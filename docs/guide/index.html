@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>alive guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="guide.css"></head>
+<body><div class="layout"><nav class="rail" data-on="index"></nav><main>
+
+<div class="kicker">Start here</div>
+<h1>Ask a creator a question, and watch them answer</h1>
+<p class="lede">alive takes a creator's public YouTube videos and builds four things from them: a way to answer
+questions in their words, their voice, a model of how their face moves when they talk, and a renderer
+that draws their face. Put together, you type a question and see them answer it on their own body.</p>
+
+<div class="box"><b class="t">Everything it shows is generated.</b>The face, the voice and the words are made by
+models. Every frame carries an "AI-generated" label, and the creator never said any of it.</div>
+
+<h2>The whole system in one picture</h2>
+<figure class="fig">
+<svg viewBox="0 0 760 400" role="img" aria-label="Built once per creator, then every question runs the chain">
+ <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--dim)"/></marker></defs>
+ <text x="8" y="20" font-size="13" font-weight="700" fill="var(--dim)">BUILT ONCE PER CREATOR, by the recipes</text>
+ <g font-size="13.5" text-anchor="middle">
+  <rect x="8" y="34" width="110" height="84" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="63" y="70" fill="var(--ink)">their</text><text x="63" y="88" fill="var(--ink)">YouTube videos</text>
+  <rect x="140" y="34" width="145" height="84" rx="8" fill="var(--panel)" stroke="var(--s-answers)" stroke-width="2"/><text x="212" y="62" fill="var(--ink)" font-weight="700">1 answers</text><text x="212" y="84" fill="var(--dim)" font-size="13">their words,</text><text x="212" y="101" fill="var(--dim)" font-size="13">searchable</text>
+  <rect x="295" y="34" width="145" height="84" rx="8" fill="var(--panel)" stroke="var(--s-voice)" stroke-width="2"/><text x="367" y="62" fill="var(--ink)" font-weight="700">2 voice</text><text x="367" y="84" fill="var(--dim)" font-size="13">a cloned voice</text><text x="367" y="101" fill="var(--dim)" font-size="13">(F5-TTS)</text>
+  <rect x="450" y="34" width="145" height="84" rx="8" fill="var(--panel)" stroke="var(--s-motion)" stroke-width="2"/><text x="522" y="58" fill="var(--ink)" font-weight="700">3 face clips</text><text x="522" y="76" fill="var(--ink)" font-weight="700">4 motion</text><text x="522" y="96" fill="var(--dim)" font-size="13">a 3D face puppet,</text><text x="522" y="112" fill="var(--dim)" font-size="13">moved by sound</text>
+  <rect x="605" y="34" width="147" height="84" rx="8" fill="var(--panel)" stroke="var(--s-render)" stroke-width="2"/><text x="678" y="62" fill="var(--ink)" font-weight="700">5 picture</text><text x="678" y="84" fill="var(--dim)" font-size="13">paints the puppet</text><text x="678" y="101" fill="var(--dim)" font-size="13">as them (STAvatar)</text>
+ </g>
+ <path d="M118,76 H136" stroke="var(--dim)" stroke-width="1.5" marker-end="url(#a)"/>
+ <rect x="140" y="150" width="612" height="44" rx="8" fill="var(--bg)" stroke="var(--accent)" stroke-dasharray="5 4"/>
+ <text x="446" y="177" text-anchor="middle" font-size="14" fill="var(--ink)"><tspan font-weight="700" fill="var(--accent)">checkpoints/&lt;creator&gt;/</tspan>  the trained models</text>
+ <g stroke="var(--dim)" stroke-width="1.3" marker-end="url(#a)"><path d="M212,118 V146"/><path d="M367,118 V146"/><path d="M522,118 V146"/><path d="M678,118 V146"/></g>
+ <text x="8" y="236" font-size="13" font-weight="700" fill="var(--dim)">EVERY QUESTION, LIVE  (./alive up &lt;creator&gt;)</text>
+ <path d="M446,194 V244" stroke="var(--dim)" stroke-width="1.3" marker-end="url(#a)"/>
+ <g font-size="13.5" text-anchor="middle">
+  <rect x="8" y="250" width="110" height="80" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="63" y="286" fill="var(--ink)">your</text><text x="63" y="304" fill="var(--ink)">question</text>
+  <rect x="140" y="250" width="145" height="80" rx="8" fill="var(--panel)" stroke="var(--s-answers)" stroke-width="2"/><text x="212" y="278" fill="var(--ink)" font-weight="700">answer text</text><text x="212" y="300" fill="var(--dim)" font-size="13">an LLM, citing</text><text x="212" y="317" fill="var(--dim)" font-size="13">them; 20-70 s</text>
+  <rect x="295" y="250" width="145" height="80" rx="8" fill="var(--panel)" stroke="var(--s-voice)" stroke-width="2"/><text x="367" y="278" fill="var(--ink)" font-weight="700">their voice</text><text x="367" y="300" fill="var(--dim)" font-size="13">first sound</text><text x="367" y="317" fill="var(--dim)" font-size="13">in ~1 s</text>
+  <rect x="450" y="250" width="145" height="80" rx="8" fill="var(--panel)" stroke="var(--s-motion)" stroke-width="2"/><text x="522" y="278" fill="var(--ink)" font-weight="700">face motion</text><text x="522" y="300" fill="var(--dim)" font-size="13">a moving 3D face</text><text x="522" y="317" fill="var(--dim)" font-size="13">from the sound</text>
+  <rect x="605" y="250" width="147" height="80" rx="8" fill="var(--panel)" stroke="var(--s-render)" stroke-width="2"/><text x="678" y="278" fill="var(--ink)" font-weight="700">their face</text><text x="678" y="300" fill="var(--dim)" font-size="13">on their real body,</text><text x="678" y="317" fill="var(--dim)" font-size="13">~80 frames/s</text>
+ </g>
+ <g stroke="var(--dim)" stroke-width="1.5" marker-end="url(#a)"><path d="M118,290 H136"/><path d="M285,290 H291"/><path d="M440,290 H446"/><path d="M595,290 H601"/></g>
+ <text x="380" y="372" text-anchor="middle" font-size="14" fill="var(--s-live)" font-weight="700">6 the live app: a page in your browser at http://127.0.0.1:8800</text>
+</svg>
+<figcaption>The top row runs once per creator and takes a day or two. The bottom row runs on every question. Colours mark the six stages throughout this guide.</figcaption>
+</figure>
+
+<p>The two hardest parts stand on published work: the face is drawn by <b>STAvatar</b>, a method that learns a
+photoreal head from video, and the voice is <b>F5-TTS</b>. <a href="credits.html">Credits</a> lists every outside
+piece, where it sits, and what was changed.</p>
+
+<h2>What is a recipe?</h2>
+<p>A <b>recipe</b> is the written procedure for building one of those models, for any creator. The same recipe
+builds Dr K's voice and Huberman's voice; only the settings differ. Each recipe has four parts:</p>
+<figure class="fig">
+<svg viewBox="0 0 760 290" role="img" aria-label="The parts of a recipe">
+ <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--dim)"/></marker></defs>
+ <g font-size="14" text-anchor="middle">
+  <rect x="10" y="15" width="365" height="78" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="192" y="44" font-weight="700" fill="var(--ink)">RECIPE.md</text><text x="192" y="68" fill="var(--dim)" font-size="13">the steps, in order, and why each exists</text>
+  <rect x="385" y="15" width="365" height="78" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="567" y="44" font-weight="700" fill="var(--ink)">a profile per creator</text><text x="567" y="68" fill="var(--dim)" font-size="13">profiles/&lt;name&gt;.py: what differs per person</text>
+  <rect x="10" y="103" width="365" height="78" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="192" y="132" font-weight="700" fill="var(--ink)">the scripts</text><text x="192" y="156" fill="var(--dim)" font-size="13">one per step; each takes --profile &lt;name&gt;</text>
+  <rect x="385" y="103" width="365" height="78" rx="8" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/><text x="567" y="132" font-weight="700" fill="var(--ink)">a status command</text><text x="567" y="156" fill="var(--dim)" font-size="13">reads the disk, prints the next command</text>
+ </g>
+ <rect x="10" y="210" width="740" height="66" rx="8" fill="var(--bg)" stroke="var(--line)"/>
+ <text x="380" y="238" text-anchor="middle" font-size="14" fill="var(--ink)">status → run what it prints → status again → … until it says done</text>
+ <text x="380" y="262" text-anchor="middle" font-size="13" fill="var(--dim)">where a person must look and decide, it stops and says what to look at</text>
+ <path d="M567,181 V206" stroke="var(--dim)" stroke-width="1.3" marker-end="url(#b)"/>
+</svg>
+</figure>
+<p>Because the status command only reads what is on disk, you can stop at any point, reboot, and pick up
+where you were. Nothing remembers anything except the files.</p>
+<p>You will rarely run the recipes by hand. <code>./alive build &lt;creator&gt;</code> runs all of them in
+order, asking each one's status command what is next. The pages under <i>Build a creator</i> explain
+what each recipe does, so that when one stops and asks for you, you know what it wants.</p>
+
+<h2>Words this guide uses</h2>
+<div class="tbl"><table>
+<tr><th>word</th><th>means</th></tr>
+<tr><td>creator</td><td>the person being modelled. Today: <code>drk</code> (Dr K) and <code>huberman</code></td></tr>
+<tr><td>take</td><td>one downloaded YouTube video, in <code>data/takes/&lt;creator&gt;/&lt;take&gt;/</code></td></tr>
+<tr><td>profile</td><td>a small settings file for one creator in one recipe: <code>profiles/&lt;name&gt;.py</code></td></tr>
+<tr><td>checkpoint</td><td>a trained model. All of a creator's are in <code>checkpoints/&lt;creator&gt;/</code></td></tr>
+<tr><td>gate</td><td>a step where a person looks and decides (for example: which video clusters really show the creator)</td></tr>
+<tr><td><code>data/</code>, <code>externals/</code></td><td>folders that are not in git: your data, and outside code (the face tracker, the renderer, the voice model code)</td></tr>
+</table></div>
+
+<h2>Where do you want to start?</h2>
+<div class="cards">
+ <a class="card s-live" href="run.html"><b>Run the app</b><span>You already have a creator's trained models. Start it and ask a question.</span></a>
+ <a class="card s-voice" href="build.html"><b>Rebuild Dr K or Huberman</b><span>From their YouTube videos, with every decision already recorded. One command.</span></a>
+ <a class="card s-render" href="new-creator.html"><b>Add a new creator</b><span>Pick videos, copy the templates, build, and make the decisions along the way.</span></a>
+</div>
+<p>Whichever you pick, <a href="setup.html">set up the machine</a> first.</p>
+
+<h2>What is not in the repository</h2>
+<ul>
+ <li><b>The trained models.</b> Not released. You build them with the recipes.</li>
+ <li><b>Licensed inputs</b> each user must get themselves: the FLAME head model, NVIDIA's Audio2Face-3D speech
+  models, and a MetaHuman face rig. <a href="setup.html#licensed">Setup</a> says where each comes from.</li>
+ <li><b>The creators' videos and words.</b> Downloaded from YouTube by the build; never committed.</li>
+</ul>
+
+<h2>What you need</h2>
+<div class="tbl"><table>
+<tr><th></th><th>to run the app</th><th>to build a creator</th></tr>
+<tr><td>GPU</td><td>NVIDIA, 12 GB</td><td>NVIDIA, 16 GB (built on an RTX 5080)</td></tr>
+<tr><td>RAM</td><td>16 GB</td><td>32 GB</td></tr>
+<tr><td>disk</td><td>~3 GB per creator</td><td>~150 GB per creator while building</td></tr>
+<tr><td>time</td><td>seconds to start</td><td>about a day per tracked video, mostly face tracking</td></tr>
+<tr><td>also</td><td>Linux, an Anthropic API key</td><td>the same, plus ffmpeg and yt-dlp</td></tr>
+</table></div>
+
+<div class="pager"></div>
+</main></div><script src="nav.js"></script></body></html>

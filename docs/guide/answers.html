@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stage 1, answers · alive guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="guide.css"></head>
+<body><div class="layout"><nav class="rail" data-on="answers"></nav><main class="s-answers">
+
+<div class="kicker">Stage 1 · engines/knowledge_style</div>
+<h1>Answers in their own words</h1>
+<p class="lede">An answer is written by an LLM (Anthropic's Claude) that searches everything the creator has
+said in their videos and may only claim what it found there. This stage builds what it searches, and a
+short note on how the creator talks.</p>
+
+<h2>How an answer is made</h2>
+<figure class="fig">
+<svg viewBox="0 0 760 360" role="img" aria-label="How an answer is made">
+ <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--dim)"/></marker></defs>
+ <g font-size="13" text-anchor="middle">
+  <rect x="10" y="30" width="120" height="56" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="70" y="63" fill="var(--ink)">the question</text>
+  <rect x="180" y="15" width="300" height="190" rx="12" fill="var(--panel)" stroke="var(--s-answers)" stroke-width="2"/>
+  <text x="330" y="40" font-size="15" font-weight="700" fill="var(--ink)">one LLM conversation</text>
+  <text x="330" y="60" fill="var(--dim)">reads: the rules, the persona note</text>
+  <rect x="200" y="78" width="125" height="52" rx="8" fill="var(--bg)" stroke="var(--line)"/><text x="262" y="100" fill="var(--ink)" font-weight="600">search</text><text x="262" y="118" fill="var(--dim)" font-size="11.5">words → numbered passages</text>
+  <rect x="335" y="78" width="125" height="52" rx="8" fill="var(--bg)" stroke="var(--line)"/><text x="397" y="100" fill="var(--ink)" font-weight="600">read</text><text x="397" y="118" fill="var(--dim)" font-size="11.5">full text of a passage</text>
+  <text x="330" y="152" fill="var(--dim)">several rounds; each says which</text>
+  <text x="330" y="170" fill="var(--dim)">words found nothing, so the next</text>
+  <text x="330" y="188" fill="var(--dim)">search can try other words</text>
+  <rect x="530" y="15" width="220" height="190" rx="12" fill="var(--panel)" stroke="var(--line)" stroke-width="2"/>
+  <text x="640" y="40" font-size="15" font-weight="700" fill="var(--ink)">their archive</text>
+  <text x="640" y="62" fill="var(--dim)">data/answers/&lt;creator&gt;/</text>
+  <text x="640" y="92" fill="var(--ink)">Dr K: 292 passages, 17 videos</text>
+  <text x="640" y="112" fill="var(--ink)">each ~300 words, with its</text>
+  <text x="640" y="132" fill="var(--ink)">video and timestamp</text>
+  <text x="640" y="160" fill="var(--dim)">searched by word overlap:</text>
+  <text x="640" y="178" fill="var(--dim)">the same words always give</text>
+  <text x="640" y="196" fill="var(--dim)">the same passages</text>
+  <rect x="180" y="250" width="300" height="92" rx="12" fill="var(--panel)" stroke="var(--line)" stroke-width="2"/>
+  <text x="330" y="276" font-size="15" font-weight="700" fill="var(--ink)">the answer</text>
+  <text x="330" y="298" fill="var(--ink)">every sentence names its passage [12]</text>
+  <text x="330" y="318" fill="var(--dim)">a claim with no passage is not allowed;</text>
+  <text x="330" y="334" fill="var(--dim)">the markers are removed before you see it</text>
+  <rect x="530" y="250" width="220" height="92" rx="12" fill="var(--panel)" stroke="var(--line)"/>
+  <text x="640" y="280" fill="var(--ink)">sent on to the voice</text><text x="640" y="300" fill="var(--dim)">whole sentences, up to</text><text x="640" y="318" fill="var(--dim)">about 75 s, are spoken</text>
+ </g>
+ <g stroke="var(--dim)" stroke-width="1.5" fill="none" marker-end="url(#a)">
+  <path d="M130,58 H176"/><path d="M480,95 H526"/><path d="M526,115 H484"/><path d="M330,205 V246"/><path d="M480,296 H526"/>
+ </g>
+</svg>
+<figcaption>Typically 20-70 seconds per question, most of it the LLM thinking. The settings (how many passages,
+which instructions) are the creator's <i>promoted</i> setup; see below.</figcaption>
+</figure>
+
+<h2>What this stage builds</h2>
+<figure class="fig">
+<svg viewBox="0 0 760 230" role="img" aria-label="What the answers stage builds">
+ <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--dim)"/></marker></defs>
+ <g font-size="13" text-anchor="middle">
+  <rect x="10" y="30" width="150" height="70" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="85" y="58" fill="var(--ink)" font-weight="600">YouTube subtitles</text><text x="85" y="78" fill="var(--dim)" font-size="12">every word, timed</text>
+  <rect x="200" y="30" width="160" height="70" rx="8" fill="var(--panel)" stroke="var(--s-answers)" stroke-width="2"/><text x="280" y="56" fill="var(--ink)" font-weight="600">build.py</text><text x="280" y="76" fill="var(--dim)" font-size="12">cut into ~300-word</text><text x="280" y="91" fill="var(--dim)" font-size="12">overlapping passages</text>
+  <rect x="400" y="30" width="160" height="70" rx="8" fill="var(--panel)" stroke="var(--s-answers)" stroke-width="2"/><text x="480" y="56" fill="var(--ink)" font-weight="600">mapindex.py</text><text x="480" y="76" fill="var(--dim)" font-size="12">an LLM writes a topic</text><text x="480" y="91" fill="var(--dim)" font-size="12">map of each video</text>
+  <rect x="600" y="30" width="150" height="70" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="675" y="58" fill="var(--ink)" font-weight="600">the archive</text><text x="675" y="78" fill="var(--dim)" font-size="12">store/ and map.json</text>
+  <rect x="200" y="140" width="360" height="74" rx="8" fill="var(--panel)" stroke="var(--warn)" stroke-width="2"/><text x="380" y="166" fill="var(--ink)" font-weight="600">the persona note: picked by a person</text><text x="380" y="186" fill="var(--dim)" font-size="12">18 passages of their own speech that show how they talk</text><text x="380" y="203" fill="var(--dim)" font-size="12">data/answers/&lt;creator&gt;/creator.md</text>
+ </g>
+ <g stroke="var(--dim)" stroke-width="1.5" fill="none" marker-end="url(#b)"><path d="M160,65 H196"/><path d="M360,65 H396"/><path d="M560,65 H596"/></g>
+</svg>
+</figure>
+
+<h3>Commands</h3>
+<p><code>./alive build &lt;creator&gt; --stage answers</code> runs both scripts. By hand, from
+<code>engines/knowledge_style/proto</code>, with any Python that has <code>anthropic</code>:</p>
+<pre><code>python3 build.py --takes ../../../data/takes/&lt;folder&gt; --subject &lt;creator&gt;   <span class="c"># seconds, no LLM</span>
+python3 mapindex.py --subject &lt;creator&gt;                                   <span class="c"># minutes, one LLM call per video</span>
+make status                                                              <span class="c"># per creator: videos, passages, ready?</span></code></pre>
+<p><code>&lt;creator&gt;</code> here is the answer engine's name for them, set in <code>creators/&lt;id&gt;/build.json</code> under <code>answers</code>: Dr K's is <code>healthygamer</code>, Huberman's is <code>huberman</code>. The LLM key is read from <code>data/answers/.protokey</code> (or <code>ANTHROPIC_API_KEY</code>).</p>
+
+<h2 id="persona">The persona note (a person picks it)</h2>
+<p>The note is most of what makes an answer sound like them: the search finds <i>what</i> they said, the
+note sets <i>how</i> they say it. No script writes it. It takes about twenty minutes.</p>
+<ol class="steps">
+ <li>Copy <code>engines/knowledge_style/proto/harness/creators/_template/creator.md</code> to
+  <code>data/answers/&lt;creator&gt;/creator.md</code>. The rules at the top stay as they are.</li>
+ <li>Pick <b>18 passages</b> of about 90 seconds each from their transcripts: across as many videos and topics
+  as possible, where they explain something in their normal voice. <b>Never</b> an ad, a sponsor read, an intro or
+  an outro. Leave transcription errors in.</li>
+ <li>Write each under <i>How you talk</i> as <code>[&lt;take folder&gt; HH:MM:SS-HH:MM:SS]</code>, then the words.</li>
+ <li>Fill in <i>Your archive</i> with the counts <code>make status</code> prints.</li>
+ <li>Record the pick in <code>creators/&lt;id&gt;/build/answers/persona_passages.txt</code> (sources only, no text).</li>
+ <li>Ask three questions in the live app and read the answers aloud. If an answer calls the creator "he", or
+  sounds like a summary of them instead of them, the passages are too formal or too few.</li>
+</ol>
+
+<div class="box"><b class="t">Why not a separate style model?</b>An earlier design had the LLM write plain content and a
+small local model (<a href="credits.html">inmystyle</a>) rewrite it in the creator's style. A blind judge picked out the
+real speaker every time, and the rewrite reversed a fact in about one answer in five. One LLM reading the persona note
+does better, and every claim stays tied to a real passage.</div>
+
+<h2>The promoted setup (optional)</h2>
+<p>How many passages to fetch and which instructions to use is the creator's <i>promoted</i> setup, in
+<code>harness/profiles/&lt;creator&gt;.json</code>. A new creator without one runs on Dr K's, which works well.
+Tuning one is a measure-change-measure loop over 100 test questions, written up in
+<code>engines/knowledge_style/proto/RECIPE.md</code>; it needs a set of test questions and checked answers
+(the <code>question-corpus</code> recipe), costs hours of LLM calls, and is not needed to start.</p>
+
+<h2>Things that go wrong</h2>
+<div class="tbl"><table>
+<tr><th>you see</th><th>why, and the fix</th></tr>
+<tr><td>answers talk about the creator as "he"</td><td>the persona note is missing, too short, or too formal. Re-pick the passages</td></tr>
+<tr><td>an answer drifts into general advice</td><td>the archive does not cover the question; the rules make it say so. Add videos on that topic and rebuild</td></tr>
+<tr><td><code>no persona note at ...</code></td><td>step above: the note lives in <code>data/answers/&lt;creator&gt;/</code>, not in git</td></tr>
+<tr><td>401 or "no key"</td><td>put the key in <code>data/answers/.protokey</code></td></tr>
+<tr><td>a different creator's numbers look wrong</td><td>scoring one creator against another's checked answers; every script takes <code>--creator</code>, never assume a default</td></tr>
+</table></div>
+
+<div class="pager"></div>
+</main></div><script src="nav.js"></script></body></html>

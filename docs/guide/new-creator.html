@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A new creator · alive guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="guide.css"></head>
+<body><div class="layout"><nav class="rail" data-on="new-creator"></nav><main>
+
+<div class="kicker">Reference</div>
+<h1>A new creator, from nothing</h1>
+<p class="lede">The whole path for someone who is not Dr K or Huberman, as a checklist. It assumes the machine is
+<a href="setup.html">set up</a> and <code>./alive check</code> only complains about models. Pick an id for them, short
+and lowercase; below it is <code>&lt;id&gt;</code>.</p>
+
+<h2>Where your time goes</h2>
+<figure class="fig">
+<svg viewBox="0 0 760 210" role="img" aria-label="Timeline of a new creator build">
+ <g font-size="12" fill="var(--dim)">
+  <line x1="150" y1="170" x2="750" y2="170" stroke="var(--line)"/>
+  <g text-anchor="middle"><text x="150" y="188">0 h</text><text x="300" y="188">6</text><text x="450" y="188">12</text><text x="600" y="188">18</text><text x="750" y="188">24 h</text></g>
+ </g>
+ <g font-size="13" fill="var(--ink)">
+  <text x="10" y="34">download</text><rect x="150" y="22" width="20" height="16" rx="3" fill="var(--dim)"/>
+  <text x="10" y="58">answers</text><rect x="170" y="46" width="8" height="16" rx="3" fill="var(--s-answers)"/><text x="186" y="59" font-size="12" fill="var(--warn)">+20 min of yours</text>
+  <text x="10" y="82">voice</text><rect x="178" y="70" width="38" height="16" rx="3" fill="var(--s-voice)"/><text x="224" y="83" font-size="12" fill="var(--warn)">+3 stops: threshold, listen, pick</text>
+  <text x="10" y="106">face clips</text><rect x="216" y="94" width="375" height="16" rx="3" fill="var(--s-clips)"/><text x="230" y="107" font-size="12" fill="var(--panel)">one video tracked: 10-20 h, unattended</text><text x="598" y="107" font-size="12" fill="var(--warn)">+3 looks</text>
+  <text x="10" y="130">motion</text><rect x="591" y="118" width="50" height="16" rx="3" fill="var(--s-motion)"/><text x="648" y="131" font-size="12" fill="var(--warn)">+2 looks</text>
+  <text x="10" y="154">render</text><rect x="641" y="142" width="100" height="16" rx="3" fill="var(--s-render)"/><text x="590" y="155" font-size="12" fill="var(--warn)" text-anchor="end">+2 looks</text>
+ </g>
+</svg>
+<figcaption>About a day with one tracked video; each further tracked video adds 10-20 hours. The orange notes are
+where the build stops for you. Answers and voice can be done while you wait for tracking, but the build runs the
+stages in order so they never share the card.</figcaption>
+</figure>
+
+<h2>The checklist</h2>
+
+<h3>1 · Choose the videos</h3>
+<ul>
+ <li>Their own channel, one person talking to camera, little music. Interviews and panels break the voice and face
+  steps.</li>
+ <li>About five uploads of ~30 minutes for the voice and answers; more uploads make the answers richer, at no extra
+  face cost.</li>
+ <li>One of them is the <b>face video</b>: a steady setup, face large in the frame, 30 frames a second. That is the
+  one tracked. Hold it out from voice training too, so every stage is tested on it.</li>
+ <li>Write down the YouTube ids (the part after <code>v=</code>).</li>
+</ul>
+
+<h3>2 · Create the files that describe them</h3>
+<figure class="fig">
+<svg viewBox="0 0 760 300" role="img" aria-label="Files to create for a new creator">
+ <g font-size="12.5">
+  <g font-family="IBM Plex Mono, monospace" fill="var(--ink)">
+   <text x="20" y="34">creators/_template/</text><text x="360" y="34" fill="var(--s-live)">→ creators/&lt;id&gt;/</text>
+   <text x="20" y="70">.../text-to-voice/profiles/_template.py</text><text x="360" y="70" fill="var(--s-voice)">→ profiles/&lt;id&gt;.py</text>
+   <text x="20" y="106">.../face-clips/profiles/_template.py</text><text x="360" y="106" fill="var(--s-clips)">→ profiles/&lt;id&gt;.py</text>
+   <text x="20" y="142">.../audio-to-mesh/profiles/_template.py</text><text x="360" y="142" fill="var(--s-motion)">→ profiles/&lt;id&gt;.py</text>
+   <text x="20" y="178">.../mesh-to-render/profiles/_template.py</text><text x="360" y="178" fill="var(--s-render)">→ profiles/&lt;id&gt;.py</text>
+   <text x="20" y="214">.../harness/creators/_template/creator.md</text><text x="360" y="214" fill="var(--s-answers)">→ data/answers/&lt;id&gt;/creator.md</text>
+  </g>
+  <g fill="var(--dim)">
+   <text x="580" y="34">live.env, build.json</text>
+   <text x="580" y="70">name, takes, held-out video</text>
+   <text x="580" y="106">name; numbers read later</text>
+   <text x="580" y="142">name, video → soundtrack</text>
+   <text x="580" y="178">same name; reads the rest</text>
+   <text x="580" y="214">filled in at step 4</text>
+  </g>
+  <rect x="10" y="240" width="740" height="48" rx="8" fill="var(--bg)" stroke="var(--line)"/>
+  <text x="380" y="261" text-anchor="middle" fill="var(--ink)">Use the same id everywhere and nothing has to be cross-referenced. Every template says, beside each value,</text>
+  <text x="380" y="279" text-anchor="middle" fill="var(--ink)">what it is and how to fill it. Values marked as read from a tool are left alone until that tool has run.</text>
+ </g>
+</svg>
+</figure>
+<p>In <code>creators/&lt;id&gt;/build.json</code>: the YouTube ids under <code>videos.ids</code>, the face video's id under
+<code>clips.takes</code>, and the profile names (your id) for each stage.</p>
+
+<h3>3 · Download</h3>
+<pre><code>./alive down
+./alive build &lt;id&gt; --stage videos</code></pre>
+<p>Puts each video, its sound and its subtitles in <code>data/takes/&lt;id&gt;/</code>.</p>
+
+<h3>4 · Answers</h3>
+<pre><code>./alive build &lt;id&gt; --stage answers</code></pre>
+<p>It stops asking for the persona note. Write it as on the <a href="answers.html#persona">answers page</a>, run the
+same command again.</p>
+
+<h3>5 · Everything else</h3>
+<pre><code>./alive build &lt;id&gt;</code></pre>
+<p>Run it, and each time it stops, it says what to look at. Make the decision, record it where it says (each stage
+page has a <i>Where the decisions are kept</i> table), and run the same command again. In order, the stops are:</p>
+<div class="tbl"><table>
+<tr><th>stage</th><th>you</th></tr>
+<tr><td><a href="voice.html">voice</a></td><td>read the speaker table and set the threshold; listen to the reference clip; pick the saved step</td></tr>
+<tr><td><a href="clips.html">face clips</a></td><td>read the derived numbers into the profile; label each group of frames; watch a few chunks; check the mesh overlays</td></tr>
+<tr><td><a href="motion.html">motion</a></td><td>look at their rig beside the stock face; look at the timing sheet; promote, writing what is wrong</td></tr>
+<tr><td><a href="render.html">render</a></td><td>look at the mesh-on-photo sheet and the two-second clip; promote, writing what is wrong</td></tr>
+</table></div>
+
+<h3>6 · Live</h3>
+<ol class="steps">
+ <li>Fill in <code>creators/&lt;id&gt;/live.env</code>: the template names every value. <code>WPS</code> is words
+  divided by seconds over the voice training set.</li>
+ <li><code>./alive check &lt;id&gt;</code> until nothing is missing.</li>
+ <li><code>./alive up &lt;id&gt;</code>, then pick the <a href="live.html">resting pose</a>.</li>
+ <li>Ask the example questions. Listen and watch.</li>
+</ol>
+
+<div class="box"><b class="t">Before you put it in front of anyone</b>Get the creator's permission. The page labels
+everything as AI-generated; keep that label.</div>
+
+<h2>If a stage comes out worse than for Dr K or Huberman</h2>
+<p>Every recipe's profile separates values <b>measured on this person</b> from values <b>carried over from Dr K</b>. The
+carried ones are the first place to look. Each <code>RECIPE.md</code> has a section, <i>What did not generalise</i>,
+listing what changed between the first creator and the second; a third will find more. Add what you find there.</p>
+
+<div class="pager"></div>
+</main></div><script src="nav.js"></script></body></html>

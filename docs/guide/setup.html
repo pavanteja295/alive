@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Set up a machine · alive guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="guide.css"></head>
+<body><div class="layout"><nav class="rail" data-on="setup"></nav><main>
+
+<div class="kicker">Start</div>
+<h1>Set up a machine</h1>
+<p class="lede">From a Linux machine with an NVIDIA card to <code>./alive check</code> saying everything is in place.
+About an hour, most of it installing packages. Do this once.</p>
+
+<h2>What lives where</h2>
+<p>Four folders matter. Only the first is in git; the other three are yours, and can be links to any disk
+with room.</p>
+<figure class="fig">
+<svg viewBox="0 0 760 430" role="img" aria-label="The four folders and how the code reaches them">
+ <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--dim)"/></marker></defs>
+ <rect x="10" y="10" width="740" height="150" rx="10" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+ <text x="26" y="36" font-size="16" font-weight="700" fill="var(--accent)">alive/  (git clone)</text>
+ <text x="26" y="58" font-size="13.5" fill="var(--dim)">the code, the recipes, each creator's settings and recorded decisions</text>
+ <g font-size="13.5" fill="var(--ink)">
+  <text x="40" y="88">engines/knowledge_style   answers</text>
+  <text x="40" y="108">engines/text2audio        voice</text>
+  <text x="40" y="128">engines/audio2face        face clips, motion, renderer, live face</text>
+  <text x="430" y="88">recipes/     the build order, ./alive build</text>
+  <text x="430" y="108">creators/    per creator: live.env, build.json</text>
+  <text x="430" y="128">env/         environments, setup script, patches</text>
+ </g>
+ <g font-size="13" text-anchor="middle">
+  <rect x="10" y="215" width="235" height="200" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="2"/>
+  <text x="127" y="240" font-size="16" font-weight="700" fill="var(--ink)">data/</text>
+  <text x="127" y="262" fill="var(--dim)">what you work on. not in git</text>
+  <text x="127" y="292" fill="var(--ink)">takes/   the downloaded videos</text>
+  <text x="127" y="314" fill="var(--ink)">answers/  indexed transcripts, key</text>
+  <text x="127" y="336" fill="var(--ink)">voice/   voice working files</text>
+  <text x="127" y="358" fill="var(--ink)">face/   face working files and</text>
+  <text x="127" y="376" fill="var(--ink)">the shared face assets</text>
+  <rect x="262" y="215" width="235" height="200" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="2"/>
+  <text x="380" y="240" font-size="16" font-weight="700" fill="var(--ink)">externals/</text>
+  <text x="380" y="262" fill="var(--dim)">outside code at our commits</text>
+  <text x="380" y="292" fill="var(--ink)">vhap/   the face tracker</text>
+  <text x="380" y="314" fill="var(--ink)">(its data/, output/, export/</text>
+  <text x="380" y="332" fill="var(--ink)">hold the tracking)</text>
+  <text x="380" y="356" fill="var(--ink)">stavatar/  the face renderer</text>
+  <text x="380" y="378" fill="var(--ink)">F5-TTS/   the voice model</text>
+  <rect x="515" y="215" width="235" height="200" rx="10" fill="var(--panel)" stroke="var(--s-render)" stroke-width="2"/>
+  <text x="632" y="240" font-size="16" font-weight="700" fill="var(--ink)">checkpoints/</text>
+  <text x="632" y="262" fill="var(--dim)">the trained models. not in git</text>
+  <text x="632" y="292" fill="var(--ink)">&lt;creator&gt;/voice/</text>
+  <text x="632" y="314" fill="var(--ink)">&lt;creator&gt;/face/motion/</text>
+  <text x="632" y="336" fill="var(--ink)">&lt;creator&gt;/face/rig/</text>
+  <text x="632" y="358" fill="var(--ink)">&lt;creator&gt;/face/render/</text>
+  <text x="632" y="384" fill="var(--dim)">the app reads only these</text>
+ </g>
+ <g stroke="var(--dim)" stroke-width="1.4" fill="none" marker-end="url(#a)">
+  <path d="M127,160 V211"/><path d="M380,160 V211"/><path d="M632,160 V211"/>
+ </g>
+ <text x="380" y="190" text-anchor="middle" font-size="12.5" fill="var(--dim)">the code reaches all three through relative links committed in git, never a machine path</text>
+</svg>
+</figure>
+
+<h2>The order</h2>
+<figure class="fig">
+<svg viewBox="0 0 760 140" role="img" aria-label="Setup order">
+ <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--dim)"/></marker></defs>
+ <g font-size="13.5" text-anchor="middle">
+  <rect x="5" y="30" width="135" height="72" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="72" y="60" font-weight="700" fill="var(--ink)">1 system</text><text x="72" y="80" fill="var(--dim)" font-size="12">driver, CUDA, tools</text>
+  <rect x="158" y="30" width="135" height="72" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="225" y="60" font-weight="700" fill="var(--ink)">2 clone</text><text x="225" y="80" fill="var(--dim)" font-size="12">the repository</text>
+  <rect x="311" y="30" width="135" height="72" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="378" y="60" font-weight="700" fill="var(--ink)">3 outside code</text><text x="378" y="80" fill="var(--dim)" font-size="12">one script</text>
+  <rect x="464" y="30" width="135" height="72" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="531" y="60" font-weight="700" fill="var(--ink)">4 environments</text><text x="531" y="80" fill="var(--dim)" font-size="12">six Python envs</text>
+  <rect x="617" y="30" width="138" height="72" rx="8" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/><text x="686" y="60" font-weight="700" fill="var(--ink)">5 licensed files</text><text x="686" y="80" fill="var(--dim)" font-size="12">then ./alive check</text>
+ </g>
+ <g stroke="var(--dim)" stroke-width="1.4" marker-end="url(#b)"><path d="M140,66 H154"/><path d="M293,66 H307"/><path d="M446,66 H460"/><path d="M599,66 H613"/></g>
+</svg>
+</figure>
+
+<h3>1. System</h3>
+<p>Linux with an NVIDIA driver new enough for CUDA 12.8, then these tools:</p>
+<pre><code>sudo apt install ffmpeg git cmake build-essential
+pip install yt-dlp                   <span class="c"># downloads the videos</span>
+curl -fsSL https://deno.land/install.sh | sh   <span class="c"># yt-dlp needs a JavaScript runtime for YouTube now</span>
+<span class="c"># Miniconda (conda) and uv (fast pip):</span>
+curl -LsSf https://astral.sh/uv/install.sh | sh</code></pre>
+
+<h3>2. Clone</h3>
+<pre><code>git clone https://github.com/pavanteja295/alive && cd alive</code></pre>
+
+<h3>3. Outside code</h3>
+<p>Three projects this builds on, each at the exact commit used, with our changes applied as patches:
+the face tracker (VHAP), the face renderer (STAvatar) and the voice model (F5-TTS).</p>
+<pre><code>bash env/setup_externals.sh</code></pre>
+
+<h3>4. Environments</h3>
+<p>Six separate Python environments, because their libraries conflict. Each file in <code>env/</code> is the exact
+package list. <code>env/README.md</code> has the full commands; in short:</p>
+<div class="tbl"><table>
+<tr><th>environment</th><th>for</th><th>build it with</th></tr>
+<tr><td><code>~/.venvs/vc-f5</code></td><td>voice training and serving</td><td><code>uv venv --python 3.11</code>, <code>-r env/voice-f5.txt</code>, then <code>-e externals/F5-TTS</code></td></tr>
+<tr><td><code>~/.venvs/vc-prep</code></td><td>voice data preparation</td><td><code>uv venv --python 3.11</code>, <code>-r env/voice-prep.txt</code></td></tr>
+<tr><td><code>stavatar</code> (conda)</td><td>face motion, renderer, live face</td><td><code>python=3.10</code>, <code>-r env/face.txt</code>, then the renderer's three CUDA extensions</td></tr>
+<tr><td><code>vhap</code> (conda)</td><td>face tracking</td><td><code>python=3.10</code>, <code>-r env/tracker.txt</code>, <code>-e externals/vhap</code>, plus conda's <code>gxx_linux-64</code> and <code>cuda-nvcc=12.8</code></td></tr>
+<tr><td><code>faceid</code> (conda)</td><td>checking it's the right person in each shot</td><td><code>python=3.10</code>, <code>-r env/faceid.txt</code></td></tr>
+<tr><td><code>~/.venvs/mh-offset</code></td><td>the speech encoder pass</td><td><code>uv venv --python 3.13</code>, <code>-r env/speech-encoder.txt</code></td></tr>
+</table></div>
+<p>The answer engine and the viewer only need Python 3.11+ with <code>pip install anthropic</code>.</p>
+<div class="box warn"><b class="t">On a card other than the RTX 50 series</b>set <code>TORCH_CUDA_ARCH_LIST</code> (for example
+<code>8.9</code> for an RTX 40) before the tracker and renderer first build their CUDA code.</div>
+
+<h3 id="licensed">5. Licensed files</h3>
+<p>These cannot be redistributed; each user gets their own.</p>
+<div class="tbl"><table>
+<tr><th>what</th><th>where it goes</th><th>where to get it</th></tr>
+<tr><td>FLAME 2023 head model<br><span class="cap"><code>flame2023.pkl</code>, <code>FLAME_masks.pkl</code></span></td><td><code>externals/vhap/asset/flame/</code> and <code>externals/stavatar/flame_model/assets/flame/</code></td><td>register at <a href="https://flame.is.tue.mpg.de">flame.is.tue.mpg.de</a></td></tr>
+<tr><td>Audio2Face-3D speech models<br><span class="cap"><code>audio_encoder.onnx</code>, <code>animation_decoder.onnx</code></span></td><td><code>data/face/onnx/</code></td><td>NVIDIA Audio2Face-3D</td></tr>
+<tr><td>a MetaHuman face rig<br><span class="cap"><code>face.dna</code>, <code>face_identity.dna</code></span></td><td><code>data/face/assets/</code></td><td>Epic's MetaHuman Creator, under Epic's licence. Must be DNA 2.5 (263 controls, 545 corrective shapes)</td></tr>
+<tr><td>the shared face assets built from that rig</td><td><code>data/face/head/</code>, <code>data/face/offset/</code></td><td>built once with the scripts in the README's <i>Shared face assets</i> table (needs <code>bash env/setup_externals.sh --with-riglogic</code>)</td></tr>
+<tr><td>an Anthropic API key</td><td>the file <code>data/answers/.protokey</code></td><td><a href="https://console.anthropic.com">console.anthropic.com</a></td></tr>
+</table></div>
+
+<h3>Check</h3>
+<pre><code>./alive check drk
+<span class="c">  ok    data/answers
+  ok    externals/vhap
+  ...
+  MISSING checkpoints/drk/face/render/G4_teeth (mesh-to-render recipe, promote)</span></code></pre>
+<p>Every line that says MISSING names what to add and which recipe makes it. Before you have built
+anything, the creator's models will be missing; that is what <a href="build.html">building</a> is for.</p>
+
+<div class="pager"></div>
+</main></div><script src="nav.js"></script></body></html>

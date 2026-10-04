@@ -1,18 +1,9 @@
 # voice
 
-How they sound.
+How they sound: a finetuned F5-TTS voice per creator.
 
-**build**  their audio -> provider clone -> a voice id
-**serve**  styled text -> audio at source rate
+**build**  their audio -> cleaned clips -> F5-TTS finetune -> `checkpoints/<id>/voice/`
+**serve**  text -> streamed audio (`scripts/voice_server.py`, started by `./alive up`)
 
-Small, and largely a provider boundary. Swapping providers is a new directory under
-`engines/tts/`, not a change anywhere upstream.
-
-## Status
-
-Built: a cloned voice per creator, trained and served from here.
-`recipes/text-to-voice/RECIPE.md` builds one; `scripts/voice_server.py` serves it (`./alive up`).
-
-Whether the checkpoint uses a cloned creator voice or a stock voice is unsettled.
-
-External work in `REFERENCES.md`. Nothing there is on the path; this block is good-enough.
+The recipe is `recipes/text-to-voice/RECIPE.md`; the plain-language version is
+`docs/guide/voice.html`. External work considered is in `REFERENCES.md`.

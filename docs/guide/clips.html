@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stage 3, face clips · alive guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="guide.css"></head>
+<body><div class="layout"><nav class="rail" data-on="clips"></nav><main class="s-clips">
+
+<div class="kicker">Stage 3 · engines/audio2face/corpus</div>
+<h1>Clean, tracked clips of their face</h1>
+<p class="lede">Everything the face stages learn comes from this: short stretches of video where we know, frame by
+frame, the 3D shape and position of the creator's head. Getting there from an edited YouTube video is mostly
+about throwing the right footage away.</p>
+
+<h2>What "tracked" means</h2>
+<p>The tracker is <b>VHAP</b>. It fits <b>FLAME</b>, a standard 3D model of a human head, to every frame. FLAME
+is a mesh whose shape is set by a few hundred numbers: some fixed for the person (how wide the jaw is), some
+changing every frame (mouth open, brow raised), plus where the head is and which way it points.</p>
+<figure class="fig">
+<svg viewBox="0 0 760 220" role="img" aria-label="What tracking produces">
+ <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--dim)"/></marker></defs>
+ <g font-size="13" text-anchor="middle">
+  <rect x="10" y="30" width="170" height="160" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="2"/>
+  <text x="95" y="56" font-weight="700" fill="var(--ink)">a clip of them</text>
+  <ellipse cx="95" cy="120" rx="34" ry="44" fill="none" stroke="var(--dim)" stroke-width="2"/>
+  <circle cx="82" cy="110" r="3" fill="var(--dim)"/><circle cx="108" cy="110" r="3" fill="var(--dim)"/><path d="M80,140 Q95,150 110,140" fill="none" stroke="var(--dim)" stroke-width="2"/>
+  <text x="95" y="182" fill="var(--dim)" font-size="12">512 × 512, face centred</text>
+  <rect x="250" y="55" width="200" height="110" rx="12" fill="var(--panel)" stroke="var(--s-clips)" stroke-width="2"/>
+  <text x="350" y="84" font-size="15" font-weight="700" fill="var(--ink)">VHAP</text>
+  <text x="350" y="106" fill="var(--dim)">moves FLAME until its</text><text x="350" y="124" fill="var(--dim)">outline and features land</text><text x="350" y="142" fill="var(--dim)">on the face in the frame</text>
+  <rect x="520" y="20" width="230" height="56" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="635" y="44" font-weight="600" fill="var(--ink)">their head shape</text><text x="635" y="62" fill="var(--dim)" font-size="12">one set of numbers per video</text>
+  <rect x="520" y="86" width="230" height="56" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="635" y="110" font-weight="600" fill="var(--ink)">expression, every frame</text><text x="635" y="128" fill="var(--dim)" font-size="12">jaw, lips, brows, eyes</text>
+  <rect x="520" y="152" width="230" height="56" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="635" y="176" font-weight="600" fill="var(--ink)">head position, every frame</text><text x="635" y="194" fill="var(--dim)" font-size="12">turn, tilt, distance</text>
+ </g>
+ <g stroke="var(--dim)" stroke-width="1.5" fill="none" marker-end="url(#a)"><path d="M180,110 H246"/><path d="M450,90 C490,90 490,48 516,48"/><path d="M450,110 H516"/><path d="M450,130 C490,130 490,180 516,180"/></g>
+</svg>
+</figure>
+
+<h2>Why a YouTube video cannot go straight in</h2>
+<p>VHAP expects one unbroken shot from one fixed camera. An edited video has cuts, side panels, graphics and
+screenshots with other people's faces. None of these makes the tracker fail; each makes it return a confident
+wrong answer.</p>
+<figure class="fig">
+<svg viewBox="0 0 760 310" role="img" aria-label="One edited video and what is kept">
+ <g font-size="12.5">
+  <text x="10" y="30" font-size="13.5" font-weight="700" fill="var(--ink)">one video, as edited</text>
+  <g>
+   <rect x="10" y="44" width="150" height="48" fill="var(--s-clips)" opacity=".85"/>
+   <rect x="160" y="44" width="40" height="48" fill="var(--warn)" opacity=".75"/>
+   <rect x="200" y="44" width="110" height="48" fill="var(--s-clips)" opacity=".85"/>
+   <rect x="310" y="44" width="80" height="48" fill="#8a7fb8" opacity=".85"/>
+   <rect x="390" y="44" width="60" height="48" fill="var(--warn)" opacity=".75"/>
+   <rect x="450" y="44" width="70" height="48" fill="#b07a6a" opacity=".85"/>
+   <rect x="520" y="44" width="170" height="48" fill="var(--s-clips)" opacity=".85"/>
+   <rect x="690" y="44" width="60" height="48" fill="#888" opacity=".6"/>
+  </g>
+  <g fill="var(--panel)" text-anchor="middle" font-weight="600">
+   <text x="85" y="73">him, centred</text><text x="180" y="73">ad</text><text x="255" y="73">centred</text><text x="350" y="73">side panel</text><text x="420" y="73">graphic</text><text x="485" y="73">screenshot</text><text x="605" y="73">centred</text><text x="720" y="73">tiny inset</text>
+  </g>
+  <text x="10" y="130" font-size="13.5" font-weight="700" fill="var(--ink)">what each does to the tracker</text>
+  <g fill="var(--ink)">
+   <text x="10" y="156"><tspan font-weight="700" fill="var(--warn)">graphic or ad</tspan> · no face found; the tracker is pushed away from the face and the head spins. Measured: it turned</text>
+   <text x="10" y="174">138° over an 18 s graphic and stayed wrong for the next 28 s of perfectly good footage.</text>
+   <text x="10" y="200"><tspan font-weight="700" fill="#8a7fb8">side panel</tspan> · the tracker assumes the face is near the middle of the picture; a face at the edge is read as</text>
+   <text x="10" y="218">a head turned 30°. Fixed by cropping every frame so the face is centred.</text>
+   <text x="10" y="244"><tspan font-weight="700" fill="#b07a6a">screenshot</tspan><tspan> · the face finder locks onto someone else, at full confidence. Dr K's second video: 7% of frames.</tspan></text>
+  </g>
+  <text x="10" y="262" font-size="13.5" font-weight="700" fill="var(--ink)">kept, as chunks</text>
+  <g><rect x="18" y="270" width="136" height="14" rx="3" fill="var(--s-clips)"/><rect x="206" y="270" width="98" height="14" rx="3" fill="var(--s-clips)"/><rect x="314" y="270" width="72" height="14" rx="3" fill="#8a7fb8"/><rect x="526" y="270" width="78" height="14" rx="3" fill="var(--s-clips)"/><rect x="610" y="270" width="76" height="14" rx="3" fill="var(--s-clips)"/></g>
+  <text x="560" y="300" fill="var(--dim)" text-anchor="middle">a camera move splits one shot</text>
+ </g>
+</svg>
+<figcaption>Each kept stretch is a <b>chunk</b>: one camera, one layout, cropped to a fixed box around the face,
+a few seconds to a minute long. A shot can split into two chunks when the camera re-frames. Side panels are
+kept, because after the crop the face is centred again.</figcaption>
+</figure>
+
+<h2>How it is built</h2>
+<figure class="fig">
+<svg viewBox="0 0 760 520" role="img" aria-label="The face-clips build steps">
+ <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--dim)"/></marker></defs>
+ <g font-size="13" text-anchor="middle">
+  <rect x="10" y="20" width="170" height="80" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="95" y="45" font-weight="700" fill="var(--ink)">prepare</text><text x="95" y="65" fill="var(--dim)" font-size="12">every frame as an image,</text><text x="95" y="81" fill="var(--dim)" font-size="12">and a person/background mask</text>
+  <rect x="200" y="20" width="170" height="80" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="285" y="45" font-weight="700" fill="var(--ink)">landmarks</text><text x="285" y="65" fill="var(--dim)" font-size="12">68 face points per frame,</text><text x="285" y="81" fill="var(--dim)" font-size="12">or "no face"</text>
+  <rect x="390" y="20" width="170" height="80" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="475" y="45" font-weight="700" fill="var(--ink)">thumbnails</text><text x="475" y="65" fill="var(--dim)" font-size="12">a tiny copy of each frame,</text><text x="475" y="81" fill="var(--dim)" font-size="12">and where the cuts are</text>
+  <rect x="580" y="20" width="170" height="80" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="665" y="45" font-weight="700" fill="var(--ink)">group frames</text><text x="665" y="65" fill="var(--dim)" font-size="12">frames that look alike go</text><text x="665" y="81" fill="var(--dim)" font-size="12">together: about 30 groups</text>
+  <rect x="580" y="140" width="170" height="92" rx="8" fill="var(--panel)" stroke="var(--warn)" stroke-width="2"/><text x="665" y="164" font-weight="700" fill="var(--ink)">a person: label</text><text x="665" y="184" fill="var(--dim)" font-size="12">look at 8 frames of each</text><text x="665" y="200" fill="var(--dim)" font-size="12">group; keep or drop, and</text><text x="665" y="216" fill="var(--dim)" font-size="12">centred or panel</text>
+  <rect x="390" y="140" width="170" height="92" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="475" y="164" font-weight="700" fill="var(--ink)">face check</text><text x="475" y="184" fill="var(--dim)" font-size="12">every face in every frame,</text><text x="475" y="200" fill="var(--dim)" font-size="12">compared with the</text><text x="475" y="216" fill="var(--dim)" font-size="12">creator's face</text>
+  <rect x="200" y="140" width="170" height="92" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="285" y="164" font-weight="700" fill="var(--ink)">cut chunks</text><text x="285" y="184" fill="var(--dim)" font-size="12">kept groups, minus fades,</text><text x="285" y="200" fill="var(--dim)" font-size="12">camera moves and stray</text><text x="285" y="216" fill="var(--dim)" font-size="12">faces; crop each</text>
+  <rect x="10" y="140" width="170" height="92" rx="8" fill="var(--panel)" stroke="var(--warn)" stroke-width="2"/><text x="95" y="164" font-weight="700" fill="var(--ink)">a person: watch</text><text x="95" y="184" fill="var(--dim)" font-size="12">a few chunk clips: one</text><text x="95" y="200" fill="var(--dim)" font-size="12">camera, no cut, no</text><text x="95" y="216" fill="var(--dim)" font-size="12">graphic, face centred</text>
+  <rect x="10" y="272" width="170" height="92" rx="8" fill="var(--panel)" stroke="var(--s-clips)" stroke-width="2"/><text x="95" y="296" font-weight="700" fill="var(--ink)">track each chunk</text><text x="95" y="316" fill="var(--dim)" font-size="12">VHAP, a few minutes</text><text x="95" y="332" fill="var(--dim)" font-size="12">per chunk; most of the</text><text x="95" y="348" fill="var(--dim)" font-size="12">10-20 hours</text>
+  <rect x="200" y="272" width="170" height="92" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="285" y="296" font-weight="700" fill="var(--ink)">pick the donor</text><text x="285" y="316" fill="var(--dim)" font-size="12">the longest chunk that</text><text x="285" y="332" fill="var(--dim)" font-size="12">fits well; its head shape</text><text x="285" y="348" fill="var(--dim)" font-size="12">becomes theirs</text>
+  <rect x="390" y="272" width="170" height="92" rx="8" fill="var(--panel)" stroke="var(--s-clips)" stroke-width="2"/><text x="475" y="296" font-weight="700" fill="var(--ink)">track again</text><text x="475" y="316" fill="var(--dim)" font-size="12">every chunk with that one</text><text x="475" y="332" fill="var(--dim)" font-size="12">head shape held fixed</text>
+  <rect x="580" y="272" width="170" height="92" rx="8" fill="var(--panel)" stroke="var(--warn)" stroke-width="2"/><text x="665" y="296" font-weight="700" fill="var(--ink)">a person: overlay</text><text x="665" y="316" fill="var(--dim)" font-size="12">the mesh drawn on each</text><text x="665" y="332" fill="var(--dim)" font-size="12">chunk's worst frame: is it</text><text x="665" y="348" fill="var(--dim)" font-size="12">on the face?</text>
+  <rect x="390" y="404" width="360" height="90" rx="8" fill="var(--panel)" stroke="var(--line)" stroke-width="2"/><text x="570" y="430" font-weight="700" fill="var(--ink)">reclaim</text><text x="570" y="452" fill="var(--dim)" font-size="12">delete the tracker's 50 MB textures per chunk, keep its</text><text x="570" y="470" fill="var(--dim)" font-size="12">0.2 MB of numbers. Without it the disk fills</text>
+ </g>
+ <g stroke="var(--dim)" stroke-width="1.5" fill="none" marker-end="url(#b)">
+  <path d="M180,60 H196"/><path d="M370,60 H386"/><path d="M560,60 H576"/><path d="M665,100 V136"/><path d="M580,186 H564"/><path d="M390,186 H374"/><path d="M200,186 H184"/><path d="M95,232 V268"/><path d="M180,318 H196"/><path d="M370,318 H386"/><path d="M560,318 H576"/><path d="M665,364 V400"/>
+ </g>
+</svg>
+<figcaption>Orange boxes are the three looks a person must take. Each caught something no number reported:
+a bodybuilder in screenshots boxed as the creator, a membership promo inside a kept group, a title card left
+inside a chunk after a filter silently stopped running.</figcaption>
+</figure>
+
+<h3>Why the crop fixes two problems at once</h3>
+<figure class="fig">
+<svg viewBox="0 0 760 210" role="img" aria-label="The crop around the face">
+ <g font-size="12.5">
+  <rect x="20" y="20" width="320" height="180" fill="var(--bg)" stroke="var(--line)" stroke-width="2"/>
+  <text x="30" y="40" fill="var(--dim)">the full frame, a side-panel layout</text>
+  <rect x="30" y="60" width="150" height="120" fill="var(--panel)" stroke="var(--line)"/><text x="105" y="125" text-anchor="middle" fill="var(--dim)">screenshot,</text><text x="105" y="141" text-anchor="middle" fill="var(--dim)">another face</text>
+  <ellipse cx="268" cy="118" rx="18" ry="24" fill="none" stroke="var(--s-clips)" stroke-width="2"/>
+  <rect x="210" y="61" width="116" height="116" fill="none" stroke="var(--warn)" stroke-width="2" stroke-dasharray="5 4"/>
+  <line x1="180" y1="110" x2="180" y2="126" stroke="var(--dim)"/><line x1="172" y1="118" x2="188" y2="118" stroke="var(--dim)"/>
+  <text x="180" y="196" text-anchor="middle" fill="var(--dim)">picture centre</text>
+  <path d="M345,118 H420" stroke="var(--dim)" stroke-width="1.5" marker-end="url(#c)"/>
+  <defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--dim)"/></marker></defs>
+  <rect x="430" y="30" width="160" height="160" fill="var(--bg)" stroke="var(--warn)" stroke-width="2"/>
+  <ellipse cx="510" cy="110" rx="25" ry="33" fill="none" stroke="var(--s-clips)" stroke-width="2"/>
+  <line x1="510" y1="102" x2="510" y2="118" stroke="var(--dim)"/><line x1="502" y1="110" x2="518" y2="110" stroke="var(--dim)"/>
+  <g fill="var(--ink)"><text x="605" y="70">the crop: 3.2 × the</text><text x="605" y="88">face, face in the middle</text>
+  <text x="605" y="120" fill="var(--dim)">no false head turn,</text><text x="605" y="138" fill="var(--dim)">and no room for a</text><text x="605" y="156" fill="var(--dim)">second face (0.15% of</text><text x="605" y="174" fill="var(--dim)">kept frames at most)</text></g>
+ </g>
+</svg>
+</figure>
+
+<h2>Commands</h2>
+<p><code>./alive build &lt;creator&gt; --stage clips</code> runs it, stopping where a person must look. By hand, from
+<code>engines/audio2face/corpus/</code>:</p>
+<pre><code>python status.py --seq &lt;take&gt;     <span class="c"># what this video has done, and the next command</span></code></pre>
+<p>A new creator starts as a copy of <code>recipes/face-clips/profiles/_template.py</code>. Its numbers (how
+transparent a graphic is, where a side panel sits, how short a shot can be) are read off the creator's own
+footage with <code>derive_constants.py</code>, because they differ between channels. The full recipe, with every
+measurement from Dr K's three videos and Huberman's one, is
+<code>engines/audio2face/corpus/recipes/face-clips/RECIPE.md</code>.</p>
+
+<h3>Where the decisions are kept</h3>
+<div class="tbl"><table>
+<tr><th>decision</th><th>stored in</th></tr>
+<tr><td>which videos to track</td><td><code>creators/&lt;id&gt;/build.json</code>, <code>clips.takes</code></td></tr>
+<tr><td>keep / drop per group, with the reason</td><td><code>creators/&lt;id&gt;/build/clips/&lt;take&gt;/verdicts.json</code></td></tr>
+<tr><td>how the groups were made, so the labels point at the same frames next time</td><td><code>creators/&lt;id&gt;/build/clips/&lt;take&gt;/cluster_config.json</code></td></tr>
+</table></div>
+
+<div class="box"><b class="t">When unsure, drop</b>A good frame thrown away costs a fraction of a percent of hours of
+footage. A bad frame kept is fitted into the head shape that every other chunk then inherits. Dr K's third video,
+a livestream, lost 36% to this rule, mostly a webcam inset too small to use.</div>
+
+<h2>Things that go wrong</h2>
+<div class="tbl"><table>
+<tr><th>you see</th><th>why, and the fix</th></tr>
+<tr><td>a group's 8 frames show two different things</td><td>split just that group: <code>cluster_frames.py --subcluster &lt;id&gt; --sub-k 3</code>. Re-grouping everything renumbers the groups and breaks every label</td></tr>
+<tr><td>the red box in a group sits on someone else</td><td>drop the group as <code>wrong_face</code></td></tr>
+<tr><td>"no donor candidate" after hours of tracking</td><td>the per-chunk fit scores were not written; check the tracking log for <code>residual extraction FAILED</code></td></tr>
+<tr><td>the machine runs out of memory while tracking</td><td>each chunk starts several face-point workers. Set <code>LMK_JOBS=1</code></td></tr>
+<tr><td>the disk fills</td><td>reclaim was not run. About 4 GB per video after reclaim; Dr K's 17 videos would be ~125 GB</td></tr>
+</table></div>
+
+<div class="pager"></div>
+</main></div><script src="nav.js"></script></body></html>

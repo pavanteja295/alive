@@ -10,12 +10,9 @@ from that creator's own words, measured on four frozen measures.
 **This file owns the process.** If a script, a prompt or a conversation disagrees
 with it, this file is right and the other has drifted.
 
-- **Validated on:** one creator (`healthygamer`, 292 chunks, 17 takes, 318
-  adjudicated questions). **Never run end to end on a second creator**, so the
-  Validate pass this recipe most needs has not happened. A second subject
-  (`huberman`) exists as 9 files from the retired toolchain — questions, a map, a
-  baseline arm — with **no chunk store and no oracle**, so it is a starting point
-  and not a second data point. Read `What did not generalise` before trusting any
+- **Validated on:** `healthygamer` (292 chunks, 17 takes, 318 adjudicated questions)
+  and `huberman` (213 chunks, 5 takes; its promoted setup in `harness/profiles/huberman.json`
+  measured on 100 questions). Read `What did not generalise` before trusting any
   constant here.
 - **Measures:** owned by `../METRICS.md`. **Results:** owned by `BASELINES.md`.
   **Unresolved:** `../../../problems.md`. This file owns only the procedure.
