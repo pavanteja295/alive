@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""head_assets.npz + the two eyeballs, appended so no existing index moves.
+"""The head mesh assets, read out of the MetaHuman rig: head_assets.npz (the head alone,
+--meshes 0), then head_assets_eyes.npz / head_assets_0134.npz with eyeballs and teeth
+appended so no existing index moves.
 
-Two steps, because the DNA bindings link libpython3.13 and numpy lives elsewhere:
+Two steps each, because the DNA bindings link libpython3.13 and numpy lives elsewhere:
 
-    cd OpenRigLogic/build/python && LD_LIBRARY_PATH=. PYTHONPATH=./dna:./riglogic \
-        ~/miniconda3/bin/python <alive>/engines/audio2face/extend_head_assets.py --dump
-    ~/miniconda3/envs/stavatar/bin/python engines/audio2face/extend_head_assets.py --build
+    cd externals/OpenRigLogic/build/python && LD_LIBRARY_PATH=. PYTHONPATH=./dna:./riglogic \
+        python3.13 <alive>/engines/audio2face/extend_head_assets.py --meshes 0 --dump
+    ~/miniconda3/envs/stavatar/bin/python engines/audio2face/extend_head_assets.py --meshes 0 --build
+
+then the same pair with --meshes 0,1,3,4 (what the renderer uses). --meshes 0 writes
+head_assets.npz; if one exists it is checked against the rebuild and left untouched.
 
 WHY APPEND RATHER THAN REBUILD
 
@@ -127,7 +132,16 @@ def build():
     faces = np.concatenate(faces).astype(np.int32)
     canonical_m = (dna_cm[:, (2, 1, 0)] * np.array([1.0, 1.0, -1.0]) * 0.01)
 
-    old = np.load(PIPE / "head" / "head_assets.npz")
+    base = PIPE / "head" / "head_assets.npz"
+    if TAKE == [0]:
+        if not base.exists():
+            np.savez(base, faces=faces, uvs=uvs, pos_idx=pos_idx,
+                     canonical_m=canonical_m.astype(np.float32),
+                     neutral_dna_cm=dna_cm.astype(np.float32))
+            print(f"wrote {base}: {len(canonical_m)} vertices, {len(faces)} triangles")
+            return
+        print(f"{base} exists; checking the rebuild reproduces it, writing nothing")
+    old = np.load(base)
     nL, nV, nF = len(old["uvs"]), len(old["canonical_m"]), len(old["faces"])
     # Tolerances are in each array's own units. The position arrays are stored as
     # float32, so a centimetre-scale array round-trips to ~5e-05 cm (0.5 micron) and a
@@ -143,6 +157,8 @@ def build():
                           f"(max |diff| {e:.3e}{unit}, allowed {tol:g}{unit}). The append "
                           f"has disturbed the head; stop.")
         print(f"  head half of {nm:15s} matches  (max |diff| {e:.2e}{unit})")
+    if TAKE == [0]:
+        return
 
     tag = "eyes" if TAKE == [0, 3, 4] else "".join(str(t) for t in TAKE)
     dst = PIPE / "head" / f"head_assets_{tag}.npz"

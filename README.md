@@ -99,8 +99,8 @@ OpenRigLogic (`bash env/setup_externals.sh --with-riglogic`):
 |---|---|---|
 | `offset/rig_tables.npz` | the rig's arithmetic, so it runs without the DNA library | `engines/audio2face/offset/riglogic_numpy.py`, from `face_identity.dna` |
 | `offset/cache/rig_names.npz` | control names and the GUI-to-raw map | `engines/audio2face/offset/data/extract_rig_names.py`; also reads one header from an Unreal Engine 5.8 install with the MetaHuman plugin (`UE_ROOT`) |
-| `head/head_assets.npz` | the DNA's head mesh: triangles, UVs, vertex map, neutral shape | read out of the DNA's mesh 0; the original builder was not kept |
-| `head/head_assets_0134.npz` | the head plus teeth and both eyeballs, appended | `engines/audio2face/extend_head_assets.py` (`--dump` with OpenRigLogic, then `--build`) |
+| `head/head_assets.npz` | the DNA's head mesh: triangles, UVs, vertex map, neutral shape | `engines/audio2face/extend_head_assets.py --meshes 0` (`--dump` with OpenRigLogic, then `--build`; needs `rig_tables.npz` first) |
+| `head/head_assets_0134.npz` | the head plus teeth and both eyeballs, appended | the same script, `--meshes 0,1,3,4` |
 | `head/uv_region_masks_256.pkl` | eye, nose, lips and forehead regions on the UV map | `engines/audio2face/make_region_masks.py` (writes the 512 version; the renderer reads it at 256) |
 
 ## Setting up a machine

@@ -140,13 +140,14 @@ rig's arithmetic is taken from <code>face_identity.dna</code>. First build the D
 <tr><th>file, in <code>data/face/</code></th><th>what it is</th><th>built by</th></tr>
 <tr><td><code>offset/rig_tables.npz</code></td><td>the rig's arithmetic, so it runs without the DNA library</td><td><code>engines/audio2face/offset/riglogic_numpy.py</code></td></tr>
 <tr><td><code>offset/cache/rig_names.npz</code></td><td>control names, and the map from the animator's sliders to the rig's raw controls</td><td><code>engines/audio2face/offset/data/extract_rig_names.py</code>. <b>Also needs Unreal Engine 5.8 with the MetaHuman plugin installed</b>: it reads one header file from it (set <code>UE_ROOT</code>)</td></tr>
-<tr><td><code>head/head_assets.npz</code></td><td>the head mesh: triangles, texture coordinates, rest shape</td><td><b>no script</b>: it was read out of the DNA's first mesh and the builder was not kept. See below</td></tr>
-<tr><td><code>head/head_assets_0134.npz</code></td><td>that head plus teeth and eyeballs</td><td><code>engines/audio2face/extend_head_assets.py</code> (<code>--dump</code>, then <code>--build</code>)</td></tr>
+<tr><td><code>head/head_assets.npz</code></td><td>the head mesh: triangles, texture coordinates, rest shape</td><td><code>engines/audio2face/extend_head_assets.py --meshes 0</code>: <code>--dump</code> under the DNA reader, then <code>--build</code>. Needs <code>rig_tables.npz</code> first</td></tr>
+<tr><td><code>head/head_assets_0134.npz</code></td><td>that head plus teeth and eyeballs</td><td>the same script, <code>--meshes 0,1,3,4</code></td></tr>
 <tr><td><code>head/uv_region_masks_256.pkl</code></td><td>eye, nose, lip and forehead regions on the face's texture map</td><td><code>engines/audio2face/make_region_masks.py</code></td></tr>
 </table></div>
-<div class="box warn"><b class="t">Two known gaps here</b>The builder for <code>head_assets.npz</code> is missing, so a new user
-cannot yet make it from their own rig without writing that step. And <code>rig_names.npz</code> needs an Unreal Engine
-install. Everything else in the repository runs without Unreal.</div>
+<p>Build them in the table's order. The script's header shows the exact two commands for each <code>--dump</code> /
+<code>--build</code> pair.</p>
+<div class="box warn"><b class="t">One known gap</b><code>rig_names.npz</code> needs an Unreal Engine install. Everything else
+in the repository runs without Unreal.</div>
 
 <h3>Check</h3>
 <pre><code>./alive check drk
