@@ -127,13 +127,28 @@ inside a chunk after a filter silently stopped running.</figcaption>
 
 <h2>Commands</h2>
 <p><code>./alive build &lt;creator&gt; --stage clips</code> runs it, stopping where a person must look. By hand, from
-<code>engines/audio2face/corpus/</code>:</p>
-<pre><code>python status.py --seq &lt;take&gt;     <span class="c"># what this video has done, and the next command</span></code></pre>
+<code>engines/audio2face/</code>, with the tracker's environment:</p>
+<pre><code>~/miniconda3/envs/vhap/bin/python corpus/status.py --takes takes/&lt;folder&gt;   <span class="c"># every video: done so far, next command</span>
+~/miniconda3/envs/vhap/bin/python corpus/status.py --seq &lt;take&gt;             <span class="c"># one video</span></code></pre>
 <p>A new creator starts as a copy of <code>recipes/face-clips/profiles/_template.py</code>. Its numbers (how
 transparent a graphic is, where a side panel sits, how short a shot can be) are read off the creator's own
-footage with <code>derive_constants.py</code>, because they differ between channels. The full recipe, with every
+footage, because they differ between channels: <code>corpus/derive_constants.py --seq &lt;take&gt;</code> prints each
+measured distribution with a suggested cut-off, and you type the value you choose into the profile. A suggestion is a
+starting point: on Dr K's second video it suggested 0.325 for one value where 0.62 was right. The full recipe, with every
 measurement from Dr K's three videos and Huberman's one, is
 <code>engines/audio2face/corpus/recipes/face-clips/RECIPE.md</code>.</p>
+
+<h3 id="label">Labelling the groups</h3>
+<p>The grouping step writes one sheet per group to <code>data/face/corpus/chunks/&lt;take&gt;/clusters_full/</code>: 8 frames,
+with the face detector's box in red. Open them in any image viewer and write, by hand, one line per group into
+<code>creators/&lt;id&gt;/build/clips/&lt;take&gt;/verdicts.json</code>:</p>
+<pre><code>{
+ "0":  {"verdict": "keep", "kind": "centred", "note": "clean full-frame talking head"},
+ "3":  {"verdict": "drop", "kind": "graphic", "note": "title card"},
+ "7":  {"verdict": "keep", "kind": "panel",   "note": "him on the right, screenshot left"},
+ "11": {"verdict": "drop", "kind": "wrong_face", "note": "red box on a man in a screenshot"}
+}</code></pre>
+<p>Every group gets a line. <code>kind</code> is <code>centred</code> or <code>panel</code> for kept groups.</p>
 
 <h3>Where the decisions are kept</h3>
 <div class="tbl"><table>
@@ -152,9 +167,9 @@ a livestream, lost 36% to this rule, mostly a webcam inset too small to use.</di
 <tr><th>you see</th><th>why, and the fix</th></tr>
 <tr><td>a group's 8 frames show two different things</td><td>split just that group: <code>cluster_frames.py --subcluster &lt;id&gt; --sub-k 3</code>. Re-grouping everything renumbers the groups and breaks every label</td></tr>
 <tr><td>the red box in a group sits on someone else</td><td>drop the group as <code>wrong_face</code></td></tr>
-<tr><td>"no donor candidate" after hours of tracking</td><td>the per-chunk fit scores were not written; check the tracking log for <code>residual extraction FAILED</code></td></tr>
-<tr><td>the machine runs out of memory while tracking</td><td>each chunk starts several face-point workers. Set <code>LMK_JOBS=1</code></td></tr>
-<tr><td>the disk fills</td><td>reclaim was not run. About 4 GB per video after reclaim; Dr K's 17 videos would be ~125 GB</td></tr>
+<tr><td>"no donor candidate" after hours of tracking</td><td>the <i>donor</i> is the chunk whose head shape every other chunk borrows, chosen by its fit score (<i>residual</i>: how far the fitted head drifts, in mm). The scores were not written; look in the tracking log for <code>residual extraction FAILED</code></td></tr>
+<tr><td>the machine runs out of memory while tracking</td><td>each chunk starts several face-point workers (2 by default). Run with <code>LMK_JOBS=1</code> in front of the command</td></tr>
+<tr><td>the disk fills</td><td>reclaim was not run. About 4 GB per tracked video after reclaim, more while it is being tracked; only the tracked videos count</td></tr>
 </table></div>
 
 <div class="pager"></div>

@@ -86,7 +86,7 @@ normal pace, and every sentence came out slow; the clip is now also matched on s
  </g>
 </svg>
 <figcaption>The numbers are the script names in <code>engines/text2audio/blocks/voice/scripts/</code>. The orange
-boxes are the four places a person decides; for Dr K and Huberman each decision is recorded.</figcaption>
+boxes are the three places a person decides; for Dr K and Huberman each decision is recorded.</figcaption>
 </figure>
 
 <h3>Why each cleaning step exists</h3>
@@ -112,7 +112,9 @@ because even real speech does not score perfectly.</p>
 <h2>Commands</h2>
 <p><code>./alive build &lt;creator&gt; --stage voice</code> runs the lot, stopping at the decisions. By hand, from
 <code>engines/text2audio/blocks/voice/recipes/text-to-voice/</code>:</p>
-<pre><code>python3 tools/status.py --profile &lt;name&gt;      <span class="c"># what is done, and the next command to run</span></code></pre>
+<pre><code>tools/py tools/status.py --profile &lt;name&gt;      <span class="c"># what is done, and the next command to run</span></code></pre>
+<p><code>tools/py</code> is a two-line wrapper that runs Python from the voice data-preparation environment
+(<code>~/.venvs/vc-prep</code>); the commands status prints already name the right Python.</p>
 <p>Run what it prints, then ask again. A new creator starts as a copy of <code>profiles/_template.py</code>
 with three things filled in: the creator's name, their takes folder, and which videos to hold back. The full
 recipe, with every number from both creators, is <code>RECIPE.md</code> in that folder.</p>

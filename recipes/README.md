@@ -20,10 +20,10 @@ so the same command resumes after a stop, a crash or a decision.
 |---|---|---|---|---|
 | videos | `data/takes/<folder>/` | `engines/audio2face/ingest_youtube_take.py` | (the driver checks the folders) | ~1 min per 30 min of video |
 | answers | `data/answers/<creator>/` | `engines/knowledge_style/proto/RECIPE.md` | `make status` | minutes, LLM calls |
-| voice | `checkpoints/<id>/voice/` | `engines/text2audio/blocks/voice/recipes/text-to-voice/RECIPE.md` | `scripts/status.py --profile <id>` | ~1.5 h |
-| clips | tracked clips in `data/face/corpus/chunks/` | `engines/audio2face/corpus/recipes/face-clips/RECIPE.md` | `corpus/status.py --takes takes/<folder>` (from `engines/audio2face`) | **10-20 h per recording** (tracking) |
-| motion | `checkpoints/<id>/face/{motion,rig}/` | `engines/audio2face/rigfit/recipes/audio-to-mesh/RECIPE.md` | `tools/status.py --profile <id>` | ~2 h |
-| render | `checkpoints/<id>/face/render/` | `engines/audio2face/gauss/recipes/mesh-to-render/RECIPE.md` | `tools/status.py --profile <id>` | ~3-4 h training |
+| voice | `checkpoints/<id>/voice/` | `engines/text2audio/blocks/voice/recipes/text-to-voice/RECIPE.md` | `scripts/py scripts/status.py --profile <id>` (from the voice block) | ~1.5 h |
+| clips | tracked clips in `data/face/corpus/chunks/` | `engines/audio2face/corpus/recipes/face-clips/RECIPE.md` | `corpus/status.py --takes takes/<folder>`, vhap env (from `engines/audio2face`) | **10-20 h per recording** (tracking) |
+| motion | `checkpoints/<id>/face/{motion,rig}/` | `engines/audio2face/rigfit/recipes/audio-to-mesh/RECIPE.md` | `rigfit/recipes/audio-to-mesh/tools/status.py --profile <id>`, stavatar env (from `engines/audio2face`) | ~2 h |
+| render | `checkpoints/<id>/face/render/` | `engines/audio2face/gauss/recipes/mesh-to-render/RECIPE.md` | `gauss/recipes/mesh-to-render/tools/status.py --profile <id>`, stavatar env (from `engines/audio2face`) | ~3-4 h training |
 | live app | `creators/<id>/live.env` | this page, *Resting pose* | `./alive check <id>` | minutes, by eye |
 
 Time is on one RTX 5080. Huberman, one tracked recording: about a day end to end. Dr K,
@@ -124,6 +124,7 @@ Old code and moved code, run on the same small input, outputs compared:
 - **The answer engine's onboarding.** `make onboard` builds the store and map, but its
   oracle step calls `oracle.py` with arguments it no longer takes, and `harness/tune.py`
   rewrites a creator's profile without its `promoted` block. The driver therefore builds
-  only the store and the map, and needs `promoted` already written.
+  only the store and the map. A creator with no `promoted` block is served with Dr K's
+  promoted settings, which work; tuning one is optional (proto/RECIPE.md).
 - **Huberman's mouth runs ~0.2 s early.** His source video's sound is late; the motion
   model learned that offset. A per-creator correction is one number, not yet added.

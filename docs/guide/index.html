@@ -35,7 +35,7 @@ models. Every frame carries an "AI-generated" label, and the creator never said 
  <path d="M446,194 V244" stroke="var(--dim)" stroke-width="1.3" marker-end="url(#a)"/>
  <g font-size="13.5" text-anchor="middle">
   <rect x="8" y="250" width="110" height="80" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="63" y="286" fill="var(--ink)">your</text><text x="63" y="304" fill="var(--ink)">question</text>
-  <rect x="140" y="250" width="145" height="80" rx="8" fill="var(--panel)" stroke="var(--s-answers)" stroke-width="2"/><text x="212" y="278" fill="var(--ink)" font-weight="700">answer text</text><text x="212" y="300" fill="var(--dim)" font-size="13">an LLM, citing</text><text x="212" y="317" fill="var(--dim)" font-size="13">them; 20-70 s</text>
+  <rect x="140" y="250" width="145" height="80" rx="8" fill="var(--panel)" stroke="var(--s-answers)" stroke-width="2"/><text x="212" y="278" fill="var(--ink)" font-weight="700">answer text</text><text x="212" y="300" fill="var(--dim)" font-size="13">an LLM, citing</text><text x="212" y="317" fill="var(--dim)" font-size="13">them; 20-80 s</text>
   <rect x="295" y="250" width="145" height="80" rx="8" fill="var(--panel)" stroke="var(--s-voice)" stroke-width="2"/><text x="367" y="278" fill="var(--ink)" font-weight="700">their voice</text><text x="367" y="300" fill="var(--dim)" font-size="13">first sound</text><text x="367" y="317" fill="var(--dim)" font-size="13">in ~1 s</text>
   <rect x="450" y="250" width="145" height="80" rx="8" fill="var(--panel)" stroke="var(--s-motion)" stroke-width="2"/><text x="522" y="278" fill="var(--ink)" font-weight="700">face motion</text><text x="522" y="300" fill="var(--dim)" font-size="13">a moving 3D face</text><text x="522" y="317" fill="var(--dim)" font-size="13">from the sound</text>
   <rect x="605" y="250" width="147" height="80" rx="8" fill="var(--panel)" stroke="var(--s-render)" stroke-width="2"/><text x="678" y="278" fill="var(--ink)" font-weight="700">their face</text><text x="678" y="300" fill="var(--dim)" font-size="13">on their real body,</text><text x="678" y="317" fill="var(--dim)" font-size="13">~80 frames/s</text>
@@ -43,7 +43,7 @@ models. Every frame carries an "AI-generated" label, and the creator never said 
  <g stroke="var(--dim)" stroke-width="1.5" marker-end="url(#a)"><path d="M118,290 H136"/><path d="M285,290 H291"/><path d="M440,290 H446"/><path d="M595,290 H601"/></g>
  <text x="380" y="372" text-anchor="middle" font-size="14" fill="var(--s-live)" font-weight="700">6 the live app: a page in your browser at http://127.0.0.1:8800</text>
 </svg>
-<figcaption>The top row runs once per creator and takes a day or two. The bottom row runs on every question. Colours mark the six stages throughout this guide.</figcaption>
+<figcaption>The top row runs once per creator: about a day per tracked video, mostly unattended. The bottom row runs on every question. Colours mark the six stages throughout this guide.</figcaption>
 </figure>
 
 <p>The two hardest parts stand on published work: the face is drawn by <b>STAvatar</b>, a method that learns a
@@ -74,21 +74,27 @@ where you were. Nothing remembers anything except the files.</p>
 order, asking each one's status command what is next. The pages under <i>Build a creator</i> explain
 what each recipe does, so that when one stops and asks for you, you know what it wants.</p>
 
-<h2>Words this guide uses</h2>
+<h2 id="words">Words this guide uses</h2>
 <div class="tbl"><table>
 <tr><th>word</th><th>means</th></tr>
-<tr><td>creator</td><td>the person being modelled. Today: <code>drk</code> (Dr K) and <code>huberman</code></td></tr>
-<tr><td>take</td><td>one downloaded YouTube video, in <code>data/takes/&lt;creator&gt;/&lt;take&gt;/</code></td></tr>
+<tr><td>creator, id</td><td>the person being modelled. Each has a short id: <code>creators/&lt;id&gt;/</code>, <code>checkpoints/&lt;id&gt;/</code>. Today: <code>drk</code> (Dr K) and <code>huberman</code></td></tr>
+<tr><td>stage names for the same person</td><td>some stages know a creator by another name. Dr K is <code>drk</code> to the voice and face stages but <code>healthygamer</code> (his channel) to the answer and face-clip stages. <code>creators/&lt;id&gt;/build.json</code> lists the name each stage uses; for a new creator, use the id everywhere</td></tr>
+<tr><td>take</td><td>one downloaded YouTube video, in <code>data/takes/&lt;folder&gt;/&lt;take&gt;/</code>; <code>&lt;folder&gt;</code> is set in build.json</td></tr>
+<tr><td>LLM</td><td>a large language model: here Anthropic's Claude, called over the internet with your API key. It writes the answers</td></tr>
+<tr><td>persona note</td><td>a short file of 18 passages of the creator's own speech, picked by a person, that shows the LLM how they talk</td></tr>
+<tr><td>rig, face puppet</td><td>a 3D face mesh moved by named sliders (<i>controls</i>: jaw open, lip corner up ...). The one used is Epic Games' MetaHuman rig, reshaped to each creator</td></tr>
 <tr><td>profile</td><td>a small settings file for one creator in one recipe: <code>profiles/&lt;name&gt;.py</code></td></tr>
-<tr><td>checkpoint</td><td>a trained model. All of a creator's are in <code>checkpoints/&lt;creator&gt;/</code></td></tr>
-<tr><td>gate</td><td>a step where a person looks and decides (for example: which video clusters really show the creator)</td></tr>
-<tr><td><code>data/</code>, <code>externals/</code></td><td>folders that are not in git: your data, and outside code (the face tracker, the renderer, the voice model code)</td></tr>
+<tr><td>checkpoint</td><td>a trained model. All of a creator's are in <code>checkpoints/&lt;id&gt;/</code></td></tr>
+<tr><td>promote</td><td>copy the chosen trained model into <code>checkpoints/&lt;id&gt;/</code>, with a record of how it was made and what is still wrong with it. Only promoted models are used by the app</td></tr>
+<tr><td>stop (gate)</td><td>a step where the build halts because a person must look and decide</td></tr>
+<tr><td>joins sheet</td><td>an image, and sometimes a two-second video, showing sound, video and 3D face side by side, so a person can confirm they line up. The motion and render stages each have one</td></tr>
+<tr><td><code>data/</code>, <code>externals/</code></td><td>folders that are not in git: your data, and outside code (the face tracker, the renderer, the voice model)</td></tr>
 </table></div>
 
 <h2>Where do you want to start?</h2>
 <div class="cards">
  <a class="card s-live" href="run.html"><b>Run the app</b><span>You already have a creator's trained models. Start it and ask a question.</span></a>
- <a class="card s-voice" href="build.html"><b>Rebuild Dr K or Huberman</b><span>From their YouTube videos, with every decision already recorded. One command.</span></a>
+ <a class="card s-voice" href="build.html"><b>Rebuild Dr K or Huberman</b><span>From their YouTube videos, with every decision already recorded. One command, once you add the two persona notes and your own MetaHuman rig; the result is close to ours, not identical.</span></a>
  <a class="card s-render" href="new-creator.html"><b>Add a new creator</b><span>Pick videos, copy the templates, build, and make the decisions along the way.</span></a>
 </div>
 <p>Whichever you pick, <a href="setup.html">set up the machine</a> first.</p>

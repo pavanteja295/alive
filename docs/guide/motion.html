@@ -66,7 +66,7 @@ settings give the same face, so the values are not a fair target).</p>
 <figure class="fig">
 <svg viewBox="0 0 760 120" role="img" aria-label="Train, validation, test split">
  <g font-size="13">
-  <rect x="10" y="30" width="494" height="40" fill="var(--s-motion)" opacity=".85"/><text x="257" y="55" text-anchor="middle" fill="var(--panel)" font-weight="600">train: 110 clips (Dr K)</text>
+  <rect x="10" y="30" width="494" height="40" fill="var(--s-motion)" opacity=".85"/><text x="257" y="55" text-anchor="middle" fill="var(--panel)" font-weight="600">train: 110 of Dr K's 162 chunks</text>
   <rect x="510" y="30" width="117" height="40" fill="var(--s-voice)" opacity=".85"/><text x="568" y="55" text-anchor="middle" fill="var(--panel)" font-weight="600">validate: 26</text>
   <rect x="633" y="30" width="117" height="40" fill="var(--warn)" opacity=".85"/><text x="691" y="55" text-anchor="middle" fill="var(--panel)" font-weight="600">test: 26</text>
   <text x="10" y="96" fill="var(--dim)" font-size="12.5">learned from</text><text x="510" y="96" fill="var(--dim)" font-size="12.5">picks the run</text><text x="633" y="96" fill="var(--dim)" font-size="12.5">scored once, last</text>
@@ -93,8 +93,9 @@ saw: 0% is their plain resting face, 100% is exact. Dr K's deployed model, besid
 </svg>
 <figcaption>Out of the box, Audio2Face is worse than not moving at all on this creator; the correction is what makes
 it usable. The dashed bars are ceilings: no model driving this puppet can beat them, so a score is read against
-them. Huberman: 39.0% against a 39.1% still face, because most of what is measured for him is a fixed offset of
-his resting face; his mouth is learned about as well as Dr K's.</figcaption>
+them. Huberman's model does <b>not</b> beat his average face held still on this score (39.0% against 39.1%):
+most of what it measures for him is a fixed difference in his resting face, not movement. His mouth movement is learned about as
+well as Dr K's, and that is what a viewer reads. Training on one video is the likely limit.</figcaption>
 </figure>
 
 <h2>How it is built</h2>
@@ -121,7 +122,8 @@ backwards, and the model trained without complaint and scored five points low.</
 
 <h2>Commands</h2>
 <p><code>./alive build &lt;creator&gt; --stage motion</code> runs it. By hand, from <code>engines/audio2face/</code>:</p>
-<pre><code>python rigfit/recipes/audio-to-mesh/tools/status.py --profile &lt;name&gt;   <span class="c"># done so far, and the next command</span></code></pre>
+<pre><code>~/miniconda3/envs/stavatar/bin/python rigfit/recipes/audio-to-mesh/tools/status.py --profile &lt;name&gt;</code></pre>
+<p>It prints what is done and the next command, with the right Python in it.</p>
 <p>A new creator starts as a copy of <code>rigfit/recipes/audio-to-mesh/profiles/_template.py</code>: their name,
 and which tracked video goes with which soundtrack. The full recipe is
 <code>engines/audio2face/rigfit/recipes/audio-to-mesh/RECIPE.md</code>; how a rig is reshaped to a person is in

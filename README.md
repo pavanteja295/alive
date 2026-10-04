@@ -7,6 +7,9 @@ YouTube videos of the creator. Working today for Dr K and Huberman.
 Every frame is labelled AI-generated. The face, voice and words are generated; the
 creator did not say them.
 
+**New here? Read the guide: https://pavanteja295.github.io/alive/** (also in `docs/guide/`).
+It explains every stage with diagrams, from setting up a machine to building a new creator.
+
 ```bash
 ./alive up huberman        # or drk
 # open http://127.0.0.1:8800
@@ -31,8 +34,9 @@ question -> answer text -> voice -> face motion -> pictures on the creator's rea
 `./alive up <creator>` reads `creators/<creator>/live.env` and starts the four in order.
 `./alive check <creator>` says what is missing first.
 
-Measured on the Huberman app: 60-80 s writing the answer (85% of the wait), first sound
-about 1 s later, first frame about 3 s after the audio is handed over, then 80 frames a
+Measured on the Huberman app: 20-80 s writing the answer (most of the wait), first sound
+about 1 s later, first frame about 10 s after that (the face waits for the whole voice, then starts in
+about 3 s), then 80 frames a
 second (2.7x real time).
 
 ## Hardware

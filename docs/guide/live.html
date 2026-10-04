@@ -37,7 +37,7 @@ settings file and one decision: what the creator does while waiting.</p>
   <text x="400" y="216">→ real body: any front-facing clip, or one set</text>
   <text x="400" y="244">→ their speaking rate: how many words fit 75 s</text>
   <text x="400" y="272">→ the example questions under the picture</text>
-  <text x="400" y="300">→ the resting pose: clip and frame</text>
+  <text x="400" y="300">→ the resting pose: chunk @ start frame</text>
  </g>
 </svg>
 <figcaption>A creator filmed in several rooms gets <code>FACE_BODY="random:&lt;recording&gt;"</code>, so the resting loop
@@ -67,12 +67,12 @@ and the answers come from the same room and the background does not jump.</figca
 tell a hand held up and still from a hand at rest, so the scan proposes and someone chooses by looking.</p>
 <ol class="steps">
  <li><code>./alive up &lt;id&gt;</code>, then ask the face server for the six stillest 4-second windows:<br>
-  <code>curl 'http://127.0.0.1:8730/calm?seconds=4&amp;k=6'</code><br>Every window is already front-facing.</li>
+  <code>curl 'http://127.0.0.1:8730/calm?seconds=4&amp;k=6'</code><br>Each result has a <code>clip</code> (a chunk name) and a <code>start</code> <b>frame</b>, not seconds. Every window is already front-facing.</li>
  <li>Draw each one as a sheet of 8 frames and look at all of them:<br>
   <code>curl -o c.jpg 'http://127.0.0.1:8730/calm_sheet?clip=&lt;clip&gt;&amp;start=&lt;start&gt;&amp;seconds=4'</code></li>
  <li>Choose the one that reads as listening: hands down or out of frame, upright, facing camera, nothing moving but
   breathing. The mouth does not matter; it is replaced. Rule out burned-in text.</li>
- <li>Write <code>REST="&lt;clip&gt;@&lt;start&gt;"</code> in <code>live.env</code>, with the reason and the runner-up in a comment.
+ <li>Write <code>REST="&lt;chunk&gt;@&lt;start frame&gt;"</code> in <code>live.env</code>, with the reason and the runner-up in a comment.
   <code>./alive restart app</code>.</li>
  <li>If none qualifies, pick a single front-facing, hands-down frame and set <code>REST_HOLD=1</code>: the body
   holds still and only the face moves. Dr K needed this: all 26 candidate windows had him gesturing.</li>
@@ -80,6 +80,15 @@ tell a hand held up and still from a hand at rest, so the scan proposes and some
 </ol>
 <p>Claude Code can do this step: it can fetch the sheets, view them, and write the choice. That is how both
 creators' poses were picked.</p>
+
+<p>Until <code>REST</code> is set, the app uses the stillest window it finds, so <code>./alive check</code> and
+<code>./alive up</code> both work without it.</p>
+
+<h3>Where the decisions are kept</h3>
+<div class="tbl"><table>
+<tr><th>decision</th><th>stored in</th></tr>
+<tr><td>everything on this page</td><td><code>creators/&lt;id&gt;/live.env</code>, with the reason in a comment beside each choice</td></tr>
+</table></div>
 
 <h2>The AI-generated label</h2>
 <p>The page always marks the picture <b>AI-generated</b>, and says under it: <i>"The face, the voice and the answer
@@ -89,9 +98,9 @@ of this cannot otherwise tell.</p>
 <h2>Speed</h2>
 <div class="tbl"><table>
 <tr><th>part</th><th>typical</th><th>note</th></tr>
-<tr><td>writing the answer</td><td>20-70 s</td><td>the LLM; most of the wait</td></tr>
+<tr><td>writing the answer</td><td>20-80 s</td><td>the LLM; most of the wait</td></tr>
 <tr><td>first sound</td><td>~1 s after the answer</td><td>the voice streams</td></tr>
-<tr><td>first frame</td><td>~10 s after the answer</td><td>the face waits for the whole voice before it starts</td></tr>
+<tr><td>first frame</td><td>~10 s after the answer</td><td>the face waits for the whole voice, then starts in about 3 s</td></tr>
 <tr><td>frames</td><td>about 2.7× faster than real time</td><td>on one RTX 5080, head on real body</td></tr>
 </table></div>
 <p>The bar under the picture shows these for every question.</p>

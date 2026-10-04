@@ -145,8 +145,8 @@ def work(jid, q):
              pool=r.get("pool"), cited=r.get("cited"))
 
         said, trimmed = opening(ans)
-        mark("stage", text=("speaking the opening of it in his voice" if trimmed
-                            else "speaking it in his voice"))
+        mark("stage", text=("speaking the opening of it in their voice" if trimmed
+                            else "speaking it in their voice"))
         req = urllib.request.Request(f"{VOICE}/tts/stream",
             data=json.dumps({"text": said}).encode(),
             headers={"content-type": "application/json"})

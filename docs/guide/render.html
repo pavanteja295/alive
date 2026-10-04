@@ -50,7 +50,7 @@ inside of the mouth.</p>
   <rect x="275" y="170" width="210" height="80" rx="10" fill="var(--panel)" stroke="var(--warn)" stroke-width="2"/><text x="380" y="196" font-weight="700" fill="var(--ink)">compare pixels</text><text x="380" y="216" fill="var(--dim)" font-size="12">move, recolour, add or</text><text x="380" y="232" fill="var(--dim)" font-size="12">remove blobs to close the gap</text>
  </g>
  <g stroke="var(--dim)" stroke-width="1.5" fill="none" marker-end="url(#b)"><path d="M220,60 H271"/><path d="M485,60 H536"/><path d="M645,100 V166"/><path d="M540,210 H489"/><path d="M380,170 V104" stroke-dasharray="5 4"/></g>
- <text x="380" y="136" text-anchor="middle" font-size="12" fill="var(--dim)">150,000-170,000 rounds, ~4 hours</text>
+ <text x="380" y="136" text-anchor="middle" font-size="12" fill="var(--dim)">150,000-170,000 rounds, 3-4 hours</text>
 </svg>
 <figcaption>It trains on the mesh <b>predicted from sound</b>, not the tracked one, so it learns to paint the face it
 will actually be given when live: where the predicted mouth is a little wrong, it learns to make it look right anyway.</figcaption>
@@ -60,7 +60,7 @@ will actually be given when live: where the predicted mouth is a little wrong, i
 <div class="tbl"><table>
 <tr><th>change</th><th>why</th></tr>
 <tr><td>the mesh is the MetaHuman rig, with teeth and eyeballs added, not FLAME</td><td>so stage 4's output plugs straight in; the teeth make an open mouth read as a mouth</td></tr>
-<tr><td>many short clips merged into one training set</td><td>STAvatar expects one long, steady video; ours are hundreds of chunks</td></tr>
+<tr><td>many short clips merged into one training set</td><td>STAvatar expects one long, steady video; Dr K's training set is 162 chunks</td></tr>
 <tr><td>only frames where they face the camera</td><td>turned heads smeared, and the live app shows them facing forward</td></tr>
 <tr><td>blink amount measured from the real eyes</td><td>the sound cannot say when someone blinks</td></tr>
 </table></div>
@@ -101,20 +101,28 @@ the head is new: shoulders, hands and room are the original video.</p>
 <tr><td>cook meshes</td><td>stage 4's model run over every chunk's sound: the predicted mesh per frame, with teeth</td></tr>
 <tr><td>merge, front-facing only</td><td>one training set, holding back the validation and test clips</td></tr>
 <tr><td><b>a person: the joins</b></td><td>a sheet with the mesh drawn on the photos, and a two-second video with sound. Is the mesh on the face, and in time?</td></tr>
-<tr><td>train</td><td>STAvatar, about four hours</td></tr>
+<tr><td>train</td><td>STAvatar, 3-4 hours</td></tr>
 <tr><td>render and look</td><td>a held-back clip, with sound</td></tr>
 <tr><td><b>a person: promote</b></td><td>to <code>checkpoints/&lt;creator&gt;/face/render/</code>, writing down what is still wrong</td></tr>
 </table></div>
 
 <h2>Commands</h2>
 <p><code>./alive build &lt;creator&gt; --stage render</code> runs it. By hand, from <code>engines/audio2face/</code>:</p>
-<pre><code>python gauss/recipes/mesh-to-render/tools/status.py --profile &lt;name&gt;   <span class="c"># done so far, and the next command</span>
+<pre><code>~/miniconda3/envs/stavatar/bin/python gauss/recipes/mesh-to-render/tools/status.py --profile &lt;name&gt;
 
 <span class="c"># render a held-back clip, on its real body, with sound:</span>
-python gauss/recipes/mesh-to-render/tools/infer.py --profile &lt;name&gt; --run &lt;run&gt; \
+~/miniconda3/envs/stavatar/bin/python gauss/recipes/mesh-to-render/tools/infer.py --profile &lt;name&gt; --run &lt;run&gt; \
     --clip &lt;chunk&gt; --camera clip --pose replay:&lt;chunk&gt; --composite</code></pre>
 <p>The profile has the same name as the creator's motion profile and reads most of what it needs from it. The full
 recipe is <code>engines/audio2face/gauss/recipes/mesh-to-render/RECIPE.md</code>.</p>
+
+<h3>Where the decisions are kept</h3>
+<div class="tbl"><table>
+<tr><th>decision</th><th>stored in</th></tr>
+<tr><td>the joins sheet was looked at</td><td><code>creators/&lt;id&gt;/build/render/joins_render_acked.json</code> (Dr K only)</td></tr>
+<tr><td>release the deployed run, and what is still wrong with it</td><td><code>creators/&lt;id&gt;/build.json</code>, <code>render.deployed</code> and <code>render.wrong</code></td></tr>
+</table></div>
+<p>The profile is <code>gauss/recipes/mesh-to-render/profiles/&lt;id&gt;.py</code>, copied from <code>_template.py</code> in the same folder.</p>
 
 <h2>Things that go wrong</h2>
 <div class="tbl"><table>

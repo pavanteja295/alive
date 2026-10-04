@@ -124,11 +124,11 @@
 <main>
   <div class="stage">
     <canvas id="cv" width="1280" height="720"></canvas>
-    <div class="warm" id="warm">getting him ready…</div>
+    <div class="warm" id="warm">getting {{NAME}} ready…</div>
     <div class="pill" id="pill"><i></i><span id="ptext">listening</span><span class="secs" id="psecs"></span></div>
     <div class="caption" id="cap"></div>
     <div class="aitag" title="the face, voice and words are generated">AI-generated</div>
-    <button class="tap" id="tap" type="button">tap to hear him</button>
+    <button class="tap" id="tap" type="button">tap to hear {{NAME}}</button>
   </div>
 
   <div class="ask">
@@ -258,7 +258,7 @@ async function loadRest(){
     rest.push(b64blob(m.b64));
   });
   if (!rest.length){
-    $('#warm').textContent = 'getting him ready… (' + (state || 'waiting for the face service') + ')';
+    $('#warm').textContent = 'getting {{NAME}} ready… (' + (state || 'waiting for the face service') + ')';
     setTimeout(loadRest, 4000);
   }
 }

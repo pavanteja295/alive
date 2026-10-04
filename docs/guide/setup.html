@@ -79,9 +79,12 @@ with room.</p>
 <h3>1. System</h3>
 <p>Linux with an NVIDIA driver new enough for CUDA 12.8, then these tools:</p>
 <pre><code>sudo apt install ffmpeg git cmake build-essential
-pip install yt-dlp                   <span class="c"># downloads the videos</span>
+python3 -m pip install --user yt-dlp   <span class="c"># downloads the videos; any Python, it only has to be on PATH</span>
 curl -fsSL https://deno.land/install.sh | sh   <span class="c"># yt-dlp needs a JavaScript runtime for YouTube now</span>
-<span class="c"># Miniconda (conda) and uv (fast pip):</span>
+<span class="c"># Miniconda, into ~/miniconda3 (the default the scripts look in):</span>
+curl -LO https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh -b -p ~/miniconda3
+<span class="c"># uv, a fast pip, for the three plain venvs:</span>
 curl -LsSf https://astral.sh/uv/install.sh | sh</code></pre>
 
 <h3>2. Clone</h3>
@@ -104,7 +107,14 @@ package list. <code>env/README.md</code> has the full commands; in short:</p>
 <tr><td><code>faceid</code> (conda)</td><td>checking it's the right person in each shot</td><td><code>python=3.10</code>, <code>-r env/faceid.txt</code></td></tr>
 <tr><td><code>~/.venvs/mh-offset</code></td><td>the speech encoder pass</td><td><code>uv venv --python 3.13</code>, <code>-r env/speech-encoder.txt</code></td></tr>
 </table></div>
-<p>The answer engine and the viewer only need Python 3.11+ with <code>pip install anthropic</code>.</p>
+<p>The renderer's three CUDA extensions are <code>diff-gaussian-rasterization</code>, <code>simple-knn</code> and
+<code>fused-ssim</code>, under <code>externals/stavatar/submodules/</code>; <code>env/README.md</code> has the one
+<code>pip install</code> line that builds them. The answer engine and the viewer only need the system Python 3.11+ with
+<code>python3 -m pip install --user anthropic</code>.</p>
+<div class="box"><b class="t">You never activate an environment</b><code>./alive</code>, <code>./alive build</code> and the
+answer engine run on the system <code>python3</code>, and every step calls its own environment's Python by path. The paths
+default to the ones in the table; if yours differ, set <code>ENV_F5</code>, <code>ENV_PREP</code>, <code>ENV_STAVATAR</code> or
+<code>ENV_VHAP</code> to the environment's folder. The stage pages show the Python to use when you run a step by hand.</div>
 <div class="box warn"><b class="t">On a card other than the RTX 50 series</b>set <code>TORCH_CUDA_ARCH_LIST</code> (for example
 <code>8.9</code> for an RTX 40) before the tracker and renderer first build their CUDA code.</div>
 
@@ -113,11 +123,30 @@ package list. <code>env/README.md</code> has the full commands; in short:</p>
 <div class="tbl"><table>
 <tr><th>what</th><th>where it goes</th><th>where to get it</th></tr>
 <tr><td>FLAME 2023 head model<br><span class="cap"><code>flame2023.pkl</code>, <code>FLAME_masks.pkl</code></span></td><td><code>externals/vhap/asset/flame/</code> and <code>externals/stavatar/flame_model/assets/flame/</code></td><td>register at <a href="https://flame.is.tue.mpg.de">flame.is.tue.mpg.de</a></td></tr>
-<tr><td>Audio2Face-3D speech models<br><span class="cap"><code>audio_encoder.onnx</code>, <code>animation_decoder.onnx</code></span></td><td><code>data/face/onnx/</code></td><td>NVIDIA Audio2Face-3D</td></tr>
+<tr><td>Audio2Face-3D speech models<br><span class="cap"><code>audio_encoder.onnx</code>, <code>animation_decoder.onnx</code></span></td><td><code>data/face/onnx/</code></td><td>NVIDIA's Audio2Face-3D models, under NVIDIA's licence. The model meant is the one that outputs 81 MetaHuman face curves at 50 frames a second; other versions will fail on shape</td></tr>
 <tr><td>a MetaHuman face rig<br><span class="cap"><code>face.dna</code>, <code>face_identity.dna</code></span></td><td><code>data/face/assets/</code></td><td>Epic's MetaHuman Creator, under Epic's licence. Must be DNA 2.5 (263 controls, 545 corrective shapes)</td></tr>
-<tr><td>the shared face assets built from that rig</td><td><code>data/face/head/</code>, <code>data/face/offset/</code></td><td>built once with the scripts in the README's <i>Shared face assets</i> table (needs <code>bash env/setup_externals.sh --with-riglogic</code>)</td></tr>
-<tr><td>an Anthropic API key</td><td>the file <code>data/answers/.protokey</code></td><td><a href="https://console.anthropic.com">console.anthropic.com</a></td></tr>
+<tr><td>the shared face assets built from that rig</td><td><code>data/face/head/</code>, <code>data/face/offset/</code></td><td>built once from the rig: <a href="#assets">below</a></td></tr>
+<tr><td>an Anthropic API key</td><td>the file <code>data/answers/.protokey</code>: the key alone, on one line</td><td><a href="https://console.anthropic.com">console.anthropic.com</a></td></tr>
 </table></div>
+
+<h3 id="assets">The shared face assets</h3>
+<p>Every creator's face is the same MetaHuman rig reshaped to them, so a few files are built once from your rig and shared.
+The rig must be MetaHuman DNA version 2.5 (263 controls, 545 corrective shapes); older ones do not fit. Make a MetaHuman
+in Epic's MetaHuman Creator and export its face DNA; whose face it is matters little, because each creator's face is
+reshaped from it. <code>face.dna</code> and <code>face_identity.dna</code> are both read from <code>data/face/assets/</code>; the
+rig's arithmetic is taken from <code>face_identity.dna</code>. First build the DNA reader:
+<code>bash env/setup_externals.sh --with-riglogic</code>.</p>
+<div class="tbl"><table>
+<tr><th>file, in <code>data/face/</code></th><th>what it is</th><th>built by</th></tr>
+<tr><td><code>offset/rig_tables.npz</code></td><td>the rig's arithmetic, so it runs without the DNA library</td><td><code>engines/audio2face/offset/riglogic_numpy.py</code></td></tr>
+<tr><td><code>offset/cache/rig_names.npz</code></td><td>control names, and the map from the animator's sliders to the rig's raw controls</td><td><code>engines/audio2face/offset/data/extract_rig_names.py</code>. <b>Also needs Unreal Engine 5.8 with the MetaHuman plugin installed</b>: it reads one header file from it (set <code>UE_ROOT</code>)</td></tr>
+<tr><td><code>head/head_assets.npz</code></td><td>the head mesh: triangles, texture coordinates, rest shape</td><td><b>no script</b>: it was read out of the DNA's first mesh and the builder was not kept. See below</td></tr>
+<tr><td><code>head/head_assets_0134.npz</code></td><td>that head plus teeth and eyeballs</td><td><code>engines/audio2face/extend_head_assets.py</code> (<code>--dump</code>, then <code>--build</code>)</td></tr>
+<tr><td><code>head/uv_region_masks_256.pkl</code></td><td>eye, nose, lip and forehead regions on the face's texture map</td><td><code>engines/audio2face/make_region_masks.py</code></td></tr>
+</table></div>
+<div class="box warn"><b class="t">Two known gaps here</b>The builder for <code>head_assets.npz</code> is missing, so a new user
+cannot yet make it from their own rig without writing that step. And <code>rig_names.npz</code> needs an Unreal Engine
+install. Everything else in the repository runs without Unreal.</div>
 
 <h3>Check</h3>
 <pre><code>./alive check drk

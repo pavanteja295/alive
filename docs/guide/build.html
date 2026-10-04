@@ -13,7 +13,11 @@ It takes one to two days, mostly unattended, and stops only when a person has to
 
 <pre><code>./alive down                        <span class="c"># building needs the whole card</span>
 ./alive build huberman --dry-run    <span class="c"># what would run next, in every stage</span>
-./alive build huberman              <span class="c"># do it; run the same command again after any stop</span></code></pre>
+./alive build huberman              <span class="c"># do it; run the same command again after any stop</span>
+./alive build huberman --stage voice   <span class="c"># one stage only</span></code></pre>
+<p>Stages, in order: <code>videos</code>, <code>answers</code>, <code>voice</code>, <code>clips</code>, <code>motion</code>,
+<code>render</code>. The live app is not a build stage; it is a settings file (<a href="live.html">stage 6</a>).
+It runs on the system <code>python3</code> and picks each step's environment itself.</p>
 
 <h2>What needs what</h2>
 <p>Six stages. Each makes something the later ones read, which is why they run in this order.</p>
@@ -87,15 +91,33 @@ says it is done. When the next step is a decision only a person can make, it loo
 the decision and run <code>./alive build &lt;creator&gt;</code> again; it carries on from there.</figcaption>
 </figure>
 
+<h2>What a stop looks like, and how to clear it</h2>
+<pre><code>STOPPED at a decision only a person can make:
+  voice: choose the step to release from the sweep table (RECIPE.md), and record it
+  as voice.release_step in build.json
+Record it, then run the same command again; finished stages are skipped.</code></pre>
+<p>Every stop names the file to change. You edit it by hand; there is no separate tool. The stops, and the
+edit each one wants:</p>
+<div class="tbl"><table>
+<tr><th>stop says</th><th>what to do</th></tr>
+<tr><td><code>answers: no persona note</code></td><td>write <code>data/answers/&lt;name&gt;/creator.md</code> (<a href="answers.html#persona">how</a>)</td></tr>
+<tr><td><code>voice: ... read it off</code></td><td>read the speaker table the step printed; set <code>SPK_THRESHOLD = 0.60</code> (your value) in the voice profile</td></tr>
+<tr><td><code>voice: choose the step to release</code></td><td>read the sweep table; set <code>"release_step": 8000</code> under <code>voice</code> in build.json</td></tr>
+<tr><td><code>clips: look at .../clusters_full/ and write verdicts.json</code></td><td>look at each group's sheet and write <code>creators/&lt;id&gt;/build/clips/&lt;take&gt;/verdicts.json</code> (<a href="clips.html#label">format</a>)</td></tr>
+<tr><td><code>motion: look at the joins sheet</code> / <code>render: ...</code></td><td>open the image it names; if the mouths line up, run the command it names with <code>--ack "what you saw"</code> (motion) or <code>--yes</code> (render). Or rerun the build with <code>--trust-gates</code>, which records that nobody looked</td></tr>
+<tr><td><code>motion: read the sweep's validation ranking</code></td><td>set <code>"run": "&lt;winner&gt;"</code> and <code>"wrong": "what is still wrong"</code> under <code>motion</code> in build.json</td></tr>
+</table></div>
+
 <h2>The creator's build file</h2>
 <p><code>creators/&lt;creator&gt;/build.json</code> says which videos and which settings, and records the decisions
 that are one value. Larger decisions sit beside it in <code>creators/&lt;creator&gt;/build/</code>.</p>
 <pre><code>{
  "videos":  {"folder": "huberman", "ids": ["QmOF0crdyRU", "XeN6eGO6FVQ", ...],   <span class="c">← YouTube ids</span>
-             "download": ["--full", "--no-video", "--a2f", "--subs"]},
+             "download": ["--full", "--no-video", "--a2f", "--subs"]},   <span class="c">← whole video kept as a file; frames are
+                                                                   cut later, only for the tracked one</span>
  "answers": {"creator": "huberman"},
  "voice":   {"profile": "huberman", "release_step": 8000},                    <span class="c">← which trained step to keep</span>
- "clips":   {"profile": "huberman", "takes": ["vXTK0Ac9i1Q"]},                <span class="c">← which videos to track</span>
+ "clips":   {"profile": "huberman", "takes": ["vXTK0Ac9i1Q"]},                <span class="c">← which of the ids above to track</span>
  "motion":  {"profile": "huberman", "run": "huberman_S_seed0", "wrong": "..."}, <span class="c">← which training run to keep</span>
  "render":  {"profile": "huberman", "deployed": true, "wrong": "..."}
 }</code></pre>

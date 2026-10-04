@@ -215,7 +215,7 @@ def parse_blocks(raw):
 def work(job, question, history, cid):
     try:
         t0 = time.time()
-        JOBS[job]["stage"] = "searching his archive"
+        JOBS[job]["stage"] = "searching their archive"
         ans, info = L.run(question, STATE["creator"], STATE["bm"], STATE["chunks"],
                           history=history)
         JOBS[job]["stage"] = "checking every claim against a passage"

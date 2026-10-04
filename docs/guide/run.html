@@ -91,7 +91,7 @@ others in turn.</p>
   <rect x="406" y="130" width="341" height="18" rx="3" fill="var(--s-live)"/><text x="577" y="144" text-anchor="middle" font-size="12" fill="var(--panel)">71 s of speech, frames made at 2.7x real time</text>
  </g>
 </svg>
-<figcaption>Writing the answer is most of the wait. While it writes, the viewer plays a resting loop of the
+<figcaption>Writing the answer is most of the wait: 20-80 s depending on the question; this one took 40.6 s. While it writes, the viewer plays a resting loop of the
 creator (blinking, breathing) so the page never looks stuck. The bar under the picture shows these timings
 live for every question.</figcaption>
 </figure>
@@ -115,7 +115,7 @@ live for every question.</figcaption>
 <tr><td>"out of memory" in the voice or face log</td><td>something else is on the card. <code>nvidia-smi</code>, stop it, <code>./alive restart</code></td></tr>
 <tr><td>stuck on "thinking" for minutes</td><td>the answer engine is waiting on the LLM; check <code>data/answers/.protokey</code> and <code>./alive logs style</code></td></tr>
 <tr><td>no sound</td><td>browsers block sound until you click the page; click the picture once</td></tr>
-<tr><td>the picture never leaves "getting him ready"</td><td>the resting loop is still being made, about 10 seconds after start; <code>./alive logs app</code></td></tr>
+<tr><td>the picture never leaves "getting &lt;name&gt; ready"</td><td>the resting loop is still being made, about 10 seconds after start; <code>./alive logs app</code></td></tr>
 </table></div>
 
 <div class="pager"></div>

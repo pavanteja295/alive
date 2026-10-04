@@ -42,7 +42,8 @@ stages in order so they never share the card.</figcaption>
  <li>About five uploads of ~30 minutes for the voice and answers; more uploads make the answers richer, at no extra
   face cost.</li>
  <li>One of them is the <b>face video</b>: a steady setup, face large in the frame, 30 frames a second. That is the
-  one tracked. Hold it out from voice training too, so every stage is tested on it.</li>
+  one tracked. Its clips are split three ways for the face stages (train, choose, test). Hold the whole video out of
+  voice training, so the finished chain can be tested on its test clips with a voice that never heard them.</li>
  <li>Write down the YouTube ids (the part after <code>v=</code>).</li>
 </ul>
 
@@ -52,11 +53,11 @@ stages in order so they never share the card.</figcaption>
  <g font-size="12.5">
   <g font-family="IBM Plex Mono, monospace" fill="var(--ink)">
    <text x="20" y="34">creators/_template/</text><text x="360" y="34" fill="var(--s-live)">→ creators/&lt;id&gt;/</text>
-   <text x="20" y="70">.../text-to-voice/profiles/_template.py</text><text x="360" y="70" fill="var(--s-voice)">→ profiles/&lt;id&gt;.py</text>
-   <text x="20" y="106">.../face-clips/profiles/_template.py</text><text x="360" y="106" fill="var(--s-clips)">→ profiles/&lt;id&gt;.py</text>
-   <text x="20" y="142">.../audio-to-mesh/profiles/_template.py</text><text x="360" y="142" fill="var(--s-motion)">→ profiles/&lt;id&gt;.py</text>
-   <text x="20" y="178">.../mesh-to-render/profiles/_template.py</text><text x="360" y="178" fill="var(--s-render)">→ profiles/&lt;id&gt;.py</text>
-   <text x="20" y="214">.../harness/creators/_template/creator.md</text><text x="360" y="214" fill="var(--s-answers)">→ data/answers/&lt;id&gt;/creator.md</text>
+   <text x="20" y="70">voice: .../text-to-voice/profiles/</text><text x="360" y="70" fill="var(--s-voice)">→ profiles/&lt;id&gt;.py</text>
+   <text x="20" y="106">clips: .../face-clips/profiles/</text><text x="360" y="106" fill="var(--s-clips)">→ profiles/&lt;id&gt;.py</text>
+   <text x="20" y="142">motion: .../audio-to-mesh/profiles/</text><text x="360" y="142" fill="var(--s-motion)">→ profiles/&lt;id&gt;.py</text>
+   <text x="20" y="178">render: .../mesh-to-render/profiles/</text><text x="360" y="178" fill="var(--s-render)">→ profiles/&lt;id&gt;.py</text>
+   <text x="20" y="214">answers: .../harness/creators/_template/</text><text x="360" y="214" fill="var(--s-answers)">→ data/answers/&lt;id&gt;/creator.md</text>
   </g>
   <g fill="var(--dim)">
    <text x="580" y="34">live.env, build.json</text>
@@ -72,6 +73,15 @@ stages in order so they never share the card.</figcaption>
  </g>
 </svg>
 </figure>
+<p>In each recipe's folder, copy <code>_template.py</code> to <code>&lt;id&gt;.py</code>. The full folders:</p>
+<div class="tbl"><table>
+<tr><th>stage</th><th>profiles folder</th></tr>
+<tr><td>voice</td><td><code>engines/text2audio/blocks/voice/recipes/text-to-voice/profiles/</code></td></tr>
+<tr><td>face clips</td><td><code>engines/audio2face/corpus/recipes/face-clips/profiles/</code></td></tr>
+<tr><td>motion</td><td><code>engines/audio2face/rigfit/recipes/audio-to-mesh/profiles/</code></td></tr>
+<tr><td>render</td><td><code>engines/audio2face/gauss/recipes/mesh-to-render/profiles/</code></td></tr>
+<tr><td>answers (persona note)</td><td><code>engines/knowledge_style/proto/harness/creators/_template/creator.md</code> → <code>data/answers/&lt;id&gt;/creator.md</code></td></tr>
+</table></div>
 <p>In <code>creators/&lt;id&gt;/build.json</code>: the YouTube ids under <code>videos.ids</code>, the face video's id under
 <code>clips.takes</code>, and the profile names (your id) for each stage.</p>
 
@@ -82,8 +92,8 @@ stages in order so they never share the card.</figcaption>
 
 <h3>4 · Answers</h3>
 <pre><code>./alive build &lt;id&gt; --stage answers</code></pre>
-<p>It stops asking for the persona note. Write it as on the <a href="answers.html#persona">answers page</a>, run the
-same command again.</p>
+<p>It stops asking for the persona note. Write it as on the <a href="answers.html#persona">answers page</a> (its last
+step, trying it out, waits until the app runs), then run the same command again.</p>
 
 <h3>5 · Everything else</h3>
 <pre><code>./alive build &lt;id&gt;</code></pre>
@@ -99,11 +109,12 @@ page has a <i>Where the decisions are kept</i> table), and run the same command 
 
 <h3>6 · Live</h3>
 <ol class="steps">
- <li>Fill in <code>creators/&lt;id&gt;/live.env</code>: the template names every value. <code>WPS</code> is words
-  divided by seconds over the voice training set.</li>
+ <li>Fill in <code>creators/&lt;id&gt;/live.env</code>: the template names every value. Leave <code>REST</code> empty for now.
+  <code>WPS</code>, their speaking rate, comes from the voice training set:<br>
+  <code>python3 -c "import json;r=[json.loads(l) for l in open('data/voice/dataset/&lt;id&gt;/train/manifest.jsonl')];print(sum(x['n_words'] for x in r)/sum(x['seconds'] for x in r))"</code></li>
  <li><code>./alive check &lt;id&gt;</code> until nothing is missing.</li>
- <li><code>./alive up &lt;id&gt;</code>, then pick the <a href="live.html">resting pose</a>.</li>
- <li>Ask the example questions. Listen and watch.</li>
+ <li><code>./alive up &lt;id&gt;</code>, then pick the <a href="live.html">resting pose</a> and set <code>REST</code>.</li>
+ <li>Ask the example questions, and the three persona-note test questions. Listen and watch.</li>
 </ol>
 
 <div class="box"><b class="t">Before you put it in front of anyone</b>Get the creator's permission. The page labels

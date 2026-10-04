@@ -47,7 +47,7 @@ short note on how the creator talks.</p>
   <path d="M130,58 H176"/><path d="M480,95 H526"/><path d="M526,115 H484"/><path d="M330,205 V246"/><path d="M480,296 H526"/>
  </g>
 </svg>
-<figcaption>Typically 20-70 seconds per question, most of it the LLM thinking. The settings (how many passages,
+<figcaption>Typically 20-80 seconds per question, most of it the LLM thinking. The settings (how many passages,
 which instructions) are the creator's <i>promoted</i> setup; see below.</figcaption>
 </figure>
 
@@ -59,7 +59,7 @@ which instructions) are the creator's <i>promoted</i> setup; see below.</figcapt
   <rect x="10" y="30" width="150" height="70" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="85" y="58" fill="var(--ink)" font-weight="600">YouTube subtitles</text><text x="85" y="78" fill="var(--dim)" font-size="12">every word, timed</text>
   <rect x="200" y="30" width="160" height="70" rx="8" fill="var(--panel)" stroke="var(--s-answers)" stroke-width="2"/><text x="280" y="56" fill="var(--ink)" font-weight="600">build.py</text><text x="280" y="76" fill="var(--dim)" font-size="12">cut into ~300-word</text><text x="280" y="91" fill="var(--dim)" font-size="12">overlapping passages</text>
   <rect x="400" y="30" width="160" height="70" rx="8" fill="var(--panel)" stroke="var(--s-answers)" stroke-width="2"/><text x="480" y="56" fill="var(--ink)" font-weight="600">mapindex.py</text><text x="480" y="76" fill="var(--dim)" font-size="12">an LLM writes a topic</text><text x="480" y="91" fill="var(--dim)" font-size="12">map of each video</text>
-  <rect x="600" y="30" width="150" height="70" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="675" y="58" fill="var(--ink)" font-weight="600">the archive</text><text x="675" y="78" fill="var(--dim)" font-size="12">store/ and map.json</text>
+  <rect x="600" y="30" width="150" height="70" rx="8" fill="var(--panel)" stroke="var(--line)"/><text x="675" y="58" fill="var(--ink)" font-weight="600">the archive</text><text x="675" y="78" fill="var(--dim)" font-size="12">passages + topic map</text>
   <rect x="200" y="140" width="360" height="74" rx="8" fill="var(--panel)" stroke="var(--warn)" stroke-width="2"/><text x="380" y="166" fill="var(--ink)" font-weight="600">the persona note: picked by a person</text><text x="380" y="186" fill="var(--dim)" font-size="12">18 passages of their own speech that show how they talk</text><text x="380" y="203" fill="var(--dim)" font-size="12">data/answers/&lt;creator&gt;/creator.md</text>
  </g>
  <g stroke="var(--dim)" stroke-width="1.5" fill="none" marker-end="url(#b)"><path d="M160,65 H196"/><path d="M360,65 H396"/><path d="M560,65 H596"/></g>
@@ -86,7 +86,7 @@ note sets <i>how</i> they say it. No script writes it. It takes about twenty min
  <li>Write each under <i>How you talk</i> as <code>[&lt;take folder&gt; HH:MM:SS-HH:MM:SS]</code>, then the words.</li>
  <li>Fill in <i>Your archive</i> with the counts <code>make status</code> prints.</li>
  <li>Record the pick in <code>creators/&lt;id&gt;/build/answers/persona_passages.txt</code> (sources only, no text).</li>
- <li>Ask three questions in the live app and read the answers aloud. If an answer calls the creator "he", or
+ <li>Later, once the live app runs (the last step of a build), ask three questions and read the answers aloud. If an answer calls the creator "he", or
   sounds like a summary of them instead of them, the passages are too formal or too few.</li>
 </ol>
 
@@ -97,10 +97,10 @@ does better, and every claim stays tied to a real passage.</div>
 
 <h2>The promoted setup (optional)</h2>
 <p>How many passages to fetch and which instructions to use is the creator's <i>promoted</i> setup, in
-<code>harness/profiles/&lt;creator&gt;.json</code>. A new creator without one runs on Dr K's, which works well.
+<code>engines/knowledge_style/proto/harness/profiles/&lt;creator&gt;.json</code> (<i>harness</i> is the answer loop's code). A new creator without one runs on Dr K's, which works well.
 Tuning one is a measure-change-measure loop over 100 test questions, written up in
 <code>engines/knowledge_style/proto/RECIPE.md</code>; it needs a set of test questions and checked answers
-(the <code>question-corpus</code> recipe), costs hours of LLM calls, and is not needed to start.</p>
+(written by a separate recipe, <code>question-corpus</code>, in <code>proto/recipes/</code>), costs hours of LLM calls, and is not needed to start.</p>
 
 <h2>Things that go wrong</h2>
 <div class="tbl"><table>
