@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>The Content Workflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,300..700&display=swap">
+<style>
+:root{--paper:#faf8f5;--raise:#fffefc;--ink:#1a1714;--mut:#6b625a;--faint:#8d8478;
+--line:#e0d9d0;--hair:#eee9e2;--ochre:#a8622a;--ochre-soft:#f2e6da;
+--good:#2f6b4f;--good-soft:#e2ede6;--bad:#9c3b2a;--bad-soft:#f6e3de;
+--blue:#3a5a8c;--blue-soft:#e3e9f2;
+--serif:Newsreader,Georgia,serif;--sans:Archivo,-apple-system,"Segoe UI",sans-serif;
+--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+--paper:#191714;--raise:#211e1a;--ink:#ece7df;--mut:#9d9488;--faint:#7d7568;
+--line:#332e27;--hair:#282420;--ochre:#d9924f;--ochre-soft:#3a2b1d;
+--good:#76b891;--good-soft:#1e2e26;--bad:#d98770;--bad-soft:#33221e;
+--blue:#8aa9d8;--blue-soft:#1f2733}}
+:root[data-theme="dark"]{--paper:#191714;--raise:#211e1a;--ink:#ece7df;--mut:#9d9488;
+--faint:#7d7568;--line:#332e27;--hair:#282420;--ochre:#d9924f;--ochre-soft:#3a2b1d;
+--good:#76b891;--good-soft:#1e2e26;--bad:#d98770;--bad-soft:#33221e;
+--blue:#8aa9d8;--blue-soft:#1f2733}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--serif);
+-webkit-font-smoothing:antialiased}
+.page{max-width:860px;margin:0 auto;padding:0 20px 90px}
+h1{font:600 clamp(33px,6vw,52px)/1.04 var(--serif);letter-spacing:-.02em;margin:0}
+h2{font:600 clamp(23px,3.2vw,30px)/1.18 var(--serif);margin:0 0 6px;letter-spacing:-.012em}
+h3{font:600 19px/1.3 var(--serif);margin:26px 0 8px}
+h4{font:600 12px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+color:var(--mut);margin:0 0 8px}
+p{margin:0 0 1em}
+header{padding:60px 0 28px}
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;
+color:var(--ochre);margin-bottom:18px}
+.stamp{font:400 12px/1.7 var(--mono);color:var(--faint);margin-top:20px}
+section{padding:36px 0;border-top:1px solid var(--hair)}
+.secno{font:500 12px/1 var(--mono);color:var(--ochre);letter-spacing:.1em;margin-bottom:10px}
+.lede{font-size:1.12em;line-height:1.5}
+.box{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+padding:16px 18px;margin:0 0 1em}
+.box.bad{background:var(--bad-soft);border-color:var(--bad)}
+.box.good{background:var(--good-soft);border-color:var(--good)}
+.box.key{background:var(--ochre-soft);border-color:var(--ochre)}
+.box p:last-child{margin:0}
+pre{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+padding:14px 16px;overflow-x:auto;font:400 13px/1.55 var(--mono);margin:0 0 1em}
+pre .c{color:var(--faint)}
+.tw{overflow-x:auto;margin:0 0 1em}
+table{border-collapse:collapse;width:100%;min-width:430px;font:400 14.5px/1.45 var(--sans)}
+th{text-align:left;font:600 11px/1.3 var(--sans);letter-spacing:.07em;text-transform:uppercase;
+color:var(--mut);padding:0 12px 8px 0;border-bottom:1px solid var(--line);vertical-align:bottom}
+td{padding:8px 12px 8px 0;border-bottom:1px solid var(--hair);vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+tr:last-child td{border-bottom:none}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.g{color:var(--good);font-weight:600}.b{color:var(--bad);font-weight:600}.m{color:var(--mut)}
+ul,ol{margin:0 0 1em;padding-left:1.2em}li{margin-bottom:.45em}li::marker{color:var(--faint)}
+code{font:500 .86em var(--mono);color:var(--mut)}
+figure{margin:0 0 1em}
+.fig{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+padding:18px 14px 10px;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:560px}
+figcaption{font:400 13px/1.5 var(--sans);color:var(--mut);padding-top:8px}
+svg text{font-family:Archivo,sans-serif}
+.nb{fill:var(--raise);stroke:var(--line);stroke-width:1}
+.nb-a{fill:var(--ochre-soft);stroke:var(--ochre);stroke-width:1.2}
+.nb-b{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.nb-g{fill:var(--good-soft);stroke:var(--good);stroke-width:1.2}
+.nb-u{fill:var(--blue-soft);stroke:var(--blue);stroke-width:1.2}
+.nt{fill:var(--ink);font-size:12.5px;font-weight:500}
+.ns{fill:var(--mut);font-size:11px}
+.nk{fill:var(--faint);font-size:10px;font-family:var(--mono);letter-spacing:.05em}
+.ed{stroke:var(--faint);stroke-width:1.3;fill:none}
+.ed-a{stroke:var(--ochre);stroke-width:1.6;fill:none}
+.axl{stroke:var(--line);stroke-width:1}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">specification</div>
+  <h1>The content workflow</h1>
+  <p class="lede m" style="margin-top:16px;max-width:62ch">The loop the model runs, why each control belongs to it rather than to us, and what every tool has to do well before the model can be blamed for anything.</p>
+  <div class="stamp">16 September 2026 &middot; content stage only &middot; style and disfluency are separate stages</div>
+</header>
+
+<!-- ================================== 0 -->
+<section>
+  <div class="secno">00</div>
+  <h2>The shape we already had, and what is wrong with it</h2>
+  <p>Write queries in the person's voice, retrieve some matches, hand them to a model to write the answer. <strong>That is the standard shape and it is correct.</strong> Every system in the related-work collection does it: Delphi, Bi-Mem, the product-discovery agents.</p>
+  <p>They do it in one pass because they answer in a second. We do not have that constraint and copied it anyway.</p>
+
+  <div class="box bad">
+    <h4>what writing it as fixed code forced us to decide in advance</h4>
+    <div class="tw" style="margin:.6em 0 0">
+      <table>
+        <thead><tr><th style="width:30%">precommitment</th><th>what we could not know when we made it</th></tr></thead>
+        <tbody>
+          <tr><td><strong>four queries</strong></td><td>whether those four find anything. Nothing checks. And the model is told it may search five times while the code silently keeps four</td></tr>
+          <tr><td><strong>six results each</strong></td><td>whether the answer is in the top six. Measured: the passage we needed often sits at rank 7 to 12, just past the cut</td></tr>
+          <tr><td><strong>plus neighbours</strong></td><td>20% of everything sent matched nothing at all</td></tr>
+          <tr><td><strong>43 passages</strong></td><td>nobody chose this. It falls out of 4 &times; 6 &times; neighbours, deduplicated</td></tr>
+          <tr><td><strong>then write</strong></td><td>whether any of it is relevant. 54% of it cannot answer the question, and nothing checks before the model reads it</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p>Each of those is a guess frozen into code. The model can see the thing we were guessing about, and we cannot.</p>
+</section>
+
+<!-- ================================== 1 -->
+<section>
+  <div class="secno">01</div>
+  <h2>The workflow the model runs</h2>
+  <p>Same shape. The difference is that every arrow is a decision the model makes after seeing the result of the last one.</p>
+
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 880 340" role="img" aria-label="The model writes queries, retrieves, judges what came back, decides whether to search again or narrow, drafts, checks the draft, and either revises or answers.">
+        <defs><marker id="w1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,1 L7,4 L0,7 z" fill="var(--ochre)"/></marker>
+        <marker id="w2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,1 L7,4 L0,7 z" fill="var(--faint)"/></marker></defs>
+
+        <rect class="nb" x="16" y="18" width="92" height="36" rx="2"/>
+        <text class="nt" x="28" y="41">question</text>
+        <path class="ed-a" d="M108,36 H150" marker-end="url(#w1)"/>
+
+        <rect class="nb nb-a" x="156" y="12" width="178" height="48" rx="2"/>
+        <text class="nt" x="168" y="32">write queries</text>
+        <text class="ns" x="168" y="49">in HIS words, as many as needed</text>
+        <path class="ed-a" d="M334,36 H378" marker-end="url(#w1)"/>
+
+        <rect class="nb nb-g" x="384" y="12" width="150" height="48" rx="2"/>
+        <text class="nt" x="396" y="32">retrieve</text>
+        <text class="ns" x="396" y="49">free, deterministic</text>
+        <path class="ed-a" d="M534,36 H578" marker-end="url(#w1)"/>
+
+        <rect class="nb nb-u" x="584" y="12" width="280" height="48" rx="2"/>
+        <text class="nt" x="596" y="32">look at what came back</text>
+        <text class="ns" x="596" y="49">how many? relevant? what is still missing?</text>
+
+        <path class="ed-a" d="M724,60 V96" marker-end="url(#w1)"/>
+        <rect class="nb nb-a" x="560" y="96" width="304" height="72" rx="2"/>
+        <text class="nt" x="572" y="116">and now it decides</text>
+        <text class="ns" x="572" y="134">nothing useful came back &rarr; query differently</text>
+        <text class="ns" x="572" y="150">half the question unanswered &rarr; search for that half</text>
+        <text class="ns" x="572" y="164">mostly noise &rarr; judge it and keep what bears on it</text>
+
+        <path class="ed" d="M560,132 H300 V60" marker-end="url(#w2)" stroke-dasharray="4 4"/>
+        <text class="nk" x="312" y="126">back round, with a better query</text>
+
+        <path class="ed-a" d="M712,168 V200" marker-end="url(#w1)"/>
+        <rect class="nb nb-a" x="560" y="200" width="304" height="44" rx="2"/>
+        <text class="nt" x="572" y="220">draft the answer</text>
+        <text class="ns" x="572" y="236">from what it kept, not from everything</text>
+
+        <path class="ed-a" d="M712,244 V276" marker-end="url(#w1)"/>
+        <rect class="nb nb-u" x="560" y="276" width="304" height="48" rx="2"/>
+        <text class="nt" x="572" y="296">check the draft</text>
+        <text class="ns" x="572" y="313">every claim: which passage, or none</text>
+
+        <path class="ed" d="M560,300 H480 V224 H556" marker-end="url(#w2)" stroke-dasharray="4 4"/>
+        <text class="nk" x="418" y="262">unsupported &rarr;</text>
+        <text class="nk" x="418" y="276">cut it or go find it</text>
+
+        <rect class="nb nb-g" x="16" y="276" width="330" height="48" rx="2"/>
+        <text class="nt" x="28" y="296">answer, when the check passes</text>
+        <text class="ns" x="28" y="313">or say plainly that he has not covered this</text>
+        <path class="ed-a" d="M560,300 H352" marker-end="url(#w1)"/>
+      </svg>
+    </div>
+    <figcaption>The two dashed arrows are the whole difference. Today neither exists: one pass, no feedback, no check.</figcaption>
+  </figure>
+
+  <div class="box key">
+    <h4>what the feedback buys, concretely</h4>
+    <ul style="margin:.5em 0 0">
+      <li><strong>a query that found nothing is visible</strong>, so it can be rewritten instead of silently wasting a quarter of the budget</li>
+      <li><strong>a half-answered question is visible</strong>, so the second half gets searched for. Today nothing ever asks</li>
+      <li><strong>noise is visible</strong>, so it can be narrowed. Today 54% junk goes straight into the prompt unexamined</li>
+      <li><strong>an unsupported claim is visible</strong> before it reaches the person, not after</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================================== 2 -->
+<section>
+  <div class="secno">02</div>
+  <h2>The tools have to be good first</h2>
+  <p class="lede">A model driving bad tools is still bad. Before the agent can be blamed for anything, each tool has to do its job with sane defaults.</p>
+
+  <h3>Query writing</h3>
+  <p>The model already writes good queries. On a question about avoiding commitment it produced <code>puer aeternus never commits to anything</code> — his own Jungian term, not the asker's words. That part works.</p>
+  <div class="box bad">
+    <h4>what is broken around it</h4>
+    <ul style="margin:.4em 0 0">
+      <li><strong>No feedback reaches it.</strong> A query that returns nothing useful looks identical to one that nails it. The model never learns which of its four worked.</li>
+      <li><strong>We already compute the signal and throw it away.</strong> Every search returns a coverage figure — how much of the query's meaningful vocabulary appeared in what came back. It is logged and never shown to the model.</li>
+      <li><strong>The cap is a bug.</strong> The model is told it may search five times; the code keeps four.</li>
+    </ul>
+  </div>
+  <p><strong>What good looks like:</strong> the result of a search tells the model how it went — how many passages, how much of the query was covered, whether anything was new. Then a bad query is a thing it can respond to.</p>
+
+  <h3>Retrieval</h3>
+  <p>Everything below is measured on 100 questions in the live configuration.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:38%">issue</th><th>the number</th></tr></thead>
+      <tbody>
+        <tr><td><strong>word matching only</strong></td><td>no meaning-based matching at all. Three sources in the related work treat blending both as the unremarkable default</td></tr>
+        <tr><td><strong>the cutoff throws away found passages</strong></td><td>of 20 total misses, <span class="b">11 had the needed passage at rank 7 to 12</span>. The cut is at 6</td></tr>
+        <tr><td><strong>most of what is sent is noise</strong></td><td>judged against the question: 17% answer it, 29% carry part, <span class="b">54% do not help</span></td></tr>
+        <tr><td><strong>a fifth is pure padding</strong></td><td>20% of passages sent matched nothing — they are neighbours of things that matched</td></tr>
+        <tr><td><strong>complete evidence is rare</strong></td><td>at the deployed setting, all the needed passages arrive <span class="b">59%</span> of the time. At a wider cutoff, 87%</td></tr>
+        <tr><td><strong>across videos is the hard case</strong></td><td>recall 0.62 but complete only <span class="b">0.32</span> — it reaches into both and misses the rest</td></tr>
+        <tr><td><strong>phrasing swings the outcome</strong></td><td>spread of 0.26 across different framings of the same question. Nearly as large as the mean</td></tr>
+        <tr><td><strong>the question index is unused</strong></td><td>6,766 generated questions, each tied to the passage that answers it, covering 287 of 292 passages. <span class="b">Nothing has ever searched them.</span> This is the direct fix for vocabulary mismatch and it sits on disk</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="box good">
+    <p><strong>What retrieval does well, and it was understated.</strong> Scoring it against the passages his reference answer happened to use gave precision 0.080. Judging each passage against the question instead gives <strong>0.202</strong>. The old number was calling roughly half the usable material noise. Retrieval is better than we thought; the measurement was wrong.</p>
+  </div>
+
+  <h3>Relevance judging</h3>
+  <p>The one judgement with evidence behind it: showing the model which passages bear on the question cut contradictions from 11 to 7.</p>
+  <div class="box bad">
+    <p><strong>And the model will not call it.</strong> Given it as a tool, it used it <strong>nine times in a hundred questions</strong>. It triages by reading instead. So this probably should not be a tool it may call — it should run always, with the verdicts attached to every passage, which is the configuration that produced the best number we have.</p>
+  </div>
+
+  <h3>The draft check</h3>
+  <p>Traces each claim to a passage or to nothing. The only check that works without a reference answer, so the only one usable at serve time. When offered natively the model used it on every answered question.</p>
+</section>
+
+<!-- ================================== 3 -->
+<section>
+  <div class="secno">03</div>
+  <h2>What the agent has to be told about retrieval</h2>
+  <p>Not rules about how many queries to write. Facts about the tool it is holding, so it is appropriately suspicious of what comes back.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:44%">tell it</th><th>because</th></tr></thead>
+      <tbody>
+        <tr><td><strong>the archive is his speech, so query in his words</strong></td><td>a question in an outsider's vocabulary misses material that plainly answers it</td></tr>
+        <tr><td><strong>the score is weak. A low score is not "irrelevant" and a high score is not "this is the one"</strong></td><td>word overlap ranks the needed passage around position 40</td></tr>
+        <tr><td><strong>roughly half of what comes back cannot answer the question</strong></td><td>measured: 54% judged no help</td></tr>
+        <tr><td><strong>one search is almost never enough</strong></td><td>at the deployed setting the complete evidence arrives 59% of the time</td></tr>
+        <tr><td><strong>sharing a topic is not answering the question</strong></td><td>this is exactly how a claim ends up resting on a passage that cannot support it</td></tr>
+        <tr><td><strong>gathering is not progress; an unused passage is worth nothing</strong></td><td>a quarter of runs spent every turn searching and never answered</td></tr>
+        <tr><td><strong>if it is not there, say so</strong></td><td>an answer assembled from whatever shared a word is worse than no answer</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================================== 4 -->
+<section>
+  <div class="secno">04</div>
+  <h2>The final judge</h2>
+  <p class="lede">Two questions, and neither of them is "does this match a reference answer".</p>
+
+  <div class="box bad">
+    <h4>why the current judge is wrong</h4>
+    <p>It compares the answer to the one passage the question was generated from. He covers the same ground across seventeen videos, so an answer built from other things he really said is scored as wrong.</p>
+    <p style="margin-top:.7em"><strong>The proof: across 600 answers, not one has ever been marked as matching.</strong> A measure that cannot return its own pass value is measuring distance from one particular answer, not quality.</p>
+  </div>
+
+  <div class="box good">
+    <h4>what it should ask instead</h4>
+    <ol style="margin:.5em 0 0">
+      <li><strong>Does it answer the question?</strong> Not partially, not adjacently. Would the person who asked feel it was addressed.</li>
+      <li><strong>Does it answer from what was retrieved?</strong> Every claim traceable to a passage that genuinely bears on the question — not merely present somewhere in the pile.</li>
+    </ol>
+  </div>
+
+  <p><strong>Those two separate cleanly, and they fail differently.</strong> An answer can address the question while inventing; it can be perfectly grounded while answering a neighbouring question. Today we measure something in between and cannot tell which happened.</p>
+
+  <p><strong>One survives from the old set unchanged:</strong> does it contradict him. Reversing what he said is wrong under any measurement, and it is the failure he would most object to.</p>
+</section>
+
+<!-- ================================== 5 -->
+<section>
+  <div class="secno">05</div>
+  <h2>Order</h2>
+  <ol>
+    <li><strong>Fix the judge.</strong> Everything else is tuned against it, and it currently rewards matching one reference rather than answering the question.</li>
+    <li><strong>Fix the tool defaults.</strong> Feedback on the search result, the four-query bug, the dead 20%, the unused question index. A model driving bad tools is still bad.</li>
+    <li><strong>Run relevance always</strong> rather than offering it, since it is the one control that works and the one the model ignores.</li>
+    <li><strong>Then hand the loop to the model</strong>, and measure it against the same 100 questions.</li>
+  </ol>
+</section>
+
+</div>
+</body>
+</html>

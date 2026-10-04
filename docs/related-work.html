@@ -1,0 +1,1598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Who Else Is Building This</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..600&display=swap">
+<style>
+:root{
+  --paper:#faf8f5; --raise:#fffefc; --ink:#1a1714; --mut:#6b625a; --faint:#8d8478;
+  --line:#e0d9d0; --hair:#eee9e2;
+  --ochre:#a8622a; --ochre-soft:#f2e6da;
+  --ours:#2f6b4f; --ours-soft:#e2ede6;
+  --other:#3a5a8c; --other-soft:#e3e9f2;
+  --warn:#9c3b2a; --warn-soft:#f6e3de;
+  --shadow:0 1px 2px rgba(26,23,20,.05);
+  --serif:Newsreader,Georgia,"Times New Roman",serif;
+  --sans:Archivo,-apple-system,"Segoe UI",Helvetica,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#191714; --raise:#211e1a; --ink:#ece7df; --mut:#9d9488; --faint:#7d7568;
+    --line:#332e27; --hair:#282420;
+    --ochre:#d9924f; --ochre-soft:#3a2b1d;
+    --ours:#76b891; --ours-soft:#1e2e26;
+    --other:#8aa9d8; --other-soft:#1f2733;
+    --warn:#d98770; --warn-soft:#33221e;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#191714; --raise:#211e1a; --ink:#ece7df; --mut:#9d9488; --faint:#7d7568;
+  --line:#332e27; --hair:#282420;
+  --ochre:#d9924f; --ochre-soft:#3a2b1d;
+  --ours:#76b891; --ours-soft:#1e2e26;
+  --other:#8aa9d8; --other-soft:#1f2733;
+  --warn:#d98770; --warn-soft:#33221e;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:400 17px/1.62 var(--serif);-webkit-font-smoothing:antialiased}
+.page{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0 96px}
+
+/* ---- rail layout: monospace marker in a left gutter, prose in a measure ---- */
+.rail{display:grid;grid-template-columns:104px minmax(0,68ch);gap:0 28px;align-items:start}
+.rail>.mark{font:500 11px/1.9 var(--mono);color:var(--faint);letter-spacing:.06em;
+  text-transform:uppercase;padding-top:.55em;border-top:1px solid var(--line);
+  position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.rail>.body{min-width:0}
+.wide{grid-column:1/-1}
+@media (max-width:900px){
+  .rail{grid-template-columns:minmax(0,1fr);gap:8px}
+  .rail>.mark{position:static;border-top:none;padding-top:0}
+}
+
+h1,h2,h3,h4{text-wrap:balance;margin:0}
+h1{font:600 clamp(38px,6.4vw,62px)/1.02 var(--serif);letter-spacing:-.022em}
+h2{font:600 clamp(25px,3.2vw,33px)/1.16 var(--serif);letter-spacing:-.014em}
+h3{font:600 20px/1.3 var(--serif)}
+h4{font:600 12px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--mut)}
+p{margin:0 0 1.05em}
+a{color:var(--ochre);text-underline-offset:3px}
+strong{font-weight:600}
+em{font-style:italic}
+code,.tt{font:500 .85em/1.5 var(--mono);color:var(--mut)}
+
+section{padding-block:46px;border-top:1px solid var(--hair)}
+section:first-of-type{border-top:none}
+.lede{font-size:1.14em;line-height:1.55;color:var(--ink)}
+.sub{color:var(--mut)}
+
+/* ---- header ---- */
+header{padding-block:72px 40px}
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ochre);margin-bottom:22px}
+.byline{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:26px;
+  font:400 12px/1.6 var(--mono);color:var(--faint)}
+.byline span{white-space:nowrap}
+
+/* ---- figures ---- */
+figure{margin:0;padding-block:6px 0}
+.fig{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+  padding:22px 18px 14px;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:520px}
+figcaption{font:400 13px/1.5 var(--sans);color:var(--mut);padding-top:9px}
+.figwide .fig svg{min-width:660px}
+
+svg text{font-family:Archivo,sans-serif}
+.nb{fill:var(--raise);stroke:var(--line);stroke-width:1}
+.nb-o{fill:var(--ours-soft);stroke:var(--ours);stroke-width:1.2}
+.nb-t{fill:var(--other-soft);stroke:var(--other);stroke-width:1.2}
+.nb-w{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1.2}
+.nb-a{fill:var(--ochre-soft);stroke:var(--ochre);stroke-width:1.2}
+.nt{fill:var(--ink);font-size:12.5px;font-weight:500}
+.ns{fill:var(--mut);font-size:11px}
+.nk{fill:var(--faint);font-size:10px;font-family:"JetBrains Mono",monospace;
+  letter-spacing:.05em;text-transform:uppercase}
+.ed{stroke:var(--faint);stroke-width:1.3;fill:none}
+.ed-d{stroke:var(--faint);stroke-width:1.3;fill:none;stroke-dasharray:4 3}
+.ed-a{stroke:var(--ochre);stroke-width:1.6;fill:none}
+.ed-o{stroke:var(--ours);stroke-width:1.6;fill:none}
+.axl{stroke:var(--line);stroke-width:1}
+
+/* ---- cards / grids ---- */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(255px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+
+.entry{border-top:2px solid var(--ink);padding-top:14px}
+.entry .tag{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 14px;margin-bottom:10px}
+.letter{font:700 13px/1 var(--mono);color:var(--paper);background:var(--ink);
+  padding:5px 7px;border-radius:2px}
+.venue{font:400 12px/1.5 var(--mono);color:var(--faint)}
+
+.rate{display:inline-flex;align-items:center;gap:7px;
+  font:600 11px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+.pips{display:inline-flex;gap:3px}
+.pip{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.pip.on{background:var(--ochre)}
+
+.note{border-left:2px solid var(--line);padding:2px 0 2px 16px;margin:0 0 1.05em;
+  color:var(--mut);font-size:.95em}
+.note.key{border-left-color:var(--ochre);color:var(--ink)}
+.note.us{border-left-color:var(--ours)}
+.note.bad{border-left-color:var(--warn)}
+.note h4{margin-bottom:5px}
+
+.verdict{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+  padding:14px 16px;font-size:.95em}
+.verdict p{margin:0 0 .5em}
+.verdict p:last-child{margin:0}
+
+/* ---- tables ---- */
+.tw{overflow-x:auto;margin:0 0 1.05em}
+table{border-collapse:collapse;width:100%;min-width:430px;
+  font:400 14.5px/1.45 var(--sans)}
+th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--mut);padding:0 14px 8px 0;
+  border-bottom:1px solid var(--line);vertical-align:bottom}
+td{padding:9px 14px 9px 0;border-bottom:1px solid var(--hair);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:last-child,th:last-child{padding-right:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
+.ours-c{color:var(--ours);font-weight:600}
+.them-c{color:var(--other);font-weight:600}
+.none-c{color:var(--mut)}
+
+ul,ol{margin:0 0 1.05em;padding-left:1.15em}
+li{margin-bottom:.42em}
+li::marker{color:var(--faint)}
+
+.find{display:grid;grid-template-columns:34px minmax(0,1fr);gap:0 16px;
+  padding-block:20px;border-top:1px solid var(--hair)}
+.find:first-of-type{border-top:none;padding-top:4px}
+.find .n{font:600 20px/1.1 var(--serif);color:var(--ochre);padding-top:2px}
+.find h3{margin-bottom:8px}
+
+.q{display:grid;grid-template-columns:26px minmax(0,1fr);gap:0 14px;
+  padding-block:11px;border-top:1px solid var(--hair);align-items:baseline}
+.q .n{font:500 12px/1.6 var(--mono);color:var(--faint)}
+.q .t{font-size:.97em}
+.q .why{color:var(--mut);font-size:.9em;display:block;margin-top:2px}
+
+footer{padding-top:40px;border-top:1px solid var(--line);
+  font:400 13px/1.7 var(--sans);color:var(--mut)}
+footer ul{padding-left:1.1em}
+footer li{margin-bottom:.28em}
+
+@media (prefers-reduced-motion:no-preference){
+  a{transition:opacity .15s}
+}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--ochre);outline-offset:3px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">Related work &middot; first pass</div>
+  <h1>Who else is building this</h1>
+  <p class="lede sub" style="max-width:62ch;margin-top:20px">Seven outside sources, read against our own construction: a company already shipping it, four papers, and what you can clone for free. What they do, where we differ, and which ones are worth going back to.</p>
+  <div class="byline">
+    <span>knowledge + style engine</span>
+    <span>15 September 2026</span>
+    <span>source: references/SURVEY.md</span>
+  </div>
+</header>
+
+<section class="rail">
+  <div class="mark">01 / aim</div>
+  <div class="body">
+    <h2>What we are building</h2>
+    <p class="lede">A conversational clone of a creator that sounds like them talking.</p>
+    <p>Somebody types a question. The system answers using things the creator has actually said, in the creator's own speaking voice, and then says it out loud in their cloned voice.</p>
+  </div>
+
+  <figure class="wide figwide" style="margin-top:8px">
+    <div class="fig">
+      <svg viewBox="0 0 900 200" role="img" aria-label="End to end flow: a creator's videos become an archive; a viewer's question is answered from that archive, rewritten to sound spoken, then voiced.">
+        <defs>
+          <marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,1 L7,4 L0,7 z" fill="var(--faint)"/>
+          </marker>
+          <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,1 L7,4 L0,7 z" fill="var(--ochre)"/>
+          </marker>
+        </defs>
+
+        <text class="nk" x="20" y="26">the creator's side</text>
+        <rect class="nb" x="20" y="36" width="150" height="50" rx="2"/>
+        <text class="nt" x="34" y="58">his videos</text>
+        <text class="ns" x="34" y="74">subtitles, timestamped</text>
+        <path class="ed" d="M170,61 H222" marker-end="url(#a1)"/>
+        <rect class="nb nb-o" x="228" y="36" width="152" height="50" rx="2"/>
+        <text class="nt" x="242" y="58">archive of what</text>
+        <text class="nt" x="242" y="74">he actually said</text>
+
+        <text class="nk" x="20" y="130">a viewer's side</text>
+        <rect class="nb" x="20" y="140" width="150" height="44" rx="2"/>
+        <text class="nt" x="34" y="167">a question</text>
+        <path class="ed-a" d="M170,162 H400" marker-end="url(#a2)"/>
+        <path class="ed-d" d="M304,86 V156" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-a" x="406" y="128" width="144" height="68" rx="2"/>
+        <text class="nt" x="420" y="152">find what he said,</text>
+        <text class="nt" x="420" y="168">answer from it</text>
+        <text class="nk" x="420" y="186">stage a</text>
+        <path class="ed-a" d="M550,162 H600" marker-end="url(#a2)"/>
+
+        <rect class="nb nb-a" x="606" y="128" width="130" height="68" rx="2"/>
+        <text class="nt" x="620" y="152">make it sound</text>
+        <text class="nt" x="620" y="168">spoken, not written</text>
+        <text class="nk" x="620" y="186">stage b</text>
+        <path class="ed-a" d="M736,162 H786" marker-end="url(#a2)"/>
+
+        <rect class="nb nb-a" x="792" y="128" width="96" height="68" rx="2"/>
+        <text class="nt" x="806" y="152">his cloned</text>
+        <text class="nt" x="806" y="168">voice</text>
+        <text class="nk" x="806" y="186">stage c</text>
+      </svg>
+    </div>
+    <figcaption>The whole shape. Everything below is a comparison against this.</figcaption>
+  </figure>
+
+  <div class="mark"></div>
+  <div class="body" style="margin-top:26px">
+    <h4>Three commitments that separate this from a chatbot with a persona prompt</h4>
+    <ol>
+      <li><strong>The content comes from things he actually said</strong>, retrieved with timestamps you can check, not from the base model's impression of him.</li>
+      <li><strong>Sounding like him is a separate job from knowing what he thinks</strong>, done by a separate model that never sees the question.</li>
+      <li><strong>The output is written to be spoken.</strong> Text is a waypoint, not the product.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">02 / ours</div>
+  <div class="body">
+    <h2>Our architecture as it stands</h2>
+    <p>Two halves. The left is built once per creator and is deterministic or cached. The right runs on every question.</p>
+  </div>
+
+  <figure class="wide figwide">
+    <div class="fig">
+      <svg viewBox="0 0 900 400" role="img" aria-label="Our build pipeline and our serving loop, side by side.">
+        <text class="nk" x="18" y="18">build &mdash; once per creator</text>
+        <line class="axl" x1="18" y1="26" x2="404" y2="26"/>
+
+        <rect class="nb" x="18" y="40" width="160" height="42" rx="2"/>
+        <text class="nt" x="30" y="60">auto-captions</text>
+        <text class="ns" x="30" y="75">one file per video</text>
+        <path class="ed" d="M98,82 V110" marker-end="url(#a1)"/>
+
+        <rect class="nb" x="18" y="116" width="160" height="42" rx="2"/>
+        <text class="nt" x="30" y="136">cut into chunks</text>
+        <text class="ns" x="30" y="151">fixed size, overlapping</text>
+        <path class="ed" d="M98,158 V186" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-o" x="18" y="192" width="160" height="46" rx="2"/>
+        <text class="nt" x="30" y="214">the archive</text>
+        <text class="ns" x="30" y="229">his words, timestamped</text>
+
+        <path class="ed" d="M178,205 H208 V132 H236" marker-end="url(#a1)"/>
+        <rect class="nb" x="242" y="110" width="160" height="44" rx="2"/>
+        <text class="nt" x="254" y="130">a map per video</text>
+        <text class="ns" x="254" y="145">what he argues, his terms</text>
+
+        <path class="ed" d="M178,215 H208 V262 H236" marker-end="url(#a1)"/>
+        <rect class="nb" x="242" y="240" width="160" height="44" rx="2"/>
+        <text class="nt" x="254" y="260">questions his own</text>
+        <text class="nt" x="254" y="276">words already answer</text>
+        <path class="ed" d="M322,284 V312" marker-end="url(#a1)"/>
+
+        <rect class="nb" x="242" y="318" width="160" height="44" rx="2"/>
+        <text class="nt" x="254" y="338">pairs, judged</text>
+        <text class="ns" x="254" y="353">only exact matches kept</text>
+        <path class="ed-o" d="M402,340 H440 V300" marker-end="url(#a1)"/>
+
+        <line class="axl" x1="428" y1="34" x2="428" y2="372" stroke-dasharray="3 4"/>
+
+        <text class="nk" x="458" y="18">serve &mdash; every question</text>
+        <line class="axl" x1="458" y1="26" x2="884" y2="26"/>
+
+        <rect class="nb" x="458" y="40" width="130" height="38" rx="2"/>
+        <text class="nt" x="470" y="64">a question</text>
+        <path class="ed" d="M588,59 H628" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-a" x="634" y="34" width="250" height="50" rx="2"/>
+        <text class="nt" x="646" y="55">told who he is, shown real</text>
+        <text class="nt" x="646" y="71">passages of him talking</text>
+        <path class="ed-a" d="M759,84 V112" marker-end="url(#a2)"/>
+
+        <rect class="nb nb-a" x="634" y="118" width="250" height="60" rx="2"/>
+        <text class="nt" x="646" y="140">the model writes its own</text>
+        <text class="nt" x="646" y="156">searches, several rounds</text>
+        <text class="nk" x="646" y="171">it decides what to look for</text>
+
+        <path class="ed-o" d="M634,148 H500 V214 H176" marker-end="url(#a1)"/>
+        <text class="nk" x="506" y="143">searches the archive</text>
+        <path class="ed-o" d="M176,225 H510 V158 H628" marker-end="url(#a1)"/>
+        <text class="nk" x="516" y="232">gets passages back</text>
+
+        <path class="ed-a" d="M759,178 V206" marker-end="url(#a2)"/>
+        <rect class="nb" x="634" y="212" width="250" height="44" rx="2"/>
+        <text class="nt" x="646" y="232">is any of this really relevant?</text>
+        <text class="ns" x="646" y="248">if not, say so instead of answering</text>
+        <path class="ed-a" d="M759,256 V284" marker-end="url(#a2)"/>
+
+        <rect class="nb nb-a" x="634" y="290" width="250" height="44" rx="2"/>
+        <text class="nt" x="646" y="310">an answer, with the</text>
+        <text class="nt" x="646" y="326">passages it leaned on</text>
+        <path class="ed-a" d="M759,334 V358" marker-end="url(#a2)"/>
+
+        <rect class="nb nb-w" x="634" y="364" width="250" height="34" rx="2"/>
+        <text class="nt" x="646" y="385">restyled to sound spoken</text>
+        <text class="nk" x="836" y="385">fails today</text>
+      </svg>
+    </div>
+    <figcaption>The archive sits <em>beside</em> the model, not in front of it. The model decides what to search for, which is worth far more than any prompt wording we tried. <strong>But it does not search repeatedly &mdash; that claim, which this caption used to make, is false.</strong> It has a five-round budget and uses one, on every question in every run ever logged.</figcaption>
+  </figure>
+
+  <div class="mark"></div>
+  <div class="body">
+    <h4 style="margin-top:20px">Where we are weak, measured, stated up front so the comparison is honest</h4>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:44%">what is wrong</th><th>how we know</th></tr></thead>
+        <tbody>
+          <tr><td>search matches on shared words only, not meaning</td><td>most rejections in one pass read <em>"no passage addresses this"</em> for questions written from the transcripts themselves</td></tr>
+          <tr><td>an answer spread across two videos never gets assembled</td><td>zero out of twelve on a smoke test</td></tr>
+          <tr><td>the style stage does not work</td><td>a blind judge picked the real speaker every single time</td></tr>
+          <tr><td>no agreed way to measure style</td><td>two of our own documents disagree, both citing reasons</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">02b / new</div>
+  <div class="body">
+    <h2>The architecture we are moving to</h2>
+    <p>Three stages, each gated. Inside a stage the model does what it likes; at the boundary it must pass a check. Built and running for the first stage.</p>
+  </div>
+
+  <figure class="wide figwide">
+    <div class="fig">
+      <svg viewBox="0 0 900 430" role="img" aria-label="Three gated stages. Inside stage one the model calls five tools in any order against a shared pool of passages, then must pass a traceability check before style, which must pass a marker check before disfluency.">
+        <text class="nk" x="18" y="18">stage 1 &mdash; content. the model drives. free order, one budget</text>
+        <line class="axl" x1="18" y1="26" x2="884" y2="26"/>
+
+        <rect class="nb" x="18" y="40" width="96" height="38" rx="2"/>
+        <text class="nt" x="30" y="64">question</text>
+        <path class="ed-a" d="M114,59 H158" marker-end="url(#a2)"/>
+
+        <rect class="nb nb-a" x="164" y="36" width="190" height="46" rx="2"/>
+        <text class="nt" x="176" y="56">the model, one action</text>
+        <text class="nt" x="176" y="72">at a time, any order</text>
+        <path class="ed-a" d="M259,82 V112" marker-end="url(#a2)"/>
+        <path class="ed-d" d="M354,59 H408 V112" marker-end="url(#a1)"/>
+        <text class="nk" x="364" y="53">result back</text>
+
+        <rect class="nb nb-o" x="18" y="122" width="150" height="50" rx="2"/>
+        <text class="nt" x="30" y="142">search</text>
+        <text class="ns" x="30" y="158">an index, 285 words</text>
+        <rect class="nb nb-o" x="178" y="122" width="126" height="50" rx="2"/>
+        <text class="nt" x="190" y="142">read 3,7,11</text>
+        <text class="ns" x="190" y="158">only what it wants</text>
+        <rect class="nb nb-t" x="314" y="122" width="150" height="50" rx="2"/>
+        <text class="nt" x="326" y="142">relevance</text>
+        <text class="ns" x="326" y="158">which bear on this</text>
+        <rect class="nb nb-t" x="474" y="122" width="120" height="50" rx="2"/>
+        <text class="nt" x="486" y="142">gap</text>
+        <text class="ns" x="486" y="158">what is missing</text>
+        <rect class="nb nb-t" x="604" y="122" width="180" height="50" rx="2"/>
+        <text class="nt" x="616" y="142">check &lt;draft&gt;</text>
+        <text class="ns" x="616" y="158">per claim, which passage</text>
+
+        <rect class="nb" x="18" y="186" width="480" height="40" rx="2"/>
+        <text class="nt" x="30" y="204">one numbered pool of passages, verdicts attached once judged</text>
+        <text class="ns" x="30" y="219">numbers stable across calls, so it can revisit what it read</text>
+
+        <rect class="nb nb-w" x="520" y="186" width="264" height="40" rx="2"/>
+        <text class="nt" x="532" y="205" fill="var(--warn)">GATE: every claim lands on a</text>
+        <text class="nt" x="532" y="220" fill="var(--warn)">passage judged relevant</text>
+        <path class="ed-a" d="M652,226 V254" marker-end="url(#a2)"/>
+
+        <text class="nk" x="18" y="250">stage 2 &mdash; style. must not change a claim</text>
+        <line class="axl" x1="18" y1="258" x2="884" y2="258"/>
+        <rect class="nb nb-o" x="18" y="270" width="200" height="46" rx="2"/>
+        <text class="nt" x="30" y="290">restyle</text>
+        <text class="ns" x="30" y="306">local adapter, text in and out</text>
+        <rect class="nb nb-t" x="228" y="270" width="230" height="46" rx="2"/>
+        <text class="nt" x="240" y="290">style meter</text>
+        <text class="ns" x="240" y="306">his marker rates against this text</text>
+        <rect class="nb nb-w" x="520" y="270" width="264" height="46" rx="2"/>
+        <text class="nt" x="532" y="290" fill="var(--warn)">GATE: markers in band AND</text>
+        <text class="nt" x="532" y="306" fill="var(--warn)">claims unchanged</text>
+        <path class="ed-a" d="M652,316 V344" marker-end="url(#a2)"/>
+
+        <text class="nk" x="18" y="340">stage 3 &mdash; disfluency. must not change a word</text>
+        <line class="axl" x1="18" y1="348" x2="884" y2="348"/>
+        <rect class="nb nb-o" x="18" y="360" width="200" height="46" rx="2"/>
+        <text class="nt" x="30" y="380">insert breaks</text>
+        <text class="ns" x="30" y="396">from his measured distribution</text>
+        <rect class="nb nb-t" x="228" y="360" width="230" height="46" rx="2"/>
+        <text class="nt" x="240" y="380">disfluency meter</text>
+        <text class="ns" x="240" y="396">his rate, and where it falls</text>
+        <rect class="nb nb-w" x="520" y="360" width="264" height="46" rx="2"/>
+        <text class="nt" x="532" y="380" fill="var(--warn)">GATE: rate matches AND</text>
+        <text class="nt" x="532" y="396" fill="var(--warn)">words unchanged</text>
+        <text class="nk" x="800" y="386">then voice</text>
+      </svg>
+    </div>
+    <figcaption>Loose inside a stage, strict at the seam. No supervisor: three unrelated instruments with no exchange rate between them cannot be traded off by one judge.</figcaption>
+  </figure>
+
+  <div class="mark"></div>
+  <div class="body">
+    <h3 style="margin-top:22px">Why it is a better shape than what we have</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:24%"></th><th>now</th><th>this</th></tr></thead>
+        <tbody>
+          <tr><td>searches</td><td class="none-c">one round, always</td><td class="ours-c">three on the first question tried, because it saw what it was missing</td></tr>
+          <tr><td>cost of a search</td><td class="none-c">all 43 passages in full, ~13,000 words, carried by every later call</td><td class="ours-c">an index of 285 words; full text costs a separate read</td></tr>
+          <tr><td>calls affordable in 60 seconds</td><td class="none-c">two</td><td class="ours-c">eight</td></tr>
+          <tr><td>measured time</td><td>39 seconds</td><td class="ours-c">25 seconds</td></tr>
+          <tr><td>can ask what is missing</td><td class="none-c">no</td><td class="ours-c">yes, as a tool it runs</td></tr>
+          <tr><td>can check its own draft</td><td class="none-c">nothing exists</td><td class="ours-c">per claim, against the passages</td></tr>
+          <tr><td>numbers nobody chose</td><td class="none-c">4 queries, 5 rounds, 43 passages &mdash; all defaults, one of them a bug</td><td class="ours-c">one budget; the model decides the rest</td></tr>
+          <tr><td>style and disfluency</td><td class="none-c">one pass each, nothing checks either</td><td class="ours-c">own stage, own meter, own gate, cannot damage the stage beneath</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note bad"><strong>What it still gets wrong, on the one question tried.</strong> It never called the relevance judge and never checked its draft &mdash; it searched, read, and answered. So with five tools and no instruction it skips the two that would catch its errors, exactly as the deployed system does with one. That is the argument for the gate being a hard check rather than the model's judgement, and for <strong>native tool calling</strong>: our wrapper hands it a text protocol to scrape rather than tools in the format it was trained on.</p>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">03 / index</div>
+  <div class="body">
+    <h2>The collection</h2>
+    <p>Rated by what each would change if we took it seriously, not by how good the work is.</p>
+  </div>
+  <div class="wide tw" style="margin-top:14px">
+    <table>
+      <thead><tr><th style="width:34px"></th><th style="width:26%">source</th><th style="width:28%">what it is</th><th style="width:84px">weight</th><th>why</th></tr></thead>
+      <tbody>
+        <tr><td class="num">A</td><td><strong>Delphi</strong></td><td>a company shipping our product</td>
+          <td><span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></td>
+          <td>the only source that says what production looks like</td></tr>
+        <tr><td class="num">B</td><td><strong>Park et&nbsp;al.</strong><br><span class="venue">arXiv 2411.10109</span></td><td>1,052 people simulated from interviews</td>
+          <td><span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></td>
+          <td>strongest result on simulating a specific person, plus a measurement idea we lack</td></tr>
+        <tr><td class="num">C</td><td><strong>Wang &amp; Siu</strong><br><span class="venue">arXiv 2603.29890</span></td><td>the negative replication</td>
+          <td><span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></td>
+          <td>measured voice and tone; found nobody's agents capture it</td></tr>
+        <tr><td class="num">D</td><td><strong>Bi-Mem</strong><br><span class="venue">arXiv 2601.06490</span></td><td>layered memory for personal chat</td>
+          <td><span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span></td>
+          <td>conflicts with how we store things; useful as a map of that field</td></tr>
+        <tr><td class="num">E</td><td><strong>open source</strong></td><td>what you can clone today</td>
+          <td><span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i></span></td>
+          <td>tells us what is commodity and what nobody has built</td></tr>
+        <tr><td class="num">F</td><td><strong>Kinzinger &amp; Hartmann</strong><br><span class="venue">arXiv 2606.04592</span></td><td>twins built many ways and compared</td>
+          <td><span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></td>
+          <td>the one head-to-head between keeping material raw and summarising it</td></tr>
+        <tr><td class="num">G</td><td><strong>Jemama &amp; Kumar</strong><br><span class="venue">arXiv 2509.24930</span></td><td>how well models imitate a writer</td>
+          <td><span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span></td>
+          <td>the only paper whose whole subject is our stage B</td></tr>
+        <tr><td class="num">H</td><td><strong>Second Me</strong><br><span class="venue">arXiv 2503.08102</span></td><td>the one open project that trains rather than searches</td>
+          <td><span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span></td>
+          <td>abandoned, and it scores itself with the model that wrote its own exam. One section is worth taking</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="mark"></div>
+  <div class="body">
+    <p class="note bad" style="margin-top:18px"><strong>Before reading on:</strong> B and the Stanford policy brief are the same study. The brief is the policy-facing summary of that paper, same lead author, same people, same headline. Treat it as that paper's governance chapter, not a second source.</p>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">04 / A</div>
+  <div class="body">
+    <div class="entry">
+      <div class="tag"><span class="letter">A</span><h2 style="flex:1">Delphi</h2>
+        <span class="rate">weight <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span></div>
+      <p class="venue">Cerebras engineering blog &middot; Pinecone customer study &middot; VentureBeat &middot; Sequoia podcast</p>
+    </div>
+    <p style="margin-top:16px">A funded company selling exactly our product: a creator uploads their content and gets a chatbot that answers as them, by text and by voice. Thousands of these exist.</p>
+    <p><strong>The public record comes in two halves that do not obviously agree</strong>, and that is the most useful thing about it.</p>
+  </div>
+
+  <figure class="wide figwide">
+    <div class="fig">
+      <svg viewBox="0 0 900 260" role="img" aria-label="Delphi's two published stories: an infrastructure account of chunking and vector search, and a founder's account of a knowledge graph. How they join is not public.">
+        <text class="nk" x="18" y="18">half one &mdash; told by their infrastructure partners</text>
+        <line class="axl" x1="18" y1="26" x2="884" y2="26"/>
+
+        <rect class="nb" x="18" y="40" width="126" height="46" rx="2"/>
+        <text class="nt" x="30" y="60">uploads</text>
+        <text class="ns" x="30" y="76">articles, podcasts, video</text>
+        <path class="ed" d="M144,63 H176" marker-end="url(#a1)"/>
+        <rect class="nb" x="182" y="40" width="112" height="46" rx="2"/>
+        <text class="nt" x="194" y="60">clean and</text>
+        <text class="nt" x="194" y="76">cut up</text>
+        <path class="ed" d="M294,63 H326" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-a" x="332" y="34" width="184" height="58" rx="2"/>
+        <text class="nt" x="344" y="54">add a summary and the</text>
+        <text class="nt" x="344" y="70">questions each piece answers</text>
+        <text class="nk" x="344" y="85">the idea worth taking</text>
+        <path class="ed" d="M516,63 H548" marker-end="url(#a1)"/>
+
+        <rect class="nb" x="554" y="40" width="126" height="46" rx="2"/>
+        <text class="nt" x="566" y="60">match by</text>
+        <text class="nt" x="566" y="76">meaning</text>
+        <path class="ed" d="M680,63 H712" marker-end="url(#a1)"/>
+        <rect class="nb" x="718" y="40" width="166" height="46" rx="2"/>
+        <text class="nt" x="730" y="60">one sealed drawer</text>
+        <text class="nt" x="730" y="76">per creator</text>
+
+        <text x="450" y="126" class="nt" text-anchor="middle" fill="var(--warn)" font-size="22" font-weight="600">?</text>
+        <text x="450" y="146" class="nk" text-anchor="middle">nothing public says how these join</text>
+        <line class="axl" x1="180" y1="118" x2="420" y2="118" stroke-dasharray="3 4"/>
+        <line class="axl" x1="480" y1="118" x2="720" y2="118" stroke-dasharray="3 4"/>
+
+        <text class="nk" x="18" y="180">half two &mdash; told by the founder</text>
+        <line class="axl" x1="18" y1="188" x2="884" y2="188"/>
+
+        <circle cx="120" cy="228" r="20" class="nb nb-t"/>
+        <circle cx="240" cy="212" r="16" class="nb nb-t"/>
+        <circle cx="236" cy="256" r="13" class="nb nb-t"/>
+        <circle cx="352" cy="232" r="18" class="nb nb-t"/>
+        <line class="ed" x1="140" y1="224" x2="224" y2="213"/>
+        <line class="ed-d" x1="138" y1="236" x2="223" y2="252"/>
+        <line class="ed" x1="256" y1="216" x2="334" y2="228"/>
+        <line class="ed-d" x1="249" y1="252" x2="336" y2="239"/>
+        <text class="ns" x="390" y="212">facts as things and links between them</text>
+        <text class="ns" x="390" y="230">each link carries how sure it is</text>
+        <text class="ns" x="390" y="248">and the whole thing changes as he does</text>
+        <text class="nk" x="700" y="230">they call it the clone brain</text>
+      </svg>
+    </div>
+    <figcaption>Both are probably true, a graph layered over a store of passages, but no public source says how. Worth holding as an open question rather than resolving it by guess.</figcaption>
+  </figure>
+
+  <div class="mark"></div>
+  <div class="body">
+    <h3 style="margin-top:22px">The one disclosure that genuinely matters</h3>
+    <p>The creator chooses how far the clone is allowed to go.</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:150px">setting</th><th>what it does</th></tr></thead>
+        <tbody>
+          <tr><td><strong>strict</strong></td><td>only says things from his own material that directly answer the question</td></tr>
+          <tr><td><strong>interpolate</strong></td><td>allowed to reach for material from the wider internet</td></tr>
+          <tr><td><strong>extrapolate</strong></td><td>his material only, but faced with something new, predicts what he <em>would</em> say</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Their example: he never discussed a topic, but his principles about handling uncertainty carry across, so the clone reasons over.</p>
+    <p class="note us"><strong>We already compute this distinction.</strong> Every answer we produce carries a label saying whether the position was found, extended from nearby material, or unsupported. We report it as an output. They let the creator set it as an input. That is one step away.</p>
+
+    <h3 style="margin-top:26px">Same, different, and worth taking</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:26%"></th><th style="width:37%">Delphi</th><th>us</th></tr></thead>
+        <tbody>
+          <tr><td>matching</td><td class="them-c">by meaning</td><td>by shared words, and it is our measured weak spot</td></tr>
+          <tr><td>what is stored</td><td class="them-c">the passage <em>plus</em> generated summaries and questions</td><td>the passage only</td></tr>
+          <tr><td>answering</td><td>look once, then write</td><td class="ours-c">search repeatedly, deciding what to look for each round</td></tr>
+          <tr><td>speed</td><td class="them-c">about a second, end to end</td><td>many round trips; nowhere near it</td></tr>
+          <tr><td>declining</td><td class="them-c">a setting the creator picks</td><td>a check that is on or off</td></tr>
+          <tr><td>sounding like them</td><td class="none-c">not disclosed anywhere</td><td class="ours-c">a separately trained model</td></tr>
+          <tr><td>quality</td><td class="none-c">no measurement published at all</td><td class="ours-c">a blind judge, which says ours fails</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note key">
+      <h4>The best idea in the whole collection</h4>
+      <p style="margin-bottom:0"><strong>Store, alongside each passage, the questions that passage would answer, and search those too.</strong> It attacks our exact measured failure: our search misses passages that plainly answer a question because the question is in the asker's words and the passage is in his. And <strong>we have already built the artifact</strong> &mdash; ten thousand such questions, generated per passage, currently used only as training data.</p>
+    </div>
+
+    <p style="margin-top:16px">Three more worth having: an explicit <strong>strict-or-extrapolate setting</strong>; <strong>one sealed drawer per creator</strong>, so removing a creator is a single operation rather than a migration; and <strong>interview mode</strong>, where the clone asks its own creator questions to fill gaps. That last one is the only proposal anywhere in the collection that addresses coverage, which our own notes say prompting cannot fix.</p>
+
+    <div class="verdict" style="margin-top:20px">
+      <p><strong>Nice, unproven.</strong> The graph is the most attractive claim in the set &mdash; it would let a clone represent that someone changed their mind, which plain retrieval cannot. There is no published evaluation of it, no ablation, and it cuts against our decision to keep things verbatim. Believe the infrastructure; treat the graph as a hypothesis.</p>
+      <p><strong>Verdict.</strong> The product baseline to beat, and the source of our production budget. Their retention figure &mdash; users who arrive by voice come back several times more often &mdash; is the strongest evidence in the collection that the voice end of our pipeline is the product, not the garnish.</p>
+    </div>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">05 / B</div>
+  <div class="body">
+    <div class="entry">
+      <div class="tag"><span class="letter">B</span><h2 style="flex:1">Simulating a thousand people</h2>
+        <span class="rate">weight <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span></div>
+      <p class="venue">Park, Zou, Kamphorst, Egan, Shaw, Hill, Cai, Morris, Liang, Willer, Bernstein &middot; Stanford, Northwestern, Washington, Google DeepMind &middot; arXiv 2411.10109</p>
+    </div>
+    <p style="margin-top:16px">They recruited a thousand Americans, ran a two-hour interview with each one, built an agent per person, and tested whether it answered surveys the way that person did.</p>
+    <p><strong>The architecture is deliberately the simplest possible thing.</strong> No search, no database, no training. The whole interview goes into the prompt.</p>
+  </div>
+
+  <figure class="wide">
+    <div class="fig">
+      <svg viewBox="0 0 900 220" role="img" aria-label="A person is interviewed for two hours; the whole transcript is put into a model's prompt; its answers are compared both to the person and to the same person two weeks later.">
+        <rect class="nb" x="18" y="60" width="118" height="46" rx="2"/>
+        <text class="nt" x="30" y="80">one real</text>
+        <text class="nt" x="30" y="96">person</text>
+        <path class="ed" d="M136,83 H168" marker-end="url(#a1)"/>
+        <rect class="nb" x="174" y="60" width="140" height="46" rx="2"/>
+        <text class="nt" x="186" y="80">two-hour interview</text>
+        <text class="ns" x="186" y="96">about their whole life</text>
+        <path class="ed" d="M314,83 H346" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-t" x="352" y="46" width="176" height="74" rx="2"/>
+        <text class="nt" x="364" y="68">the entire transcript,</text>
+        <text class="nt" x="364" y="84">pasted into the prompt</text>
+        <text class="nk" x="364" y="104">no search, no training</text>
+        <path class="ed" d="M528,83 H560" marker-end="url(#a1)"/>
+
+        <rect class="nb" x="566" y="60" width="128" height="46" rx="2"/>
+        <text class="nt" x="578" y="80">its answer to</text>
+        <text class="nt" x="578" y="96">a survey question</text>
+
+        <path class="ed-a" d="M694,83 H738" marker-end="url(#a2)"/>
+        <text class="nk" x="748" y="80">scored</text>
+        <text class="nk" x="748" y="94">against</text>
+
+        <path class="ed-d" d="M77,106 V166 H560" marker-end="url(#a1)"/>
+        <rect class="nb nb-o" x="566" y="144" width="128" height="44" rx="2"/>
+        <text class="nt" x="578" y="164">the same person,</text>
+        <text class="nt" x="578" y="180">two weeks later</text>
+        <path class="ed-a" d="M694,166 H738" marker-end="url(#a2)"/>
+
+        <text class="nt" x="748" y="140" fill="var(--ours)" font-weight="600">the ceiling</text>
+        <text class="ns" x="748" y="158">people do not agree</text>
+        <text class="ns" x="748" y="174">with themselves either</text>
+      </svg>
+    </div>
+    <figcaption>The move worth copying is the bottom row, not the top one.</figcaption>
+  </figure>
+
+  <div class="mark"></div>
+  <div class="body">
+    <h3 style="margin-top:22px">The idea we should steal</h3>
+    <p>They do not report how often the agent was right. <strong>They report how close it got to how often the person agreed with themselves</strong> when asked the same questions a fortnight later. The ceiling is the person's own inconsistency, and it is nowhere near perfect.</p>
+    <p>That is the right shape for any task where perfect agreement is neither available nor meaningful. We already have one measure with this property: our blind style judge aims at a coin flip, not at perfection, because a coin flip means indistinguishable.</p>
+    <p class="note us"><strong>We have no equivalent on the content side, and it matters.</strong> How consistent is our creator with himself? If he answers two similar questions across two videos and says slightly different things, that spread is the real ceiling for any system answering as him &mdash; and every content number we report is currently measured against an unreachable one.</p>
+
+    <h3 style="margin-top:26px">Where they and we part</h3>
+    <p>Their input is a two-hour interview, elicited on purpose, <em>about the person</em>. Our archive is long, found rather than elicited, and <em>about topics</em>, with the person visible only as a side effect. That is why they can skip search and we cannot &mdash; and it is also why questions about him personally are our worst band.</p>
+
+    <h3 style="margin-top:22px">The governance half</h3>
+    <p><strong>They did not release the agents.</strong> Research access only, aggregate results open, individual results behind review. They propose an audit log per agent so a participant can see what theirs is doing and <strong>withdraw consent later</strong> &mdash; permission granted one day, revocable a month after.</p>
+    <p>For a creator product that is not an ethics footnote, it is a feature list. The risks they name transfer directly: over-reliance when accuracy is low, leakage of sensitive source material, co-option of a likeness, and reputational damage from someone steering the clone into saying something it should not.</p>
+
+    <div class="verdict" style="margin-top:20px">
+      <p><strong>Unproven at our scale.</strong> Putting everything in the prompt works at two hours. It does not obviously work at seventeen videos, and we have already rejected whole-archive context on cost.</p>
+      <p><strong>But</strong> this is precisely the day-one experiment our own documents specify and nobody has run: a strong model, the full transcript, no search, no training, outputs read beside his real answers. This paper is the best argument for running it, and it hands us the number to beat.</p>
+    </div>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">06 / C</div>
+  <div class="body">
+    <div class="entry">
+      <div class="tag"><span class="letter">C</span><h2 style="flex:1">The negative replication</h2>
+        <span class="rate">weight <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span></div>
+      <p class="venue">Zichao Wang and Alexa Siu &middot; Adobe Research &middot; arXiv 2603.29890 &middot; March 2026</p>
+    </div>
+    <p style="margin-top:16px">They took the architecture above, pointed it at a different task, and it came apart. Fifty-one knowledge workers interviewed about how they work, one agent each, then both the humans and their agents rated four proposed products.</p>
+    <p class="lede" style="margin-top:20px">Their finding, in their words: the agents are <strong>calibrated to the crowd but imprecise about the individual.</strong> They match the population. They do not match the person.</p>
+  </div>
+
+  <figure class="wide">
+    <div class="fig">
+      <svg viewBox="0 0 900 250" role="img" aria-label="Agents reproduce the shape of a group's opinions but not any individual's. Individual predictions scatter while the group distribution lines up.">
+        <text class="nk" x="18" y="18">as a crowd &mdash; close</text>
+        <line class="axl" x1="18" y1="26" x2="400" y2="26"/>
+        <g>
+          <rect x="40" y="130" width="26" height="30" fill="var(--mut)" opacity=".5"/>
+          <rect x="76" y="106" width="26" height="54" fill="var(--mut)" opacity=".5"/>
+          <rect x="112" y="72" width="26" height="88" fill="var(--mut)" opacity=".5"/>
+          <rect x="148" y="90" width="26" height="70" fill="var(--mut)" opacity=".5"/>
+          <rect x="184" y="120" width="26" height="40" fill="var(--mut)" opacity=".5"/>
+          <path d="M53,134 L89,112 L125,79 L161,96 L197,125" class="ed-a" stroke-width="2"/>
+          <circle cx="53" cy="134" r="3.5" fill="var(--ochre)"/><circle cx="89" cy="112" r="3.5" fill="var(--ochre)"/>
+          <circle cx="125" cy="79" r="3.5" fill="var(--ochre)"/><circle cx="161" cy="96" r="3.5" fill="var(--ochre)"/>
+          <circle cx="197" cy="125" r="3.5" fill="var(--ochre)"/>
+          <line class="axl" x1="34" y1="160" x2="300" y2="160"/>
+          <text class="ns" x="34" y="178">how the whole group rated the idea</text>
+          <rect x="230" y="66" width="12" height="12" fill="var(--mut)" opacity=".5"/>
+          <text class="ns" x="248" y="76">real people</text>
+          <line x1="230" y1="96" x2="242" y2="96" class="ed-a" stroke-width="2"/>
+          <text class="ns" x="248" y="100">their agents</text>
+        </g>
+
+        <line class="axl" x1="440" y1="34" x2="440" y2="220" stroke-dasharray="3 4"/>
+
+        <text class="nk" x="470" y="18">person by person &mdash; scattered</text>
+        <line class="axl" x1="470" y1="26" x2="884" y2="26"/>
+        <g>
+          <line x1="500" y1="160" x2="856" y2="46" class="ed-d"/>
+          <text class="nk" x="700" y="66" transform="rotate(-18 700 66)">perfect agreement</text>
+          <circle cx="536" cy="96" r="4" fill="var(--warn)"/><circle cx="572" cy="140" r="4" fill="var(--warn)"/>
+          <circle cx="600" cy="72" r="4" fill="var(--warn)"/><circle cx="628" cy="132" r="4" fill="var(--warn)"/>
+          <circle cx="664" cy="98" r="4" fill="var(--warn)"/><circle cx="692" cy="146" r="4" fill="var(--warn)"/>
+          <circle cx="716" cy="66" r="4" fill="var(--warn)"/><circle cx="748" cy="122" r="4" fill="var(--warn)"/>
+          <circle cx="776" cy="86" r="4" fill="var(--warn)"/><circle cx="808" cy="138" r="4" fill="var(--warn)"/>
+          <circle cx="556" cy="120" r="4" fill="var(--warn)"/><circle cx="640" cy="102" r="4" fill="var(--warn)"/>
+          <circle cx="732" cy="94" r="4" fill="var(--warn)"/><circle cx="820" cy="106" r="4" fill="var(--warn)"/>
+          <line class="axl" x1="496" y1="170" x2="860" y2="170"/>
+          <line class="axl" x1="496" y1="42" x2="496" y2="170"/>
+          <text class="ns" x="496" y="190">what the person said</text>
+          <text class="ns" x="470" y="212" >every extra scrap of interview left this unchanged</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Giving the agent the full interview helped the left picture. It did not reliably help the right one.</figcaption>
+  </figure>
+
+  <div class="mark"></div>
+  <div class="body">
+    <h3 style="margin-top:22px">Why this is the most important paper here for us</h3>
+    <p class="lede"><strong>They measured voice and tone, and it was their worst axis.</strong> None of the agent designs adequately captured how the participants actually speak. They call the result thematically right but not experientially right.</p>
+
+    <p>Their description of the failure is almost word for word ours:</p>
+    <ul>
+      <li>Real people ranged from enthusiasm through flat rejection to <strong>philosophical tangents</strong>. The agents were <strong>uniformly constructive</strong> &mdash; even the criticism was phrased as something a tweak could fix.</li>
+      <li>Real people said things like <em>"I'm a little confused on how that works."</em> The agents produced clear, structured interpretations every time.</li>
+      <li>Real people raised specific obstacles &mdash; needing sign-off, compliance rules, justifying the cost. The agents flattened these into generalities.</li>
+    </ul>
+
+    <p class="note us"><strong>That is our own finding, from the other direction.</strong> Our creator breaks off and restarts mid-sentence constantly. Every model we tried &mdash; trained, prompted, small, large, local, frontier &mdash; produced none of it. Not few. None. We eliminated model size, compression, adapter size, learning rate, checkpoint choice, decoding settings, more data and more training, each by measurement.</p>
+    <p>This paper says the flattening is general, shows up in <em>content</em> as well as wording, and is not fixed by giving the model more evidence about the person. <strong>Independent corroboration that the thing we cannot fix is not a bug in our pipeline.</strong></p>
+
+    <div class="verdict" style="margin-top:20px">
+      <p><strong>Temper the pessimism slightly.</strong> Their participants were inventing opinions on the spot about tools they had never used. Our creator has genuinely said the thing, so there is a right answer sitting in the archive. Ours may be the easier task.</p>
+      <p><strong>The caution stands regardless.</strong> Never promise individual fidelity on the strength of population-level agreement. If we ever report "the clone sounds like him" from an average, this is the counterexample sitting in the literature waiting to be cited at us.</p>
+    </div>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">07 / D</div>
+  <div class="body">
+    <div class="entry">
+      <div class="tag"><span class="letter">D</span><h2 style="flex:1">Bi-Mem</h2>
+        <span class="rate">weight <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span></span></div>
+      <p class="venue">Mao, Tan, Liu, Liu, Xu, Ji, Wang &middot; USTC and collaborators &middot; arXiv 2601.06490 &middot; January 2026</p>
+    </div>
+    <p style="margin-top:16px"><strong>The problem is not ours.</strong> They assume a long-running chat between an assistant and one user, and ask how to remember that user. We have a fixed archive of broadcast video and a creator who is not in conversation with anyone.</p>
+    <p>Their argument: build memory only from the bottom up and errors compound, so a local cluster of facts drifts away from who the person actually is. Run it both ways instead.</p>
+  </div>
+
+  <figure class="wide">
+    <div class="fig">
+      <svg viewBox="0 0 900 250" role="img" aria-label="Three layers built bottom-up from conversation, with a top-down pass that patches the middle layer against the top.">
+        <rect class="nb" x="18" y="100" width="130" height="48" rx="2"/>
+        <text class="nt" x="30" y="122">the conversation</text>
+        <text class="ns" x="30" y="138">hundreds of turns</text>
+        <path class="ed" d="M148,124 H182" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-t" x="188" y="94" width="150" height="60" rx="2"/>
+        <text class="nt" x="200" y="116">single facts</text>
+        <text class="ns" x="200" y="132">one summary per turn,</text>
+        <text class="ns" x="200" y="146">the original discarded</text>
+        <path class="ed" d="M338,124 H372" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-t" x="378" y="94" width="150" height="60" rx="2"/>
+        <text class="nt" x="390" y="116">themes</text>
+        <text class="ns" x="390" y="132">related facts grouped,</text>
+        <text class="ns" x="390" y="146">then summarised again</text>
+        <path class="ed" d="M528,124 H562" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-t" x="568" y="94" width="150" height="60" rx="2"/>
+        <text class="nt" x="580" y="116">who they are</text>
+        <text class="ns" x="580" y="132">a short description</text>
+        <text class="ns" x="580" y="146">distilled from all of it</text>
+
+        <path class="ed-a" d="M643,94 V56 H453 V88" marker-end="url(#a2)"/>
+        <text class="nk" x="472" y="48">then back down: does this theme contradict who they are? patch it</text>
+
+        <rect x="188" y="184" width="530" height="44" rx="2" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.2"/>
+        <text class="nt" x="204" y="204" fill="var(--warn)">everything above the first box is a summary of a summary.</text>
+        <text class="nt" x="204" y="220" fill="var(--warn)">you cannot read any of it aloud in the person's voice.</text>
+      </svg>
+    </div>
+    <figcaption>Built to answer questions <em>about</em> a person. We are building something to answer <em>as</em> one.</figcaption>
+  </figure>
+
+  <div class="mark"></div>
+  <div class="body">
+    <h3 style="margin-top:22px">Read their results table carefully</h3>
+    <p>They score against seven other memory systems on a shared benchmark. Two things fall out that are worth more than the method:</p>
+    <p class="note key"><strong>The whole field is fighting over a handful of points against plain search</strong>, and the winner is still well short of good. Ordinary retrieval, with none of the machinery, beats several purpose-built memory architectures. Bi-Mem's gain over it is real and statistically solid &mdash; and it costs a model call per turn to extract a fact, another per group to write a theme, more to distil a description, and another to check each theme.</p>
+    <p class="note bad"><strong>Questions needing evidence from two places are where everyone is worst</strong>, by a wide margin, across all seven systems. Our own notes say our search never assembles an answer spread across two videos, and that better ranking may not be the fix. <strong>This table supports that.</strong> It moves the question from "tune our retriever" to "what shape of system composes evidence at all", which is a literature question, not an engineering one.</p>
+
+    <h3 style="margin-top:26px">Worth taking anyway</h3>
+    <ul>
+      <li><strong>Match on words and meaning together</strong>, blended evenly. They use it as the unremarkable default. We match on words alone, and our own measurements say that is a weak spot. This is the cheapest and least controversial upgrade in the collection, and unlike a knowledge graph it does not touch how we store anything.</li>
+      <li><strong>Check the summary against the whole.</strong> Strip the extraction away and the idea survives: anything built from parts should be checked against a global view and patched where it disagrees. We build one summary per video already, and nothing checks it against anything.</li>
+    </ul>
+    <div class="verdict" style="margin-top:18px">
+      <p><strong>Verdict.</strong> Reference implementation only. It conflicts with how we store things at the foundation. Valuable as a map of that field and as evidence about what the field cannot yet do.</p>
+    </div>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">08 / E</div>
+  <div class="body">
+    <div class="entry">
+      <div class="tag"><span class="letter">E</span><h2 style="flex:1">What exists in the open</h2>
+        <span class="rate">weight <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i></span></span></div>
+    </div>
+    <p style="margin-top:16px">Nothing open does the whole job. The pieces exist separately, at very different levels of seriousness.</p>
+    <div class="grid g2" style="margin-top:20px">
+      <div class="verdict">
+        <h4>Closest to Delphi's storage claim</h4>
+        <p><strong>Graphiti / Zep.</strong> An open graph of facts where <em>every fact carries both the moment it became true and the moment it was superseded</em>, so a contradicted fact is marked no-longer-true rather than deleted. You can ask what is true now, or what was true then. This is the open shape of the thing Delphi describes and will not detail.</p>
+        <p><strong>It does not belong in the extract-and-discard group, and a first reading put it there.</strong> The raw material is kept as the ground truth and every derived fact traces back to the passage it came from. That is point-don't-replace &mdash; our own stance &mdash; and it is materially different from Bi-Mem, which summarises a turn and drops the original.</p>
+        <p>Its contradiction handling is mechanical rather than asking a model to summarise the conflict away, which avoids a failure we have hit elsewhere. And its search is word-matching and meaning-matching together with a reranking pass, at under a second: the fourth independent source saying ours is behind.</p>
+        <p class="sub">Every headline number in this category is published by the vendor whose system wins. Treat them as claims.</p>
+      </div>
+      <div class="verdict">
+        <h4>Closest to our whole ambition</h4>
+        <p><strong>Second Me.</strong> Runs locally, trains on your own material, on the same model family our style stage uses. The only open project that trains rather than only searches, which is the half of our system nobody else attempts.</p>
+        <p>Read properly, it comes apart in ways that matter, and one part of it is worth taking anyway. <strong>Its own entry is below.</strong></p>
+      </div>
+      <div class="verdict">
+        <h4>The memory layer, commodity</h4>
+        <p><strong>Mem0, Letta, Cognee.</strong> Bolt onto an existing agent. Widely adopted. All of them extract facts and drop the original.</p>
+      </div>
+      <div class="verdict">
+        <h4>The role-play family, academic</h4>
+        <p>Training models to <em>be</em> a character is nominally our stage B. Two reasons it may not transfer: they target fictional or historical figures where there is no ground truth to contradict, and they are scored on staying in character rather than on being mistaken for a specific living person.</p>
+      </div>
+    </div>
+    <p class="note" style="margin-top:20px">Below that sits a tier of small projects doing "chat with a YouTube channel" with meaning-based search and citations. Useful only as confirmation that the search half of our stage A is commodity, and that what actually differentiates us is the parts nobody has built.</p>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">09 / F</div>
+  <div class="body">
+    <div class="entry">
+      <div class="tag"><span class="letter">F</span><h2 style="flex:1">Raw beats summarised</h2>
+        <span class="rate">weight <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span></div>
+      <p class="venue">Leonard Kinzinger and Jochen Hartmann &middot; TU Munich &middot; arXiv 2606.04592 &middot; June 2026</p>
+    </div>
+    <p style="margin-top:16px">Everyone else here builds a twin from material collected <em>in order to</em> build a twin. These authors point out that no company has that. What companies have is years of accumulated, uneven records gathered for other reasons. So they built twins from a long-running household survey never designed for the purpose.</p>
+    <p>Then they did something the rest of the collection does not. Instead of building one system and reporting how well it did, <strong>they built the same twin many different ways and compared the ways against each other</strong> &mdash; several models, several amounts of information, two ways of handing it over, with and without letting the model think first. Every combination, scored on the same held-out questions from the same people.</p>
+  </div>
+
+  <figure class="wide">
+    <div class="fig">
+      <svg viewBox="0 0 900 270" role="img" aria-label="The same source material handed to a model two ways: summarised into prose, or left as raw question-and-answer pairs. The raw version won in every combination tested.">
+        <rect class="nb" x="18" y="106" width="146" height="52" rx="2"/>
+        <text class="nt" x="30" y="128">years of answers</text>
+        <text class="nt" x="30" y="144">from one real person</text>
+
+        <path class="ed" d="M164,124 H198 V72 H232" marker-end="url(#a1)"/>
+        <path class="ed-o" d="M164,140 H198 V196 H232" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-w" x="238" y="44" width="192" height="56" rx="2"/>
+        <text class="nk" x="250" y="62">path one</text>
+        <text class="nt" x="250" y="80">summarise it into</text>
+        <text class="nt" x="250" y="94">a good description</text>
+
+        <rect class="nb nb-o" x="238" y="168" width="192" height="56" rx="2"/>
+        <text class="nk" x="250" y="186">path two</text>
+        <text class="nt" x="250" y="204">leave it alone: the actual</text>
+        <text class="nt" x="250" y="218">answers, word for word</text>
+
+        <path class="ed" d="M430,72 H470" marker-end="url(#a1)"/>
+        <path class="ed-o" d="M430,196 H470" marker-end="url(#a1)"/>
+
+        <text class="nk" x="476" y="30">every combination they tried</text>
+        <g>
+          <rect x="476" y="44" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="506" y="44" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="536" y="44" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="566" y="44" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="596" y="44" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="626" y="44" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="476" y="74" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="506" y="74" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="536" y="74" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="566" y="74" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="596" y="74" width="24" height="24" rx="2" class="nb nb-w"/>
+          <rect x="626" y="74" width="24" height="24" rx="2" class="nb nb-w"/>
+        </g>
+        <g>
+          <rect x="476" y="168" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="506" y="168" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="536" y="168" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="566" y="168" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="596" y="168" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="626" y="168" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="476" y="198" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="506" y="198" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="536" y="198" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="566" y="198" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="596" y="198" width="24" height="24" rx="2" class="nb nb-o"/>
+          <rect x="626" y="198" width="24" height="24" rx="2" class="nb nb-o"/>
+        </g>
+
+        <text class="nt" x="676" y="66" fill="var(--warn)" font-weight="600">lost</text>
+        <text class="nt" x="676" y="82" fill="var(--warn)" font-weight="600">every time</text>
+        <text class="nt" x="676" y="190" fill="var(--ours)" font-weight="600">won</text>
+        <text class="nt" x="676" y="206" fill="var(--ours)" font-weight="600">every time</text>
+
+        <rect x="18" y="242" width="800" height="1" fill="var(--line)"/>
+        <text class="ns" x="18" y="262">why: compressing an answer into good prose replaces a precise thing with an approximate one, and you cannot get it back</text>
+      </svg>
+    </div>
+    <figcaption>Not on average, not mostly. Every model, with thinking and without, at full depth.</figcaption>
+  </figure>
+
+  <div class="mark"></div>
+  <div class="body">
+    <p style="margin-top:22px">They say plainly why. The summary is good prose, but compressing a scale answer into a sentence <strong>collapses a precise value into an approximate description</strong>. Their own example: a person picked the very lowest of six options, a flat "does not apply at all", and the summary rendered it as a soft "she does not really". The summary is fluent, shorter, cheaper, and it has quietly destroyed the thing the twin needed.</p>
+
+    <p class="note us"><strong>This is the strongest evidence anywhere in the collection for our decision to keep his words and never extract from them.</strong> It is a direct head-to-head between the two options, which nobody else in this batch runs, and the raw side wins outright. Bi-Mem builds its entire hierarchy on the assumption that the distilled version is the useful one; this paper tests that assumption and finds against it.</p>
+
+    <p>The mechanism they name is ours, arrived at independently. We say a summary of what he said cannot be spoken in his voice. They say a summary of what she answered cannot reproduce her answer. Same loss, two different consequences of it.</p>
+
+    <h3 style="margin-top:26px">Two more findings worth holding</h3>
+    <ul>
+      <li><strong>Raw costs several times more to hand over</strong>, which is the honest trade and the reason people reach for summaries. Our shape &mdash; keep it raw, but fetch only the part you need &mdash; is a third option neither of them tested.</li>
+      <li><strong>More material about the person helps, then flattens out</strong> well before you have used all of it. Worth knowing before assuming more videos is automatically better.</li>
+      <li><strong>Letting the model think first sharpened who-resembles-whom without making any individual answer more accurate.</strong> A useful warning: extra reasoning can improve a ranking without improving a single output.</li>
+    </ul>
+
+    <div class="verdict" style="margin-top:20px">
+      <p><strong>Where it does not transfer.</strong> Their task is predicting which box a person ticks. Ours is producing prose in that person's voice. A twin that picks the right option has not demonstrated it can say anything. And their "raw" is still curated question-and-answer pairs, not seventeen hours of someone talking about other things.</p>
+      <p><strong>Verdict.</strong> Adopt as supporting evidence. It does not change our architecture; it defends one we already chose, against the one paper here that assumes the opposite.</p>
+    </div>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">10 / G</div>
+  <div class="body">
+    <div class="entry">
+      <div class="tag"><span class="letter">G</span><h2 style="flex:1">Sounding right is not the same as passing</h2>
+        <span class="rate">weight <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span></span></div>
+      <p class="venue">Rebira Jemama and Rajesh Kumar &middot; Bucknell University &middot; arXiv 2509.24930 &middot; September 2025</p>
+    </div>
+    <p style="margin-top:16px"><strong>The first paper in the collection whose entire subject is our stage B.</strong> Not "does it know what the person thinks" but "does it write like them", asked directly.</p>
+    <p>They build a cheap detector of whether two pieces of text share an author, then use it to score five models imitating a writer under four different setups.</p>
+  </div>
+
+  <figure class="wide">
+    <div class="fig">
+      <svg viewBox="0 0 900 290" role="img" aria-label="Two measures plotted against four prompting setups: how convincingly the text reads as the author rises steeply, while how unpredictable the text is stays flat and far below the human level.">
+        <line class="axl" x1="90" y1="40" x2="90" y2="212"/>
+        <line class="axl" x1="90" y1="212" x2="820" y2="212"/>
+
+        <text class="nk" x="90" y="28">two things that do not move together</text>
+
+        <line x1="90" y1="62" x2="820" y2="62" stroke="var(--ours)" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text class="ns" x="700" y="55" fill="var(--ours)">how unpredictable a real human is</text>
+
+        <path d="M150,198 L330,96 L510,72 L690,60" class="ed-a" stroke-width="2.5"/>
+        <circle cx="150" cy="198" r="5" fill="var(--ochre)"/><circle cx="330" cy="96" r="5" fill="var(--ochre)"/>
+        <circle cx="510" cy="72" r="5" fill="var(--ochre)"/><circle cx="690" cy="60" r="5" fill="var(--ochre)"/>
+        <text class="nt" x="700" y="84" fill="var(--ochre)">does it read as them?</text>
+
+        <path d="M150,178 L330,150 L510,154 L690,152" stroke="var(--other)" stroke-width="2.5" fill="none"/>
+        <circle cx="150" cy="178" r="5" fill="var(--other)"/><circle cx="330" cy="150" r="5" fill="var(--other)"/>
+        <circle cx="510" cy="154" r="5" fill="var(--other)"/><circle cx="690" cy="152" r="5" fill="var(--other)"/>
+        <text class="nt" x="700" y="174" fill="var(--other)">is it as unpredictable</text>
+        <text class="nt" x="700" y="188" fill="var(--other)">as them?</text>
+
+        <text class="ns" x="150" y="232" text-anchor="middle">describe</text>
+        <text class="ns" x="150" y="246" text-anchor="middle">the style</text>
+        <text class="ns" x="330" y="232" text-anchor="middle">show one</text>
+        <text class="ns" x="330" y="246" text-anchor="middle">real sample</text>
+        <text class="ns" x="510" y="232" text-anchor="middle">show two</text>
+        <text class="ns" x="510" y="246" text-anchor="middle">long samples</text>
+        <text class="ns" x="690" y="232" text-anchor="middle">give half a real passage</text>
+        <text class="ns" x="690" y="246" text-anchor="middle">and let it carry on</text>
+
+        <text class="nk" x="90" y="276">the gap between the two lines never closes, however good the imitation gets</text>
+      </svg>
+    </div>
+    <figcaption>Their headline, and the most important sentence in the collection for us.</figcaption>
+  </figure>
+
+  <div class="mark"></div>
+  <div class="body">
+    <h3 style="margin-top:22px">Three findings, in descending order of use to us</h3>
+
+    <h4 style="margin-top:18px">1 &nbsp; How you ask beats which model you use</h4>
+    <p>Describing the style in words achieved almost nothing, across all five models. Showing one real sample of the author's writing transformed the result. Two long samples was better again. And best of all was not asking at all: give the model the first half of something the author genuinely wrote and let it carry on. Under that setup the detector essentially could not tell the continuation from the original. <strong>The largest model tested was not the best.</strong></p>
+    <p class="note us">Same shape as our own result that prompt wording bought us almost nothing while search strategy bought a great deal: the lever is the setup, not the size. And it is actionable &mdash; our style stage is a trained rewriter that instructs. The strongest baseline in this paper is one we have never tried: establish the voice with real passages and continue.</p>
+
+    <h4 style="margin-top:22px">2 &nbsp; Sounding like the person and being obviously machine-written are separate problems</h4>
+    <p>Even when their detector was fully convinced the imitation was the real author, the text was still <strong>markedly smoother and more predictable than human writing.</strong> Human text is lumpy: it takes odd turns, it is uneven, it surprises. Machine text imitating it is smooth, even when every surface habit has been copied. And <strong>none of the four setups changed this.</strong> Better imitation did not make the output less predictable.</p>
+    <p class="note us"><strong>That is our zero-disfluency finding, measured from a completely different direction</strong> &mdash; a different task, in writing rather than speech. We had ruled out every cheap cause by measurement and were left with an untested hypothesis: a model trained to produce the most likely next word will never produce the unpredictable bit, because the unpredictable bit is by definition not the most likely. This paper measures exactly that gap, names it as a separate axis, and shows it does not close as fidelity improves. It moves our hypothesis from plausible to supported from outside.</p>
+
+    <h4 style="margin-top:22px">3 &nbsp; Same person, different setting, reads as a stranger</h4>
+    <p>Their detector broke down in a specific and telling way when comparing an author's formal writing against their casual writing. Same human, and it repeatedly called them strangers. The authors name this as the limiting factor for real deployment.</p>
+    <p>This is our situation by construction. Our targets are automatic transcripts of someone performing to a camera. Our inputs are a model's tidy prose. That is a register gap before any style question is asked.</p>
+
+    <div class="verdict" style="margin-top:22px">
+      <h4>The large caveat, and it is ours to notice</h4>
+      <p><strong>Their detector is the same kind of instrument our own work already caught being wrong.</strong> It scores by letter patterns and meaning embeddings. We measured a letter-pattern style score giving a flawless result to an output that was one word repeated fifty times &mdash; because repeating the creator's filler is maximally his pattern. Our blind judge, reading actual text, caught what the pattern score could not.</p>
+      <p>This paper has no human judge anywhere in it. So its striking result, that continuation produces text the detector cannot distinguish from the author, reads as <em>the detector cannot tell</em>, which is not the same claim as <em>a person cannot tell</em>. Their own predictability finding is arguably the evidence that something is still off, which makes the paper quietly self-undermining in a useful way.</p>
+      <p>It is also written work, not speech, at a small venue. Take the ideas; do not take it as a settled instrument.</p>
+    </div>
+
+    <h3 style="margin-top:26px">What it does for our unresolved measurement question</h3>
+    <p>Our two internal documents disagree about what to measure style with. One says use the standard authorship models everyone publishes against; the other says those do not survive speech and topic separation, and prefers counting concrete habits.</p>
+    <p>This paper lands on the second side, offers a cheap protocol that needs no training, and adds a third axis neither of ours has: <strong>predictability, measured independently of style fidelity.</strong></p>
+    <p class="note key">That third axis is new to us, and it is not gameable the way the others are. An output that repeats one word fifty times is maximally <em>predictable</em>, so it would be caught rather than rewarded. It also runs cheaply, which matters a great deal given that our current style measurement is slow enough to foreclose a search before it starts.</p>
+  </div>
+</section>
+
+
+<section class="rail">
+  <div class="mark">11 / H</div>
+  <div class="body">
+    <div class="entry">
+      <div class="tag"><span class="letter">H</span><h2 style="flex:1">Second Me</h2>
+        <span class="rate">weight <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span></span></div>
+      <p class="venue">Wei, Ying, Gao, Bao, Tao, Shang &middot; Mindverse.ai and UC San Diego &middot; arXiv 2503.08102 &middot; March 2025 &middot; code Apache-2.0</p>
+    </div>
+    <p style="margin-top:16px">The only open project in the collection that <strong>trains</strong> a model on a person rather than only searching their material. That is the half of our system nobody else attempts, which is why it was worth reading properly.</p>
+    <p>It is a personal assistant that represents you to other services: answering questions from your own history, filling in what you would have said when you query something else, and criticising what an external system sends back. Three layers of memory &mdash; your raw material, summaries of it in plain language, and at the top memories held in the model's weights rather than in words at all.</p>
+    <p class="lede" style="margin-top:20px">The reason to read it, and the reason not to adopt it, are both in one picture.</p>
+  </div>
+
+  <figure class="wide">
+    <div class="fig">
+      <svg viewBox="0 0 900 290" role="img" aria-label="A model generates the training data, generates the evaluation data, and scores the result. Nothing in the loop touches ground truth.">
+        <rect class="nb" x="18" y="122" width="126" height="46" rx="2"/>
+        <text class="nt" x="30" y="142">a person's</text>
+        <text class="nt" x="30" y="158">raw material</text>
+        <path class="ed" d="M144,145 H188" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-t" x="194" y="118" width="150" height="54" rx="2"/>
+        <text class="nt" x="206" y="140">training examples,</text>
+        <text class="nt" x="206" y="156">written by a model</text>
+        <path class="ed" d="M344,145 H388" marker-end="url(#a1)"/>
+
+        <rect class="nb nb-a" x="394" y="96" width="150" height="46" rx="2"/>
+        <text class="nt" x="406" y="116">ordinary training</text>
+        <text class="ns" x="406" y="132">copy the examples</text>
+
+        <rect class="nb nb-o" x="394" y="152" width="150" height="54" rx="2"/>
+        <text class="nt" x="406" y="174">preference training</text>
+        <text class="ns" x="406" y="190">prefer this over that</text>
+        <path class="ed" d="M469,142 V148" marker-end="url(#a1)"/>
+
+        <path class="ed" d="M544,168 H588" marker-end="url(#a1)"/>
+        <rect class="nb nb-t" x="594" y="144" width="150" height="48" rx="2"/>
+        <text class="nt" x="606" y="166">scored by a model,</text>
+        <text class="nt" x="606" y="182">on questions a model wrote</text>
+
+        <path class="ed-d" d="M744,168 H800 V60 H480 V88" marker-end="url(#a1)"/>
+        <text class="nk" x="500" y="52">the score decides which preference pairs get made next</text>
+
+        <rect x="194" y="228" width="550" height="44" rx="2" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.2"/>
+        <text class="nt" x="210" y="248" fill="var(--warn)">a model writes the lessons, writes the exam, and marks the paper.</text>
+        <text class="nt" x="210" y="264" fill="var(--warn)">nothing in the loop touches anything a human actually did.</text>
+      </svg>
+    </div>
+    <figcaption>The green box is the part worth stealing. The red box is why none of the numbers around it can be believed.</figcaption>
+  </figure>
+
+  <div class="body">
+    <h3 style="margin-top:22px">Why not to adopt it</h3>
+    <ul>
+      <li><strong>The project is abandoned.</strong> Last real code change May 2025, one documentation edit that September, nothing since. Sixteen months, and over a hundred open issues. Fifteen thousand stars is launch-week attention, not use. <em>A dead repository with fifteen thousand stars is a worse bet than a live one with five hundred.</em></li>
+      <li><strong>The evaluation eats its own tail.</strong> The training examples are generated by a model. The test questions are generated by <em>the same pipeline</em>, held apart from the training set but manufactured identically. The answers are scored by a model against a written rubric. At no point does anything touch what a person actually said or chose.</li>
+      <li><strong>They admit the judge rewards length, and their own showcase example is an instance of it.</strong> The paper notes that the scoring model "favors longer responses, particularly in metrics like Completeness and Empathy" &mdash; then presents, as the winning output, a passage markedly longer and denser with terminology than the alternative it beat. This is the failure we hit ourselves, where a measure rated a bad output above a good one.</li>
+      <li><strong>And the score sits at its ceiling.</strong> Their human check lands at 0.95 and "close to 1". A measure pinned at the top cannot tell "barely moved" from "did not move", so it cannot steer anything &mdash; the rule we already hold ourselves to.</li>
+      <li><strong>Every number comes from one person, and that person works there.</strong> The sample size is stated, in an appendix: the results are those of "an internal staff member who has agreed to make their test results public", with 132 notes and 62 to-do items. Two hundred and forty test items, one employee. Set that against a thousand strangers with held-out answers they really gave.</li>
+      <li><strong>No outside comparison.</strong> Every table compares their own variants with each other. Nothing against a plain model, or against search alone.</li>
+      <li><strong>They argue their own measure is too harsh on them</strong> &mdash; that the real quality exceeds what the scores show. An unusual thing for a paper to claim about itself.</li>
+      <li><strong>The memory layers are the summarise-and-discard pattern</strong>, with weights at the top. Same shape as Bi-Mem, and it cuts against the storage decision that now has outside evidence behind it.</li>
+      <li><strong>The task is not ours.</strong> No style evaluation anywhere in it. No voice. It represents you to software, not to a listener.</li>
+      <li><strong>The applications section is a pitch.</strong> It claims that joining human and machine nodes raises network efficiency by three to five orders of magnitude, with no source, and proposes a token-based marketplace for personal cognitive assets. Worth knowing before weighting anything else in the paper.</li>
+    </ul>
+
+    <div class="note key">
+      <h4>The exception, and it is not small</h4>
+      <p><strong>They trained on preferences, not only on examples, and it helped on every measure they report.</strong> About a fifth of their training material was pairs of the form <em>this answer over that one</em> rather than <em>copy this answer</em>.</p>
+      <p style="margin-bottom:0">That matters for one specific reason. Preference training is <strong>not</strong> next-word prediction. It does not carry the property that deletes an optional, unpredictable word &mdash; which is the property that survived every elimination we ran on disfluency, and the route the style literature independently names as the answer. Their base model and fine-tuning method are the same family and the same technique as our own style stage, so <strong>the shape of the recipe transfers even though none of the results do</strong>.</p>
+    </div>
+
+    <div class="verdict" style="margin-top:20px">
+      <p><strong>Read one section: how they build preference pairs out of one person's own material.</strong> Skip the rest and do not build on the code.</p>
+      <p><strong>Carry this caveat with it.</strong> Their improvement is measured on the circular score, so this is evidence the pipeline is <em>buildable</em>, not evidence it <em>works</em>. A worked example, not a result.</p>
+      <p><strong>Downgraded.</strong> A first pass rated this worth a proper look, on the strength of being the only open project that trains rather than searches. That claim survives and means much less than it sounded.</p>
+      <p style="margin-bottom:0"><strong>Credit where it is due:</strong> the limitations section says it plainly &mdash; "large-scale evaluation is constrained by limited real-world user feedback". The paper does not hide what it could not do. Read front to back including appendices, 2026-09-15.</p>
+    </div>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">12 / set</div>
+  <div class="body">
+    <h2>What the collection says as a set</h2>
+    <p class="sub">Six things that only appear when the sources are put side by side.</p>
+  </div>
+
+  <div class="body" style="margin-top:20px">
+    <div class="find">
+      <div class="n">1</div>
+      <div>
+        <h3>Nobody has solved sounding like the person, and only two even measured it</h3>
+        <p>Delphi does not disclose how it handles voice. Park and colleagues do not model it, because forced-choice survey answers have no voice. Bi-Mem does not touch it. The role-play literature scores staying in character, not being a specific living person.</p>
+        <p>Two measured it, and both came back negative. One found voice and tone was their <strong>worst</strong> axis across every design they tried, and described the failure as flattening. The other got imitation good enough to fool its own detector, then showed the output was still far smoother than human writing, with nothing closing the gap.</p>
+        <p style="margin-bottom:0"><strong>Two negative results from opposite directions, and they agree: the surface can be copied and something underneath still does not come across.</strong> That is the opportunity, and it is why our measurement problem has no off-the-shelf answer. We are not failing to find the standard instrument. There is not one.</p>
+      </div>
+    </div>
+
+    <div class="find">
+      <div class="n">2</div>
+      <div>
+        <h3>Everyone who measures honestly normalises against the person's own inconsistency</h3>
+        <p>One reports how close the agent got to how well the person agreed with themselves a fortnight later. The other reports the same-human-twice comparison as the ceiling row of its own results table. Both refuse to treat perfection as the target, because a person does not reach it against themselves.</p>
+        <p style="margin-bottom:0">We already do this on one axis: our blind style judge aims at a coin flip. <strong>We do it nowhere on the content side</strong>, and we have no idea what our creator's own self-consistency is. Every content number we have is measured against an unreachable ceiling.</p>
+      </div>
+    </div>
+
+    <div class="find">
+      <div class="n">3</div>
+      <div>
+        <h3>The storage question splits the field, and one paper now settles it our way</h3>
+        <p>Bi-Mem extracts facts and builds a description. Mem0 extracts. Letta extracts. Delphi's founder describes a graph, which is extraction. Park and colleagues dodge it by storing nothing at all. Almost everyone assumes the distilled version is the useful one.</p>
+        <p><strong>Kinzinger and Hartmann actually tested it, and the raw material won in every single configuration.</strong> The reason they give is the reason we gave: compressing an answer into good prose quietly replaces a precise thing with an approximate one.</p>
+        <p style="margin-bottom:0">That changes the standing of our decision. It was a position argued from a consequence nobody else has to care about &mdash; that a summary cannot be spoken in the person's voice. It now also has outside evidence behind it on a task where voice is irrelevant, which is a stronger place to stand. If we ever loosen it, this is the paper that has to be answered.</p>
+      </div>
+    </div>
+
+    <div class="find">
+      <div class="n">4</div>
+      <div>
+        <h3>Composing evidence across sources is unsolved everywhere</h3>
+        <p>Our notes say one search never returns a complete answer spread across two videos. Bi-Mem's table shows the same failure, by a wide margin, for the best system in a field of seven purpose-built architectures.</p>
+        <p style="margin-bottom:0"><strong>This is not a defect of our retriever. It is where the field is.</strong> It moves the question from fixing our ranking to asking what shape of system assembles composed evidence at all.</p>
+      </div>
+    </div>
+
+    <div class="find">
+      <div class="n">5</div>
+      <div>
+        <h3>Production is a one-second budget and we are not built for it</h3>
+        <p>Delphi hits about a second end to end, with search taking well under a third of it, by looking once and then writing. Our stage A makes several sequential model calls just to decide what to search for, then another to answer, then hands off to a local style model, then to a voice service.</p>
+        <p style="margin-bottom:0"><strong>This is a research loop, not a serving path.</strong> Worth stating as a known property rather than discovering later. The cheerful version of the same point: their retention figure says voice is worth building toward, not treating as polish.</p>
+      </div>
+    </div>
+
+    <div class="find">
+      <div class="n">6</div>
+      <div>
+        <h3>Predictability is a separate axis, and nobody here was looking for it</h3>
+        <p>It falls out sideways. They set out to measure whether imitation works, found it does by their own instrument, and noticed on the way that the output stayed markedly smoother than the human writing it copied, however good the imitation got.</p>
+        <p>Set that beside the flattening finding, and beside our creator stammering while every model we tried produced none of it, and the three are plausibly one phenomenon seen three ways. <strong>A model asked for the most likely continuation will not produce the parts of a person that were not likely.</strong></p>
+        <p style="margin-bottom:0">If that holds it is a property of the objective, not a defect to be fixed with better data or a bigger model &mdash; both of which we have already ruled out by measurement. And it suggests an instrument we do not have: cheap, needing no human, and one that a degenerate repeating output fails rather than wins.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">13 / us</div>
+  <div class="body">
+    <h2>Where we actually sit</h2>
+  </div>
+  <div class="wide tw" style="margin-top:16px">
+    <table>
+      <thead><tr><th style="width:21%">axis</th><th style="width:31%">the field</th><th style="width:31%">us</th><th>ahead</th></tr></thead>
+      <tbody>
+        <tr><td>what is stored</td><td>mostly extract; the one paper that tested it found raw wins</td><td>keep his words, point at them</td><td class="ours-c">us, now with evidence not just an argument</td></tr>
+        <tr><td>finding the right passage</td><td>meaning-based, or both together</td><td>shared words only</td><td class="them-c">them</td></tr>
+        <tr><td>deciding what to search for</td><td>one shot at the raw question</td><td>the model writes its own searches, repeatedly</td><td class="ours-c">us</td></tr>
+        <tr><td>answers spread across sources</td><td>unsolved</td><td>unsolved</td><td class="none-c">nobody</td></tr>
+        <tr><td>answering <em>as</em> the person</td><td>prompting, undisclosed, or nothing</td><td>a separately trained stage</td><td class="ours-c">us, and it currently fails</td></tr>
+        <tr><td>measuring voice</td><td>two negative results total</td><td>a blind judge that works, on a contested foundation</td><td class="ours-c">us, unusually</td></tr>
+        <tr><td>how to elicit a voice</td><td>showing real samples beats describing; continuing a real passage beats both</td><td>a trained rewriter that instructs</td><td class="them-c">them, and we have not tried their best setup</td></tr>
+        <tr><td>predictability as its own axis</td><td>measured once, incidentally</td><td>not measured at all</td><td class="them-c">them</td></tr>
+        <tr><td>normalising the score</td><td>against the person's own consistency</td><td>only on the style axis</td><td class="them-c">them</td></tr>
+        <tr><td>speed</td><td>about a second, demonstrated</td><td>many round trips</td><td class="them-c">them, by a lot</td></tr>
+        <tr><td>consent and revocation</td><td>audit logs, withdrawal, deliberate non-release</td><td>nothing yet</td><td class="them-c">them</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="mark"></div>
+  <div class="body">
+    <p class="note key" style="margin-top:20px"><strong>The honest summary.</strong> Our search is behind, our engineering is behind, our governance does not exist &mdash; and the two things nobody else is doing are the two things we are doing, one of which does not work yet.</p>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">14 / next</div>
+  <div class="body">
+    <h2>What to read, in order</h2>
+    <p class="sub">Ordered by what unblocks the most, not by quality.</p>
+
+    <div style="margin-top:18px">
+      <div class="q"><div class="n">01</div><div class="t"><strong>Park and colleagues in full</strong>, method and appendix<span class="why">the reference baseline, and the normalising idea needs the details</span></div></div>
+      <div class="q"><div class="n">02</div><div class="t"><strong>Wang and Siu's related work</strong>, plus the two training-based citations it names<span class="why">the map of everything negative in this area, and the only pointer to training rather than prompting for fidelity</span></div></div>
+      <div class="q"><div class="n">03</div><div class="t"><strong>Jemama and Kumar in full</strong>, and the machine-text detection work it points at<span class="why">the only paper on our stage B; the predictability axis is new to us</span></div></div>
+      <div class="q"><div class="n">04</div><div class="t"><strong>The hypothetical-question retrieval line</strong><span class="why">what Delphi's enrichment idea rests on, against our measured search gap</span></div></div>
+      <div class="q"><div class="n">05</div><div class="t"><strong>The shared twin-building datasets</strong> named by Kinzinger and Hartmann<span class="why">the closest thing to a standard corpus for this problem, and we have none</span></div></div>
+      <div class="q"><div class="n">06</div><div class="t"><strong>The memory-system family and its benchmark</strong><span class="why">what every memory claim is scored on, worth understanding before we claim a retrieval result is good</span></div></div>
+      <div class="q"><div class="n">07</div><div class="t"><strong>Second-Me</strong> and its two papers<span class="why">the only open project that trains rather than only searches</span></div></div>
+      <div class="q"><div class="n">08</div><div class="t"><strong>Graphiti / Zep</strong><span class="why">only if representing that he changed his mind becomes a requirement</span></div></div>
+      <div class="q"><div class="n">09</div><div class="t">the role-play family<span class="why">background; likely does not transfer to a living person</span></div></div>
+    </div>
+
+    <p class="note bad" style="margin-top:24px"><strong>Deliberately not in the queue:</strong> more Delphi coverage. The public record is exhausted, it is two incompatible halves, and further press will not resolve them.</p>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">15 / open</div>
+  <div class="body">
+    <h2>What this reading suggests we do not know</h2>
+    <p>None of this has been written into our register. A person decides what is real.</p>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="verdict"><h4>already in the register, now with outside support</h4>
+        <ul style="margin:8px 0 0">
+          <li>our search misses passages it was generated from &mdash; and Delphi indexes the very artifact we already built and only train on</li>
+          <li>answers spread across sources never assemble &mdash; reframe from "our ranking" to "this shape of retrieval"</li>
+          <li>no model emits disfluency &mdash; corroborated twice, from two directions</li>
+          <li>keeping his words rather than extracting &mdash; now has a head-to-head result behind it</li>
+        </ul>
+      </div>
+      <div class="verdict"><h4>new, surfaced by this reading</h4>
+        <ul style="margin:8px 0 0">
+          <li>we have never tried the setup that worked best elsewhere for eliciting a voice: establish it with real passages and continue, rather than instruct a rewrite</li>
+          <li>predictability is a candidate instrument &mdash; cheap, needs no human, and a degenerate output fails it rather than scoring perfectly</li>
+          <li>we do not know our creator's own self-consistency, so every content number is against an unreachable ceiling</li>
+          <li>there is no serving-latency budget anywhere in our system</li>
+          <li>no consent, audit or revocation story exists, and both serious sources treat it as part of the architecture</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="rail">
+  <div class="mark">16 / stages</div>
+  <div class="body">
+    <h2>Naming the stages, and what we cannot yet answer about them</h2>
+    <p>A first attempt at cutting the pipeline into stages that can be argued about separately. <strong>Not yet qualified</strong> &mdash; a stage is only real when breaking it moves a measurement and points back at it, and that test has not been run here.</p>
+    <p class="note key"><strong>The first correction the attempt produced.</strong> What feels like three stages &mdash; holding his persona, searching, writing the answer &mdash; is one. They share a single prompt and happen inside the same calls, with no artifact passing between them. So they cannot be measured or swapped independently. That is a finding about the seams being too coarse, not a tidying-up.</p>
+  </div>
+
+  <figure class="wide">
+    <div class="fig">
+      <svg viewBox="0 0 900 250" role="img" aria-label="Four build stages and three serving stages, with the three concerns that share one prompt drawn inside a single box.">
+        <text class="nk" x="18" y="18">build &mdash; once per creator</text>
+        <line class="axl" x1="18" y1="26" x2="430" y2="26"/>
+        <rect class="nb" x="18" y="42" width="196" height="38" rx="2"/>
+        <text class="nt" x="30" y="66"><tspan class="nk">1</tspan>  cut into chunks</text>
+        <rect class="nb" x="18" y="88" width="196" height="38" rx="2"/>
+        <text class="nt" x="30" y="112"><tspan class="nk">2</tspan>  describe each video</text>
+        <rect class="nb" x="18" y="134" width="196" height="38" rx="2"/>
+        <text class="nt" x="30" y="158"><tspan class="nk">3</tspan>  choose the passages</text>
+        <rect class="nb" x="18" y="180" width="196" height="38" rx="2"/>
+        <text class="nt" x="30" y="204"><tspan class="nk">4</tspan>  mint the training data</text>
+
+        <path class="ed-d" d="M214,61 H300" marker-end="url(#a1)"/>
+        <path class="ed-d" d="M214,153 H300" marker-end="url(#a1)"/>
+        <path class="ed-d" d="M214,199 H260 V236 H700 V226" marker-end="url(#a1)"/>
+
+        <text class="nk" x="320" y="18">serve &mdash; per question</text>
+        <line class="axl" x1="320" y1="26" x2="884" y2="26"/>
+
+        <rect class="nb nb-a" x="320" y="42" width="270" height="130" rx="2"/>
+        <text class="nt" x="334" y="64" font-weight="600">A &nbsp;one model, one loop</text>
+        <line class="axl" x1="334" y1="74" x2="576" y2="74"/>
+        <text class="ns" x="334" y="94">holds his persona and the passages</text>
+        <text class="ns" x="334" y="114">decides what to search for, repeatedly</text>
+        <text class="ns" x="334" y="134">writes the answer</text>
+        <text class="nk" x="334" y="158">no boundary between these three</text>
+
+        <path class="ed-a" d="M590,107 H636" marker-end="url(#a2)"/>
+        <rect class="nb nb-w" x="642" y="84" width="116" height="46" rx="2"/>
+        <text class="nt" x="654" y="104">B &nbsp;restyle to</text>
+        <text class="nt" x="654" y="120">sound spoken</text>
+        <path class="ed-a" d="M758,107 H790" marker-end="url(#a2)"/>
+        <rect class="nb" x="796" y="84" width="88" height="46" rx="2"/>
+        <text class="nt" x="808" y="110">C &nbsp;voice</text>
+
+        <text class="ns" x="320" y="200">what felt like stages 2, 3 and 4 is the single box A. The two genuinely missing from the</text>
+        <text class="ns" x="320" y="216">first sketch were the voice, and the offline build of the training data, which is where the</text>
+        <text class="ns" x="320" y="232">largest failure so far originated.</text>
+      </svg>
+    </div>
+    <figcaption>Dashed lines are artifacts handed over once. Solid lines are per-question.</figcaption>
+  </figure>
+
+  <div class="body" style="margin-top:8px">
+    <h3 style="margin-top:22px">Two things found while checking these questions</h3>
+    <p class="note bad"><strong>The per-video description is used nowhere when the system actually runs.</strong> The server never switches it on, and the one path that would use it &mdash; saying what he <em>does</em> cover when declining &mdash; sits inside a branch the server also never enables. It costs a model call per video to build and is dead in the deployed path.</p>
+    <p class="note bad"><strong>Our own status note about the passages is stale.</strong> It records them as automatically picked and the curation as untested. On disk there are eighteen, hand-curated, and a scored experiment named after exactly that. The work was done and the status line never caught up &mdash; which is the failure mode our own working rules warn about.</p>
+  </div>
+</section>
+
+<section class="rail">
+  <div class="mark">17 / open</div>
+  <div class="body">
+    <h2>The questions, and whether the reading answers them</h2>
+    <p class="sub">Three marks: <span style="color:var(--ours);font-weight:600">answered</span> by work in this collection, <span style="color:var(--ochre);font-weight:600">partly</span> answered, or <span style="color:var(--warn);font-weight:600">open</span> &mdash; meaning nobody here has addressed it and we have not measured it either.</p>
+  </div>
+
+  <div class="wide tw" style="margin-top:18px">
+    <table>
+      <thead><tr><th style="width:40%">question</th><th style="width:90px">status</th><th>where it stands</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Why cut into fixed overlapping pieces?</strong> What was the hypothesis?</td>
+            <td class="ours-c">answered</td>
+            <td>There was no hypothesis of ours. It came from a paper finding fixed pieces beat meaning-based ones on retrieval, evidence and generation, and was filed as settled and creator-independent. <em>Never tested on our data.</em></td></tr>
+
+        <tr><td><strong>What is the per-video description for?</strong> Is it a higher-level search?</td>
+            <td class="ours-c">answered</td>
+            <td>Intended as a bridge from the asker's words to his. Measured in front of the searcher and <strong>rejected</strong>: questions about him personally regressed badly, because it indexes topics and says nothing about the man. Now used nowhere at run time.</td></tr>
+
+        <tr><td><strong>Are the generated questions used for anything but style training?</strong></td>
+            <td class="ours-c">answered</td>
+            <td>No. A separate small hand-banded set with ground-truth labels drives evaluation. The ten thousand generated ones only mint style pairs. <strong>Delphi indexes exactly this artifact for search and we do not.</strong></td></tr>
+
+        <tr><td><strong>Why show real passages rather than derive a description of how he talks?</strong></td>
+            <td class="ours-c">answered</td>
+            <td>Now the best-supported decision in the system. One paper measured describing-the-style against showing-real-samples: describing achieved almost nothing across five models. Another found raw beat summarised in every configuration. Ours adds the reason neither needed: a description cannot be read aloud in his voice.</td></tr>
+
+        <tr><td><strong>How were the passages chosen, and how many?</strong> Why not all?</td>
+            <td class="them-c">partly</td>
+            <td>Eighteen, now hand-curated, originally spread across videos skipping the formulaic openings. Not all, because of prompt budget. What triggered the curation was one stock phrase appearing in five of thirty-eight answers. <em>No outside work says how to choose them.</em></td></tr>
+
+        <tr><td><strong>How do the passages help the search?</strong></td>
+            <td class="warn" style="color:var(--warn);font-weight:600">open</td>
+            <td>Probably they do not. They sit in context while queries are written, but nothing isolates the effect. The component actually designed as a search aid was rejected. <strong>A gap in measurement, not only in explanation.</strong></td></tr>
+
+        <tr><td><strong>How does the search work, and why is it forced to happen first?</strong></td>
+            <td class="ours-c">answered</td>
+            <td>Word overlap weighted toward rare words, top six, plus one neighbouring piece either side. Searching first is <strong>enforced in code, not requested</strong>: left free, the model skips the search on topics it assumes are outside his world and answers from its own knowledge, the exact failure this system exists to prevent.</td></tr>
+
+        <tr><td><strong>How many turns, and how does it know to answer like him?</strong></td>
+            <td class="ours-c">answered</td>
+            <td>Two to six model calls: up to five rounds of its own searches, then one to write. It knows from three things in one prompt &mdash; the identity rules, the eighteen passages, and the length and audience directive.</td></tr>
+
+        <tr><td><strong>Would an agent with a harness, looping and tool calls be better?</strong></td>
+            <td class="ours-c">answered</td>
+            <td><strong>It already is one</strong>, and it is the biggest measured win in the system: letting the model write its own searches was worth roughly forty times better prompt wording, in a design where the two cannot be confused. Everyone else in this collection looks once. <em>Untried: more than one tool, a critique pass, and offering the video descriptions as a tool it may call rather than text pushed at it.</em></td></tr>
+
+        <tr><td><strong>What share of the job does the style stage own?</strong></td>
+            <td class="them-c">partly</td>
+            <td>Smaller than it looks. With no archive at all the bare model already produced fluent, correctly-pitched answers with none of his content: it had the voice and not the content. The residual is narrow in counts &mdash; a handful of spoken habits he uses several times more often &mdash; and yet <strong>total in effect</strong>, since the blind judge is never once fooled. That asymmetry is unexplained and nobody outside has measured it.</td></tr>
+
+        <tr><td><strong>How do we get speech disfluencies?</strong></td>
+            <td class="them-c">partly</td>
+            <td>Everything cheap is eliminated by measurement. Reading adds that this is general, not ours, and does not close as imitation improves. Four live ideas below.</td></tr>
+
+        <tr><td><strong>Should disfluencies be added by the big model or the style model?</strong></td>
+            <td class="ours-c">answered</td>
+            <td>Settled negatively for the big model. A frontier model shown six real transcripts and told plainly that he breaks off and restarts produced <strong>none</strong>. So it is not a question of a bigger or better model. It points at a different objective, or at not learning them at all.</td></tr>
+
+        <tr><td><strong>Can the style model carry disfluencies plus the remaining corrections?</strong></td>
+            <td class="warn" style="color:var(--warn);font-weight:600">open</td>
+            <td>There is a conflict to name first. It is trained only on pairs a judge confirmed say the same thing &mdash; explicitly trained to change nothing but voice. Disfluency <em>adds</em> material. One model doing both means teaching it to add some things and not others, which is the distinction the pair judge exists to remove. Either two stages, or the criterion changes on purpose.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="body">
+    <h3 style="margin-top:26px">Four live ideas for disfluency, cheapest first</h3>
+    <ol>
+      <li><strong>Ask a model to copy a stammered passage word for word.</strong> One afternoon. If it cannot even copy one, this is a refusal learned in instruction training, not an inability &mdash; and those are the two hypotheses currently tied.</li>
+      <li><strong>Do not learn them at all; add them afterwards</strong>, sampled from his own measured rate and positions. Sidesteps the averaging problem entirely. The risk is that placement is what makes a stammer read as real.</li>
+      <li><strong>Train against a preference signal rather than next-word likelihood.</strong> The literature names this as the answer for style, and it does not have the property that makes an optional, unpredictable word disappear. <strong>Second Me is a worked example</strong> of this on the same base model family and the same fine-tuning method as ours, which makes it the cheapest available template even though its own results cannot be believed.</li>
+      <li><strong>Treat them as marks to control rather than text to learn</strong>, as spontaneous-speech synthesis does with explicit tags.</li>
+    </ol>
+    <p class="note bad" style="margin-top:16px"><strong>A caveat from our own data:</strong> part of what reads as disfluency is transcription error, not speech. One tell the judge picked up on was a mis-transcribed word. So not all of the gap is desirable to close, and deciding which part is real comes before deciding how to produce it.</p>
+  </div>
+</section>
+
+
+<section class="rail">
+  <div class="mark">18 / where</div>
+  <div class="body">
+    <h2>Where disfluency lives, which nobody has decided</h2>
+    <p>He breaks off and restarts constantly. Every model we have tried &mdash; trained, prompted, small, large, local, frontier &mdash; produces none of it. We have eliminated model size, compression, adapter size, learning rate, checkpoint, decoding settings, repetition penalty, more data and more training, each by measurement.</p>
+    <p class="lede" style="margin-top:18px">Checking whether speech markup could help turned up the more useful question. <strong>There are three places this could live, and we have only ever tried one.</strong></p>
+  </div>
+
+  <figure class="wide">
+    <div class="fig">
+      <svg viewBox="0 0 900 280" role="img" aria-label="Three possible homes for disfluency: in the written text, in markup between text and voice, or in the cloned voice itself. Only the first has been tried.">
+        <rect class="nb nb-w" x="18" y="52" width="252" height="96" rx="2"/>
+        <text class="nk" x="32" y="74">route one &mdash; in the words</text>
+        <text class="nt" x="32" y="98">the model writes "the the"</text>
+        <text class="nt" x="32" y="114">as literal text</text>
+        <text class="nt" x="32" y="138" fill="var(--warn)" font-weight="600">tried. zero, everywhere.</text>
+
+        <rect class="nb" x="298" y="52" width="252" height="96" rx="2"/>
+        <text class="nk" x="312" y="74">route two &mdash; in the markup</text>
+        <text class="nt" x="312" y="98">a tag in a slot, decided</text>
+        <text class="nt" x="312" y="114">separately from the words</text>
+        <text class="nt" x="312" y="138" fill="var(--ochre)" font-weight="600">untried. carries pauses, not stammers.</text>
+
+        <rect class="nb nb-o" x="578" y="52" width="304" height="96" rx="2"/>
+        <text class="nk" x="592" y="74">route three &mdash; in the voice itself</text>
+        <text class="nt" x="592" y="98">a voice cloned from audio that</text>
+        <text class="nt" x="592" y="114">contains them may produce them</text>
+        <text class="nt" x="592" y="138" fill="var(--ours)" font-weight="600">untried. the provider says it happens for free.</text>
+
+        <path class="ed-d" d="M144,148 V178" marker-end="url(#a1)"/>
+        <path class="ed-d" d="M424,148 V178" marker-end="url(#a1)"/>
+        <path class="ed-d" d="M730,148 V178" marker-end="url(#a1)"/>
+        <line class="axl" x1="18" y1="186" x2="882" y2="186"/>
+        <text class="nk" x="18" y="206">the pipeline they would attach to</text>
+
+        <rect class="nb" x="18" y="218" width="252" height="40" rx="2"/>
+        <text class="nt" x="32" y="243">writing the answer</text>
+        <rect class="nb" x="298" y="218" width="252" height="40" rx="2"/>
+        <text class="nt" x="312" y="243">between the text and the voice</text>
+        <rect class="nb" x="578" y="218" width="304" height="40" rx="2"/>
+        <text class="nt" x="592" y="243">the cloned voice</text>
+      </svg>
+    </div>
+    <figcaption>We assumed route one because the style stage was the obvious owner. Nobody ever chose it.</figcaption>
+  </figure>
+
+  <div class="body">
+    <h3 style="margin-top:22px">What speech markup can and cannot do</h3>
+    <p>Markup for speech synthesis lets you control <strong>timing, pitch, rate, loudness, emphasis and pronunciation</strong>. You can insert a pause of an exact length, stretch a phrase, lift a syllable.</p>
+    <p class="note bad"><strong>There is no element that inserts "um", and none that repeats a word.</strong> Filled pauses and restarts are words; they have to be in the text. So markup cannot produce his signature disfluency. It <em>can</em> carry the pauses around it, which we currently lose completely &mdash; a real gain, but a different one.</p>
+    <p>Our own provider has also moved. Their newest model <strong>dropped speech markup entirely</strong> and replaced it with bracketed cues. Older models keep it. We have pinned no model anywhere in the tree, so which family we use is still a decision rather than a constraint we inherited.</p>
+
+    <h3 style="margin-top:26px">Why the tag idea is still right, just not as markup</h3>
+    <p>Our open explanation for the zero is that a model trained to pick the most likely next word will delete an optional filler, because a filler whose position is unpredictable is never the most likely word.</p>
+    <p class="note key"><strong>A tag changes the competition.</strong> If the decision at a position is "marker or no marker", that is a small choice in a dedicated slot rather than a fight against the whole vocabulary. This is the same idea as the spontaneous-speech synthesis work sitting unread in our register, which tags disfluencies as symbols for control &mdash; arrived at independently from the other end, which is worth noting.</p>
+
+    <h3 style="margin-top:26px">The finding that reframes the problem</h3>
+    <p class="note us"><strong>A voice cloned from audio containing hesitations may produce them itself, during pauses, the way a real speaker does.</strong> The provider states this. If it holds, disfluency need not be produced by any text stage at all. It lives in the voice, which is where it naturally belongs, because disfluency is a property of speech and not of writing.</p>
+    <p>Two consequences worth taking seriously.</p>
+    <p>Our own notes already record that the rhythm and melody of his speech are lost where the pipeline narrows to text, twice over, and file it as deliberate. <strong>Disfluency is plausibly the same category</strong> &mdash; a speech phenomenon we have been forcing through a text bottleneck. We never questioned that framing because the style stage looked like the obvious owner.</p>
+    <p>And <strong>the number we are chasing may be wrong.</strong> His stammer rate was measured off automatic transcripts, so it records what the transcriber chose to write down, not what he did. The true rate in the audio is almost certainly higher &mdash; and a cloned voice would learn from the audio, not from the transcript.</p>
+
+    <div class="verdict" style="margin-top:22px">
+      <h4>This is a decision, not an exploration</h4>
+      <p>Our own working rules sort unresolved things four ways, and only one of them gets a search. <strong>Which stage owns disfluency is a decision a person settles</strong>, and it bounds everything downstream: what the style model is being asked to learn, whether its content-preserving criterion has to change, and which voice model we commit to.</p>
+      <p style="margin-bottom:0">It is currently filed as an exploration. That may be why it has absorbed a great deal of measurement without closing: we have been searching inside a choice nobody made.</p>
+    </div>
+  </div>
+</section>
+
+
+<section class="rail">
+  <div class="mark">19 / thesis</div>
+  <div class="body">
+    <h2>Why this should produce a better model</h2>
+    <p class="sub">The argument for the two bets, stated so it can be attacked.</p>
+
+    <h3 style="margin-top:26px">The problem, in one sentence</h3>
+    <p class="lede">A model produces its most likely output. <strong>A person is not their most likely output.</strong></p>
+    <p>Three findings in this collection are the same observation from three directions. Agents flatten specific obstacles into generalities and authentic confusion into clean interpretation. Imitations stay about half as unpredictable as the human writing they copy, however convincing they read. And our creator stammers while every model we tried, at every size, trained or prompted, produced exactly none.</p>
+    <p class="note key">Those are not three bugs. They are one property. <strong>The gap between a model and a person is the gap between the average and the particular</strong> &mdash; and it belongs to the objective, not to the scale. More parameters make the average better, not more particular. That is why a larger model did not beat a smaller one on our task, and why a frontier model shown six real transcripts still produced nothing.</p>
+  </div>
+
+  <figure class="wide">
+    <div class="fig">
+      <svg viewBox="0 0 900 300" role="img" aria-label="A model outputs the peak of a distribution while the person sits off-peak. Two mechanisms reach off-peak: measuring the gap and correcting toward it, or factoring the decision small enough to sample.">
+        <path d="M60,230 C160,230 200,80 300,80 C400,80 440,230 560,230" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <path d="M60,230 C160,230 200,80 300,80 C400,80 440,230 560,230 L560,230 L60,230 Z" fill="var(--hair)"/>
+        <line class="axl" x1="60" y1="230" x2="580" y2="230"/>
+        <text class="ns" x="60" y="252">everything the model could plausibly say next</text>
+
+        <line x1="300" y1="80" x2="300" y2="230" stroke="var(--ochre)" stroke-width="2"/>
+        <circle cx="300" cy="80" r="6" fill="var(--ochre)"/>
+        <text class="nt" x="312" y="74" fill="var(--ochre)">what the model says</text>
+        <text class="ns" x="312" y="90">the single most likely thing</text>
+
+        <line x1="452" y1="186" x2="452" y2="230" stroke="var(--ours)" stroke-width="2"/>
+        <circle cx="452" cy="186" r="6" fill="var(--ours)"/>
+        <text class="nt" x="464" y="180" fill="var(--ours)">what he says</text>
+        <text class="ns" x="464" y="196">particular, and not the likeliest</text>
+
+        <path class="ed-o" d="M310,64 C370,44 420,44 448,166" marker-end="url(#a1)"/>
+        <text class="nk" x="352" y="38">the whole problem is this distance</text>
+
+        <line class="axl" x1="620" y1="40" x2="620" y2="264" stroke-dasharray="3 4"/>
+
+        <text class="nk" x="650" y="60">two ways to reach him</text>
+        <rect class="nb nb-a" x="650" y="76" width="234" height="68" rx="2"/>
+        <text class="nt" x="664" y="98" font-weight="600">1 &nbsp;measure the distance</text>
+        <text class="ns" x="664" y="116">put him in as a target, not as</text>
+        <text class="ns" x="664" y="132">context, and step toward him</text>
+
+        <rect class="nb nb-o" x="650" y="160" width="234" height="84" rx="2"/>
+        <text class="nt" x="664" y="182" font-weight="600">2 &nbsp;make the choice small</text>
+        <text class="ns" x="664" y="200">a rare thing cannot win against</text>
+        <text class="ns" x="664" y="216">a whole vocabulary. It can win</text>
+        <text class="ns" x="664" y="232">against three alternatives</text>
+      </svg>
+    </div>
+    <figcaption>Both bets are the same idea at two scales: one moves the system toward him, the other makes the unlikely reachable at all.</figcaption>
+  </figure>
+
+  <div class="body">
+    <h3 style="margin-top:22px">Why loops, and why the metric is the load-bearing part</h3>
+    <p>Everything the field does puts the person into the prompt as <strong>evidence</strong>: a two-hour interview, retrieved passages, a description of how they talk. Both papers here show that adding more evidence reaches a ceiling and does not fix the flattening.</p>
+    <p>It cannot, and the reason is structural. <strong>Evidence conditions the distribution. The averaging happens afterwards, when the model picks from it.</strong> So no quantity of evidence changes what the model does with what it has.</p>
+    <p class="note key">A measurement is different in kind. It turns the person from evidence into a <strong>target</strong> &mdash; and a loop is the only structure that can act on a target. A single pass has no mechanism for "that came out too smooth, go rougher", because it cannot see what it produced. <strong>You cannot prompt your way out of averaging, because prompting happens before the average is taken.</strong></p>
+    <p>Which is why the metric, not the loop, is the thing being invested in. The loop is just the mechanism that lets a measurement act. Everything rests on the measurement being right, and a loop pointed at the wrong measurement walks away from him faster than no loop at all.</p>
+
+    <h3 style="margin-top:26px">Why small intermediate models, for a reason beyond cost</h3>
+    <p>The obvious argument is economic. A loop needs cheap measurement; at twenty-five minutes a reading you get two iterations, not a search. Small models make the meters free, and that is what turns a handful of guesses into an actual search. One-shot the components so the system can afford to loop.</p>
+    <p>The deeper argument is that <strong>factoring a decision is what makes the unlikely reachable.</strong></p>
+    <p>A stammer has to beat every other word in the language at that position. It never does, and raising the randomness to let it through wrecks every other word too. But a model choosing among four things &mdash; nothing, a filled pause, a repeat, a restart &mdash; can be sampled freely, because the worst case is a stumble slightly misplaced rather than a nonsense sentence.</p>
+    <p class="note us">Same principle, stated generally: <strong>a rare, optional, human-particular event is unreachable inside one enormous joint decision and reachable inside a small factored one.</strong> That is not a workaround for disfluency. It is the general shape of how anything specific about a person survives a model that is built to average.</p>
+    <p>With one constraint the evidence already gives us: <strong>distil decisions, not prose.</strong> Choosing, gating, ranking and placing all shrink well. Writing a paragraph faithfully does not &mdash; we measured a very small model at roughly a tenth of the faithfulness it needed.</p>
+
+    <h3 style="margin-top:26px">How inference-time work becomes a better model</h3>
+    <p>The loop does not only improve one answer. Every accepted draft, and every candidate it beat, is a <strong>preference pair</strong>. That is the training signal nobody in this field has for this task &mdash; the one thing that would let us train against something other than next-word likelihood, which is the objective that causes the problem in the first place.</p>
+    <p>So it compounds: the harness produces ranked candidates, the candidates train the model, the better model needs fewer iterations, and the freed budget buys more search. The loop is the data generator, not just the runtime.</p>
+
+    <h3 style="margin-top:26px">Why this bet is available to us and not to them</h3>
+    <p>Everyone shipping this is pinned to about a second per answer, because they are products. Spending a minute on one reply is not a design they can evaluate.</p>
+    <p>We are not a product. <strong>The region of the design space where you spend real compute per answer is unexplored by the people with the most resources</strong>, for reasons that have nothing to do with whether it works. That is an asymmetry an open project can take.</p>
+
+    <div class="verdict" style="margin-top:24px">
+      <h4>Where the argument breaks, stated by us rather than found later</h4>
+      <p><strong>It has one point of failure and it is the metric.</strong> A loop amplifies whatever it measures, and distillation makes that permanent &mdash; a loop you can inspect becomes weights you cannot. Every claim above is downstream of instruments we have not yet built and, on the style axis, cannot yet agree on.</p>
+      <p><strong>And none of it is tested here.</strong> We have never shown that revision beats a single pass on this task. Both papers in this collection describe iteration converging toward blandness, which is the same direction we would be pushing against. That control comes before anything else gets built.</p>
+      <p style="margin-bottom:0">Stated plainly so that it is the first thing attacked, rather than the last thing discovered.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="rail">
+  <div class="mark">sources</div>
+  <div class="body">
+    <ul>
+      <li>Cerebras, <em>Breaking the Boundaries of Presence: Delphi's Digital Mind Technology</em></li>
+      <li>Pinecone, <em>Fast, Accurate Retrieval for Creators at Scale</em>; VentureBeat coverage of the same</li>
+      <li>Sequoia Capital, <em>Training Data</em> podcast with Dara Ladjevardian; Inference newsletter</li>
+      <li>Park et al., <em>Generative Agent Simulations of 1,000 People</em>, arXiv 2411.10109</li>
+      <li>Stanford HAI, <em>Simulating Human Behavior with AI Agents</em>, policy brief, May 2025</li>
+      <li>Wang and Siu, <em>Interview-Informed Generative Agents for Product Discovery</em>, arXiv 2603.29890</li>
+      <li>Mao et al., <em>Bi-Mem</em>, arXiv 2601.06490</li>
+      <li>Kinzinger and Hartmann, <em>Synthetic Personalities</em>, arXiv 2606.04592</li>
+      <li>Jemama and Kumar, <em>How Well Do LLMs Imitate Human Writing Style?</em>, arXiv 2509.24930</li>
+      <li>Wei et al., <em>AI-native Memory 2.0: Second Me</em>, arXiv 2503.08102; <em>mindverse/Second-Me</em></li>
+      <li><em>getzep/graphiti</em>; Mem0; Letta documentation and comparisons</li>
+      <li>Microsoft, <em>Speech Synthesis Markup Language</em> reference; ElevenLabs documentation on pauses, markup support and audio tags</li>
+    </ul>
+    <p style="margin-top:16px">Papers are in <span class="tt">engines/knowledge_style/references/pdf/</span>. The full written record, with the numbers this page leaves out, is <span class="tt">references/SURVEY.md</span> &mdash; this page is derived from it.</p>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

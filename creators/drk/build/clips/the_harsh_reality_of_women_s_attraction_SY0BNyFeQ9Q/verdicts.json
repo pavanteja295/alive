@@ -1,0 +1,158 @@
+{
+ "_": "Take 2. Asymmetric cost: a discarded good frame is cheap, a kept bad frame is fitted into the shared identity and corrupts frames that were fine. When unsure, drop.",
+ "4": {
+  "verdict": "keep",
+  "kind": "centred",
+  "note": "fireplace room, white shirt+tie - the main setup for THIS video (take 1 is a different room entirely)"
+ },
+ "5": {
+  "verdict": "keep",
+  "kind": "centred",
+  "note": "main centred talking head, largest cluster"
+ },
+ "9": {
+  "verdict": "keep",
+  "kind": "centred",
+  "note": "centred with a caption bar over the lower frame; face unoccluded"
+ },
+ "10": {
+  "verdict": "keep",
+  "kind": "centred",
+  "note": "clean fireplace room, split out of the original c10"
+ },
+ "23": {
+  "verdict": "keep",
+  "kind": "centred",
+  "note": "centred"
+ },
+ "24": {
+  "verdict": "keep",
+  "kind": "centred",
+  "note": "centred"
+ },
+ "25": {
+  "verdict": "keep",
+  "kind": "centred",
+  "note": "centred with a keyword overlay at frame right; face unoccluded"
+ },
+ "1": {
+  "verdict": "keep",
+  "kind": "panel",
+  "note": "tweet/screenshot left, him right"
+ },
+ "7": {
+  "verdict": "keep",
+  "kind": "panel",
+  "note": "panel, face-grid figure left"
+ },
+ "8": {
+  "verdict": "keep",
+  "kind": "panel",
+  "note": "panel, paper left"
+ },
+ "12": {
+  "verdict": "drop",
+  "kind": "clipped",
+  "note": "cx 0.93 - he is hard against the right frame edge and partially clipped in some frames. 17 frames; not worth it."
+ },
+ "13": {
+  "verdict": "keep",
+  "kind": "panel",
+  "note": "panel, tweets left"
+ },
+ "17": {
+  "verdict": "keep",
+  "kind": "panel",
+  "note": "panel, paper left"
+ },
+ "21": {
+  "verdict": "keep",
+  "kind": "panel",
+  "note": "panel, assorted left"
+ },
+ "0": {
+  "verdict": "drop",
+  "kind": "graphic",
+  "note": "full-screen paper text, no face"
+ },
+ "6": {
+  "verdict": "drop",
+  "kind": "graphic",
+  "note": "full-screen papers, no face"
+ },
+ "11": {
+  "verdict": "drop",
+  "kind": "graphic",
+  "note": "HG logo stings, no face"
+ },
+ "26": {
+  "verdict": "drop",
+  "kind": "graphic",
+  "note": "'Continue your journey' outro card, no face, 1 contiguous span"
+ },
+ "27": {
+  "verdict": "drop",
+  "kind": "graphic",
+  "note": "membership promo and outro, no face"
+ },
+ "2": {
+  "verdict": "drop",
+  "kind": "wrong_face",
+  "note": "STAR locked onto a face inside the content. HE IS VISIBLE but the landmarks are not his - recoverable once identity-conditioned detection lands."
+ },
+ "3": {
+  "verdict": "drop",
+  "kind": "wrong_face",
+  "note": "box on the bodybuilder photo, w=0.048. He is beside it at full size. InsightFace finds 3 faces here: 67px, 64px, and HIM at 213px."
+ },
+ "14": {
+  "verdict": "drop",
+  "kind": "wrong_face",
+  "note": "box on a synthetic face in a research figure, w=0.101"
+ },
+ "15": {
+  "verdict": "drop",
+  "kind": "wrong_face",
+  "note": "box on the bodybuilder, cx 0.12 - this is what my 'left panel' cx mode actually was"
+ },
+ "16": {
+  "verdict": "drop",
+  "kind": "wrong_face",
+  "note": "w=0.028, a face in a thumbnail grid"
+ },
+ "18": {
+  "verdict": "drop",
+  "kind": "wrong_face",
+  "note": "box on the bodybuilder, w=0.084"
+ },
+ "19": {
+  "verdict": "drop",
+  "kind": "wrong_face",
+  "note": "box on the bodybuilder, w=0.059. 1006 frames - the largest wrong-face cluster."
+ },
+ "20": {
+  "verdict": "drop",
+  "kind": "wrong_face",
+  "note": "w=0.058, faces in a thumbnail montage"
+ },
+ "22": {
+  "verdict": "drop",
+  "kind": "wrong_face",
+  "note": "box on a face-grid figure, cx 0.16, w=0.101"
+ },
+ "28": {
+  "verdict": "keep",
+  "kind": "centred",
+  "note": "clean, split out of c10"
+ },
+ "29": {
+  "verdict": "keep",
+  "kind": "centred",
+  "note": "clean, split out of c10"
+ },
+ "30": {
+  "verdict": "drop",
+  "kind": "mixed_promo",
+  "note": "split out of c10 and STILL mixed: clean fireplace frames plus a 'Live Q&A: Detachment' Memberships promo card plus a different-room shot. A second subcluster might separate them; 472 frames (1.3%) is not worth the risk of promoting an ad."
+ }
+}

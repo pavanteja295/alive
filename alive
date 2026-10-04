@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+#
+# The live app, for any creator who has been through the recipes.
+#
+#   ./alive up <creator>      start everything for creators/<creator>/live.env
+#   ./alive down              stop everything
+#   ./alive status            what is running, and what it holds on the card
+#   ./alive restart [service] one service, or all of them
+#   ./alive logs <service> [-f]
+#   ./alive check [creator]   is everything the app needs on disk?
+#   ./alive build <creator>   download their videos and rebuild every model (recipes/)
+#
+# Then open http://127.0.0.1:8800.
+#
+# FOUR SERVICES, AND THE ORDER IS NOT A PREFERENCE.
+#
+#   voice  8791   the cloned voice. ~2 GB on the card.
+#   face   8730   audio -> face motion -> pictures. ~6-7 GB at its peak.
+#   style  8788   question -> answer. No card: it calls the LLM API.
+#   app    8800   the viewer. No card.
+#
+# The voice starts FIRST. The face's speech encoder takes a memory arena on the card
+# and does not give it back; on a 16 GB card the voice then cannot load.
+#
+# Processes are tracked by pid file, never by matching their command line: a pattern
+# once matched this script's own arguments and waited all night on a finished job.
+#
+# Environments (override with the variable): ENV_F5 for the voice, ENV_STAVATAR for the
+# face, PYTHON for the answer engine and the viewer. README.md says how to build them.
+
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+RUN="$ROOT/.run"
+mkdir -p "$RUN"
+ENV_F5=${ENV_F5:-$HOME/.venvs/vc-f5}
+ENV_STAVATAR=${ENV_STAVATAR:-$HOME/miniconda3/envs/stavatar}
+PYTHON=${PYTHON:-python3}
+
+VOICE="$ROOT/engines/text2audio/blocks/voice/scripts"
+FACE="$ROOT/engines/audio2face/gauss/live"
+STYLE="$ROOT/engines/knowledge_style/proto"
+
+ORDER=(voice face style app)
+
+# WHO. Every per-creator value lives in creators/<id>/live.env; nothing below names a
+# person. The last creator brought up is remembered, so restart and logs act on them.
+pick_creator() {
+  local want=${1:-}
+  [[ -z "$want" && -f "$RUN/creator" ]] && want=$(cat "$RUN/creator")
+  if [[ -z "$want" ]]; then
+    echo "which creator? $(ls "$ROOT/creators" | grep -v '^_' | grep -v README | tr '\n' ' ')"; exit 1
+  fi
+  local env="$ROOT/creators/$want/live.env"
+  [[ -f "$env" ]] || { echo "no creators/$want/live.env (copy creators/_template/)"; exit 1; }
+  # shellcheck disable=SC1090
+  source "$env"
+  CREATOR=$want
+}
+
+port_of()  { case "$1" in voice) echo 8791;; face) echo 8730;; style) echo 8788;; app) echo 8800;; esac; }
+health_of(){ case "$1" in
+  voice) echo "http://127.0.0.1:8791/voice";;
+  face)  echo "http://127.0.0.1:8730/shelf";;
+  style) echo "http://127.0.0.1:8788/voice";;
+  app)   echo "http://127.0.0.1:8800/";;
+esac; }
+boot_of()  { case "$1" in face|voice) echo 180;; *) echo 60;; esac; }
+
+c_ok=$'\033[32m'; c_no=$'\033[31m'; c_dim=$'\033[2m'; c_b=$'\033[1m'; c_z=$'\033[0m'
+say()  { printf '%s\n' "$*"; }
+step() { printf '  %-6s %b' "$1" "$2"; }
+tty_p() { [[ -t 1 ]]; }
+redraw() { if tty_p; then printf '\r'; else printf '\n'; fi; }
+
+launch() {  # name -> spawn detached in its own session, every fd closed, pid file
+  local n=$1 log="$RUN/$1.log"
+  case "$n" in
+    voice) cd "$VOICE" && exec setsid env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+             "$ENV_F5/bin/python" voice_server.py --profile "$VOICE_PROFILE" --port 8791 ;;
+    # expandable_segments: one job holds every frame of its answer at once, and without
+    # it a 75 s reply died asking for 3.22 GB while 3.40 GB sat reserved but unused.
+    face)  cd "$FACE" && exec setsid env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+             "$ENV_STAVATAR/bin/python" server.py --profile "$FACE_PROFILE" --run "$FACE_RUN" \
+             --body "$FACE_BODY" --python "$ENV_STAVATAR/bin/python" ;;
+    # LOCAL_TTS_URL points the answer engine at our voice instead of a hosted one.
+    style) cd "$STYLE" && exec setsid env PROTO_KEY_FILE="$ROOT/data/answers/.protokey" \
+             PROTO_CACHE="$ROOT/data/answers_cache" LOCAL_TTS_URL="http://127.0.0.1:8791" \
+             "$PYTHON" harness/serve_promoted.py --creator "$STYLE_CREATOR" --port 8788 ;;
+    app)   cd "$ROOT" && exec setsid "$PYTHON" app/server.py --port 8800 \
+             --display "$DISPLAY" --wps "$WPS" --samples "${SAMPLES:-}" \
+             --face-body "$FACE_BODY" --rest "${REST:-}" --rest-hold "${REST_HOLD:-0}" ;;
+  esac >"$log" 2>&1 </dev/null 3>&- 4>&- 5>&- &
+  echo $! >"$RUN/$n.pid"
+  cd "$ROOT"
+}
+
+listening() { local p; p=$(port_of "$1"); ss -ltn 2>/dev/null | grep -q ":$p "; }
+healthy()   { curl -fs --max-time 4 -o /dev/null "$(health_of "$1")" 2>/dev/null; }
+
+wait_ready() {
+  local n=$1 limit t0=$SECONDS; limit=$(boot_of "$n")
+  while (( SECONDS - t0 < limit )); do
+    healthy "$n" && return 0
+    # a service that died is not going to become healthy
+    if grep -qiE "Traceback|out of memory|Address already in use" "$RUN/$n.log" 2>/dev/null \
+       && ! listening "$n"; then return 2; fi
+    sleep 1
+  done
+  return 1
+}
+
+pids_on_port() { local p; p=$(port_of "$1"); ss -ltnp 2>/dev/null | grep ":$p " | grep -oP 'pid=\K[0-9]+'; }
+
+stop_one() {
+  local n=$1 pid=""
+  [[ -f "$RUN/$n.pid" ]] && pid=$(cat "$RUN/$n.pid")
+  # the session first, then whoever holds the port: a service that forked children
+  # leaves the port held by one of them
+  [[ -n "$pid" ]] && kill -TERM "-$pid" "$pid" 2>/dev/null
+  for p in $(pids_on_port "$n"); do kill -TERM "$p" 2>/dev/null; done
+  local t0=$SECONDS
+  while listening "$n" && (( SECONDS - t0 < 15 )); do sleep 1; done
+  if listening "$n"; then for p in $(pids_on_port "$n"); do kill -KILL "$p" 2>/dev/null; done; sleep 2; fi
+  rm -f "$RUN/$n.pid"
+  ! listening "$n"
+}
+
+cmd_check() {  # every path the live app reads, for one creator
+  local bad=0
+  ok()  { printf '  %sok%s    %s\n' "$c_ok" "$c_z" "$1"; }
+  no()  { printf '  %sMISSING%s %s\n' "$c_no" "$c_z" "$1"; bad=1; }
+  for d in data/answers data/voice data/face data/takes externals/vhap externals/stavatar externals/F5-TTS; do
+    [[ -e "$ROOT/$d" ]] && ok "$d" || no "$d   (README.md, 'Where everything goes')"; done
+  for e in "$ENV_F5/bin/python" "$ENV_STAVATAR/bin/python"; do [[ -x "$e" ]] && ok "$e" || no "$e"; done
+  [[ -f "$ROOT/data/answers/.protokey" ]] && ok "LLM key file" || no "data/answers/.protokey (the LLM API key file)"
+  if [[ -n "${CREATOR:-}" ]]; then
+    [[ -d "$ROOT/data/answers/$STYLE_CREATOR" ]] && ok "answers for $STYLE_CREATOR" || no "data/answers/$STYLE_CREATOR"
+    (cd "$VOICE" && "$ENV_F5/bin/python" -c "import _profile; b=_profile.load('$VOICE_PROFILE').BUNDLE; assert (b/'model.pt').exists(), b") \
+      >/dev/null 2>&1 && ok "voice bundle for $VOICE_PROFILE" || no "voice bundle for $VOICE_PROFILE (voice recipe, last step)"
+    local ck="$ROOT/checkpoints/$FACE_PROFILE/face"
+    [[ -d "$ck/render/$FACE_RUN" ]] && ok "renderer $FACE_RUN" || no "checkpoints/$FACE_PROFILE/face/render/$FACE_RUN (mesh-to-render recipe, promote)"
+    compgen -G "$ck/motion/*/best.pt" >/dev/null && ok "motion model" || no "checkpoints/$FACE_PROFILE/face/motion (audio-to-mesh recipe, promote)"
+    [[ -f "$ck/rig/rig_beltrami.npz" ]] && ok "face rig" || no "checkpoints/$FACE_PROFILE/face/rig (audio-to-mesh recipe, promote)"
+  fi
+  return $bad
+}
+
+cmd_up() {
+  if [[ -f "$RUN/creator" && "$(cat "$RUN/creator")" != "$CREATOR" ]] && healthy face; then
+    say "the app is up for $(cat "$RUN/creator"); ./alive down first"; return 1
+  fi
+  cmd_check >/dev/null || { say "${c_no}not everything is on disk:${c_z}"; cmd_check | grep MISSING; return 1; }
+  echo "$CREATOR" >"$RUN/creator"
+  say "${c_b}starting the app for $DISPLAY${c_z}  ${c_dim}(voice first: the face takes the card and keeps it)${c_z}"
+  for n in "${ORDER[@]}"; do
+    if healthy "$n"; then step "$n" "already up\n"; continue; fi
+    if listening "$n"; then step "$n" "port busy, replacing it "; stop_one "$n" >/dev/null; else step "$n" ""; fi
+    launch "$n"
+    printf 'booting'
+    wait_ready "$n"; local r=$?
+    case $r in
+      0) redraw; printf '  %-6s %sup%s      %s\n' "$n" "$c_ok" "$c_z" "$(health_of "$n")" ;;
+      2) redraw; printf '  %-6s %sfailed%s  ./alive logs %s\n' "$n" "$c_no" "$c_z" "$n"
+         say ""; tail -6 "$RUN/$n.log" | sed 's/^/      /'; return 1 ;;
+      *) redraw; printf '  %-6s %sslow%s    not answering after %ss: ./alive logs %s\n' \
+                "$n" "$c_no" "$c_z" "$(boot_of "$n")" "$n"; return 1 ;;
+    esac
+  done
+  say ""; cmd_status; say ""
+  say "  ${c_b}open  http://127.0.0.1:8800${c_z}"
+}
+
+cmd_down() {
+  say "${c_b}stopping${c_z}"
+  for (( i=${#ORDER[@]}-1; i>=0; i-- )); do   # the talkers go before what they talk to
+    local n=${ORDER[$i]}
+    if ! listening "$n" && [[ ! -f "$RUN/$n.pid" ]]; then step "$n" "${c_dim}not running${c_z}\n"; continue; fi
+    step "$n" "stopping"
+    if stop_one "$n"; then redraw; printf '  %-6s %sstopped%s\n' "$n" "$c_ok" "$c_z"
+    else                   redraw; printf '  %-6s %swould not stop%s\n' "$n" "$c_no" "$c_z"; fi
+  done
+  say ""; say "  card now: $(nvidia-smi --query-gpu=memory.used --format=csv,noheader 2>/dev/null || echo unknown)"
+}
+
+cmd_status() {
+  [[ -f "$RUN/creator" ]] && say "  creator: $(cat "$RUN/creator")"
+  printf '  %-6s %-7s %-6s %-9s %s\n' service state port pid health
+  for n in "${ORDER[@]}"; do
+    local pid state col
+    pid=$(pids_on_port "$n" | head -1)
+    if healthy "$n"; then state=up; col=$c_ok
+    elif listening "$n"; then state=sick; col=$c_no
+    else state=down; col=$c_dim; fi
+    printf '  %-6s %s%-7s%s %-6s %-9s %s\n' "$n" "$col" "$state" "$c_z" "$(port_of "$n")" "${pid:--}" \
+      "$( [[ $state == up ]] && health_of "$n" || echo '-' )"
+  done
+  local g; g=$(nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader 2>/dev/null)
+  [[ -n "$g" ]] && say "  ${c_dim}card: $g${c_z}"
+}
+
+cmd_logs() {
+  local n=${1:-}; shift || true
+  [[ -z "$n" ]] && { say "which? ${ORDER[*]}"; return 1; }
+  [[ -f "$RUN/$n.log" ]] || { say "no log for $n yet"; return 1; }
+  if [[ "${1:-}" == "-f" ]]; then tail -f "$RUN/$n.log"; else tail -40 "$RUN/$n.log"; fi
+}
+
+case "${1:-}" in
+  up)      pick_creator "${2:-}"; cmd_up ;;
+  down)    cmd_down ;;
+  status)  cmd_status ;;
+  check)   [[ -n "${2:-}" ]] && pick_creator "$2"; cmd_check ;;
+  restart) shift; pick_creator ""
+           if [[ -n "${1:-}" ]]; then stop_one "$1" >/dev/null; launch "$1"
+                                      wait_ready "$1" && say "  $1 up" || say "  $1 failed"
+           else cmd_down; say ""; cmd_up; fi ;;
+  logs)    shift; cmd_logs "$@" ;;
+  build)   shift; exec "$PYTHON" "$ROOT/recipes/rebuild.py" "$@" ;;
+  *)  say "usage: ./alive up <creator> | down | status | check [creator] | restart [service] | logs <service> [-f]"
+      say "       ./alive build <creator> [--stage S] [--dry-run] [--trust-gates]"
+      say ""; say "  creators: $(ls "$ROOT/creators" | grep -v '^_' | grep -v README | tr '\n' ' ')" ;;
+esac

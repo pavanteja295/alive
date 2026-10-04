@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Are The Tools Good Enough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,300..700&display=swap">
+<style>
+:root{--paper:#faf8f5;--raise:#fffefc;--ink:#1a1714;--mut:#6b625a;--faint:#8d8478;
+--line:#e0d9d0;--hair:#eee9e2;--ochre:#a8622a;--ochre-soft:#f2e6da;
+--good:#2f6b4f;--good-soft:#e2ede6;--bad:#9c3b2a;--bad-soft:#f6e3de;
+--blue:#3a5a8c;--blue-soft:#e3e9f2;
+--serif:Newsreader,Georgia,serif;--sans:Archivo,-apple-system,"Segoe UI",sans-serif;
+--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+--paper:#191714;--raise:#211e1a;--ink:#ece7df;--mut:#9d9488;--faint:#7d7568;
+--line:#332e27;--hair:#282420;--ochre:#d9924f;--ochre-soft:#3a2b1d;
+--good:#76b891;--good-soft:#1e2e26;--bad:#d98770;--bad-soft:#33221e;
+--blue:#8aa9d8;--blue-soft:#1f2733}}
+:root[data-theme="dark"]{--paper:#191714;--raise:#211e1a;--ink:#ece7df;--mut:#9d9488;
+--faint:#7d7568;--line:#332e27;--hair:#282420;--ochre:#d9924f;--ochre-soft:#3a2b1d;
+--good:#76b891;--good-soft:#1e2e26;--bad:#d98770;--bad-soft:#33221e;
+--blue:#8aa9d8;--blue-soft:#1f2733}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--serif);
+-webkit-font-smoothing:antialiased}
+.page{max-width:900px;margin:0 auto;padding:0 20px 90px}
+h1{font:600 clamp(33px,6vw,52px)/1.04 var(--serif);letter-spacing:-.02em;margin:0}
+h2{font:600 clamp(23px,3.2vw,30px)/1.18 var(--serif);margin:0 0 6px;letter-spacing:-.012em}
+h3{font:600 20px/1.3 var(--serif);margin:30px 0 8px}
+h4{font:600 12px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+color:var(--mut);margin:0 0 8px}
+p{margin:0 0 1em}
+header{padding:60px 0 28px}
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;
+color:var(--ochre);margin-bottom:18px}
+.stamp{font:400 12px/1.7 var(--mono);color:var(--faint);margin-top:20px}
+section{padding:36px 0;border-top:1px solid var(--hair)}
+.lede{font-size:1.12em;line-height:1.5}
+.box{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+padding:16px 18px;margin:0 0 1em}
+.box.bad{background:var(--bad-soft);border-color:var(--bad)}
+.box.good{background:var(--good-soft);border-color:var(--good)}
+.box.key{background:var(--ochre-soft);border-color:var(--ochre)}
+.box p:last-child{margin:0}
+pre{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+padding:14px 16px;overflow-x:auto;font:400 13px/1.55 var(--mono);margin:0 0 1em}
+pre .c{color:var(--faint)}pre .g{color:var(--good)}pre .b{color:var(--bad)}
+.tw{overflow-x:auto;margin:0 0 1em}
+table{border-collapse:collapse;width:100%;min-width:520px;font:400 14.5px/1.45 var(--sans)}
+th{text-align:left;font:600 11px/1.3 var(--sans);letter-spacing:.07em;text-transform:uppercase;
+color:var(--mut);padding:0 12px 8px 0;border-bottom:1px solid var(--line);vertical-align:bottom}
+td{padding:9px 12px 9px 0;border-bottom:1px solid var(--hair);vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+tr:last-child td{border-bottom:none}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.g{color:var(--good);font-weight:600}.b{color:var(--bad);font-weight:600}.m{color:var(--mut)}
+ul,ol{margin:0 0 1em;padding-left:1.2em}li{margin-bottom:.45em}li::marker{color:var(--faint)}
+code{font:500 .86em var(--mono);color:var(--mut)}
+.tool{border-top:2px solid var(--ink);padding-top:14px;margin-top:34px}
+.verdict{display:inline-block;font:600 11px/1 var(--sans);letter-spacing:.07em;
+text-transform:uppercase;padding:5px 9px;border-radius:2px;margin-left:10px;vertical-align:middle}
+.v-ok{background:var(--good-soft);color:var(--good)}
+.v-weak{background:var(--ochre-soft);color:var(--ochre)}
+.v-bad{background:var(--bad-soft);color:var(--bad)}
+figure{margin:0 0 1em}
+.fig{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+padding:18px 14px 10px;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:560px}
+figcaption{font:400 13px/1.5 var(--sans);color:var(--mut);padding-top:8px}
+svg text{font-family:Archivo,sans-serif}
+.nb{fill:var(--raise);stroke:var(--line);stroke-width:1}
+.nb-a{fill:var(--ochre-soft);stroke:var(--ochre);stroke-width:1.2}
+.nb-b{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.nb-g{fill:var(--good-soft);stroke:var(--good);stroke-width:1.2}
+.nt{fill:var(--ink);font-size:12.5px;font-weight:500}
+.ns{fill:var(--mut);font-size:11px}
+.nk{fill:var(--faint);font-size:10px;font-family:var(--mono);letter-spacing:.05em}
+.ed{stroke:var(--faint);stroke-width:1.3;fill:none}
+.ed-a{stroke:var(--ochre);stroke-width:1.6;fill:none}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">tool audit</div>
+  <h1>Are the tools good enough?</h1>
+  <p class="lede m" style="margin-top:16px;max-width:62ch">Tool by tool: what is wrong, and what piece of feedback would let the model fix it itself. A model driving bad tools is still bad.</p>
+  <div class="stamp">16 September 2026 &middot; measured on 100 questions, 154 queries</div>
+</header>
+
+<section>
+  <h2>One fault, six times over</h2>
+  <p class="lede"><strong>Every tool works. None of them says how well it worked.</strong></p>
+  <p>They return content and withhold the one thing that would let the caller react: whether the call succeeded. A search that found nothing looks exactly like a search that found the answer. That is why feedback is the fix rather than better defaults — the defaults are mostly fine, the silence is not.</p>
+
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 860 170" role="img" aria-label="A search returns passages either way, whether it succeeded or failed. The model sees the same shape both times.">
+        <rect class="nb nb-g" x="16" y="24" width="180" height="40" rx="2"/>
+        <text class="nt" x="28" y="42">a query that worked</text>
+        <text class="ns" x="28" y="58">the answer is in there</text>
+        <path class="ed-a" d="M196,44 H262" marker-end="url(#t1)"/>
+        <defs><marker id="t1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,1 L7,4 L0,7 z" fill="var(--ochre)"/></marker></defs>
+
+        <rect class="nb nb-b" x="16" y="96" width="180" height="40" rx="2"/>
+        <text class="nt" x="28" y="114">a query that failed</text>
+        <text class="ns" x="28" y="130">half its words appear nowhere</text>
+        <path class="ed-a" d="M196,116 H262" marker-end="url(#t1)"/>
+
+        <rect class="nb" x="268" y="52" width="250" height="56" rx="2"/>
+        <text class="nt" x="280" y="76">[1] video, timestamp, score</text>
+        <text class="nt" x="280" y="94">[2] video, timestamp, score ...</text>
+        <text class="nk" x="280" y="44">identical shape, either way</text>
+
+        <path class="ed" d="M518,80 H584" marker-end="url(#t1)"/>
+        <rect class="nb nb-b" x="590" y="52" width="256" height="56" rx="2"/>
+        <text class="nt" x="602" y="76" fill="var(--bad)">the model cannot tell which</text>
+        <text class="nt" x="602" y="94" fill="var(--bad)">one it just did</text>
+      </svg>
+    </div>
+    <figcaption>20 of 154 queries had under half their vocabulary appear in the results. The number is computed and discarded.</figcaption>
+  </figure>
+</section>
+
+<!-- ================= search -->
+<section>
+  <div class="tool">
+    <h2 style="display:inline">search<span class="verdict v-weak">works, tells you nothing</span></h2>
+  </div>
+
+  <h3>What is wrong</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:36%">issue</th><th style="width:30%">measured</th><th>consequence</th></tr></thead>
+      <tbody>
+        <tr><td><strong>a failed query is invisible</strong></td><td class="num b">20 of 154 queries had under half their vocabulary appear in the results</td><td>the model spends a quarter of its searches on a dud and never knows</td></tr>
+        <tr><td><strong>a fifth of results matched nothing</strong></td><td class="num b">2.6 per query</td><td>padding pulled in as neighbours of real hits, displayed with score 0.00</td></tr>
+        <tr><td><strong>the cutoff throws away found passages</strong></td><td class="num b">11 of 20 total misses ranked 7&ndash;12; the cut is at 6</td><td>the passage was found and discarded</td></tr>
+        <tr><td><strong>word matching only</strong></td><td>three sources in the related work blend word and meaning as the default</td><td>a question in the asker's vocabulary misses material that answers it</td></tr>
+        <tr><td><strong>the four-query cap</strong></td><td>the model is told five, the code keeps four</td><td>a query silently discarded. This is a bug, not a setting</td></tr>
+        <tr><td><strong>the question index is unused</strong></td><td class="num b">6,766 questions covering 287 of 292 passages, never searched</td><td>the direct fix for vocabulary mismatch, sitting on disk</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>What feedback fixes</h3>
+  <pre><span class="c">today</span>
+[1] you_don_t_know_what_discipline 00:00:00-00:01:18 score 5.0
+[2] we_give_discipline_too_much_cr 00:05:25-00:06:44 score 4.1
+...
+
+<span class="c">with feedback</span>
+15 passages. <span class="g">8 are new</span>, 7 you already had.
+<span class="b">"prediction error" and "interoception" appear nowhere in the archive</span>
+<span class="b">— half your query found nothing. Try his words for it.</span>
+4 of these matched nothing at all and are only neighbours of hits.
+<span class="g">3 passages scored above 10; the rest are weak.</span>
+
+[1] you_don_t_know_what_discipline 00:00:00-00:01:18 score 5.0
+...</pre>
+
+  <div class="box good">
+    <p><strong>What that lets the model do, none of which it can do now:</strong></p>
+    <ul style="margin:.5em 0 0">
+      <li><strong>rewrite a dud query</strong> — it now knows which words drew a blank, so it can try his term instead of the asker's</li>
+      <li><strong>stop re-searching the same ground</strong> — "7 you already had" tells it the query was redundant</li>
+      <li><strong>judge the strength of what it got</strong> — three strong hits reads differently from fifteen weak ones</li>
+      <li><strong>ignore the padding</strong> rather than treating a score of zero as a passage</li>
+    </ul>
+    <p style="margin-top:.7em"><strong>Every number in that block is already computed.</strong> The coverage figure exists in the code and is thrown away. This is plumbing, not research.</p>
+  </div>
+
+  <div class="box key">
+    <p><strong>Defaults to fix regardless of feedback:</strong> drop the zero-score padding, raise the cutoff or return a deeper list so rank 7&ndash;12 is reachable, remove the four-query cap, and index the generated questions alongside the passages.</p>
+  </div>
+</section>
+
+<!-- ================= read -->
+<section>
+  <div class="tool">
+    <h2 style="display:inline">read<span class="verdict v-ok">fine</span></h2>
+  </div>
+  <p>Returns the full text of the numbers you name, raises on a number that does not exist. The index-not-text split is what makes eight calls affordable instead of two: fifteen passages cost 285 words as an index against 4,509 as text.</p>
+  <p><strong>One small addition worth having:</strong> say how much budget the read consumed. The model has no sense of what it is spending, and the runs that failed had read five times and had nothing left to answer with.</p>
+</section>
+
+<!-- ================= relevance -->
+<section>
+  <div class="tool">
+    <h2 style="display:inline">relevance<span class="verdict v-bad">works, and is ignored</span></h2>
+  </div>
+  <p>Judges each pooled passage against the question. <strong>The only control we have ever shown to work</strong> — forcing its verdicts into the prompt cut contradictions from 11 to 7.</p>
+
+  <div class="box bad">
+    <h4>the problem is not the tool</h4>
+    <p>Offered as something the model may call, it used it <strong>nine times across a hundred questions</strong>. It triages by reading passages itself instead.</p>
+    <p style="margin-top:.7em">So feedback will not fix this, because the model never gets far enough to receive any. <strong>The fix is to stop offering it.</strong> Run it automatically on every passage entering the pool and attach the verdict to the index line, so the model sees it whether it asked or not — which is exactly the configuration that produced our best number.</p>
+  </div>
+  <pre><span class="c">what the index looks like once relevance runs automatically</span>
+[1] you_don_t_know_what_discipline 00:00:00-00:01:18 score 5.0  <span class="g">[answers this]</span>
+[2] we_give_discipline_too_much_cr 00:05:25-00:06:44 score 4.1  <span class="c">[part of an answer]</span>
+[3] is_it_too_late_to_start_your_l 00:05:47-00:07:36 score 4.1  <span class="b">[not about this]</span></pre>
+  <p>That also makes the search feedback sharper: <em>"15 passages, 3 of them answer the question"</em> is a far better signal than a count.</p>
+</section>
+
+<!-- ================= gap -->
+<section>
+  <div class="tool">
+    <h2 style="display:inline">gap<span class="verdict v-weak">useful, unmeasured</span></h2>
+  </div>
+  <p>Reads the index and says what the question still needs, as a query. Used 0.62 times per question when available. It produces real second queries — on one question it returned <em>"procrastination root causes — task aversion, fear of failure, perfectionism"</em>, which the deployed system has never generated for any question.</p>
+  <div class="box bad">
+    <h4>what is wrong</h4>
+    <ul style="margin:.4em 0 0">
+      <li><strong>it reads the index, which is one line per passage.</strong> So it is judging what is missing from titles and first lines, not from content. It will miss a gap that is only visible in a passage's body.</li>
+      <li><strong>it does not know what the model has read</strong>, so it cannot distinguish "not retrieved" from "retrieved and unused".</li>
+      <li><strong>never measured alone.</strong> We do not know if it helps.</li>
+    </ul>
+  </div>
+  <p><strong>Feedback fix:</strong> give it the relevance verdicts and what has been read. Then it can say <em>"you have three passages that answer this and nothing on the second half of the question"</em> rather than guessing from first lines.</p>
+</section>
+
+<!-- ================= check -->
+<section>
+  <div class="tool">
+    <h2 style="display:inline">check<span class="verdict v-ok">the best tool here</span></h2>
+  </div>
+  <p>Traces each claim in a draft to a passage, or to nothing. <strong>The only check that works without a reference answer</strong>, so the only one usable when a real person is asking. Offered natively, the model used it on every single answered question.</p>
+  <div class="box">
+    <h4>two gaps</h4>
+    <ul style="margin:.4em 0 0">
+      <li><strong>it does not say what to do.</strong> "This claim rests on nothing" is a verdict. The model then has to decide whether to cut it or search for support, with no help.</li>
+      <li><strong>it cannot see relevance.</strong> A claim traced to a passage that does not address the question reads as supported. That is precisely how a grounded answer ends up contradicting him.</li>
+    </ul>
+  </div>
+  <p><strong>Feedback fix:</strong> pair each unsupported claim with a suggested query — <em>"nothing supports 'willpower is a finite resource'; try searching for it"</em> — and refuse to mark a claim supported when its passage was judged not to answer the question.</p>
+</section>
+
+<!-- ================= the budget -->
+<section>
+  <div class="tool">
+    <h2 style="display:inline">the budget<span class="verdict v-bad">the direct cause of a quarter of failures</span></h2>
+  </div>
+  <p>Twelve turns, counted the same whether the model searches or answers. <strong>23 of 100 questions ran out and produced nothing</strong>, having spent 11.65 searches and 5.13 reads. More than half never drafted anything.</p>
+  <div class="box bad">
+    <p><strong>The model is never told what it is spending.</strong> It receives no signal about turns remaining, so it gathers until the harness cuts it off mid-thought. The failures were on the hard questions — exactly where stopping well matters.</p>
+  </div>
+  <pre><span class="c">feedback fix, attached to every tool result</span>
+<span class="b">4 turns left. Drafting and checking need three. Stop searching.</span></pre>
+  <p><strong>Default fix alongside it:</strong> split the budget so gathering cannot consume the whole thing, and encourage parallel searches — it averaged 11.65 searches across 12 turns, so it is issuing them one at a time when a single turn holds several.</p>
+</section>
+
+<!-- ================= summary -->
+<section>
+  <h2>Summary</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:14%">tool</th><th style="width:12%">verdict</th><th style="width:36%">the issue</th><th>what fixes it</th></tr></thead>
+      <tbody>
+        <tr><td><code>search</code></td><td class="b">silent</td><td>a failed query is indistinguishable from a good one</td><td class="g">report coverage, novelty, strength, and which words drew a blank</td></tr>
+        <tr><td><code>read</code></td><td class="g">fine</td><td>no sense of cost</td><td class="g">report budget consumed</td></tr>
+        <tr><td><code>relevance</code></td><td class="b">ignored</td><td>the one control that works, called 9 times in 100</td><td class="g">stop offering it. Run it always, attach verdicts to the index</td></tr>
+        <tr><td><code>gap</code></td><td class="m">weak</td><td>judges from first lines; blind to what was read</td><td class="g">give it the verdicts and the read history</td></tr>
+        <tr><td><code>check</code></td><td class="g">good</td><td>gives a verdict, not a next move; blind to relevance</td><td class="g">suggest a query per unsupported claim; refuse passages judged irrelevant</td></tr>
+        <tr><td>budget</td><td class="b">broken</td><td>caused 23 of 100 failures</td><td class="g">tell the model what is left; reserve turns for finishing</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box key">
+    <h4>the through-line</h4>
+    <p><strong>Five of the six fixes are the same fix: make the tool report how it went, not just what it found.</strong> Almost every number needed is already computed somewhere in the code and discarded before the model sees it.</p>
+    <p style="margin-top:.7em">The exception is <code>relevance</code>, where feedback cannot help because the model never calls it. That one stops being a tool and becomes part of what search returns.</p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

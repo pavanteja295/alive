@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# CTranslate2 (under faster-whisper) dlopens cuBLAS and cuDNN by soname and does
+# not look inside the venv, where the torch wheel puts them. Torch itself loads
+# them fine, which is why this only ever fails on the ASR stage.
+V="${ENV_PREP:-$HOME/.venvs/vc-prep}"          # env/README.md
+SP="$V/lib/python3.11/site-packages/nvidia"
+export LD_LIBRARY_PATH="$SP/cublas/lib:$SP/cudnn/lib:${LD_LIBRARY_PATH:-}"
+exec "$V/bin/python" "$@"

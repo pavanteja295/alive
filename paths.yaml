@@ -1,0 +1,27 @@
+# Where everything outside the code lives, relative to this file.
+#
+# Bulk data never moves into git. Code reaches it through these folders, so nothing
+# hardcodes a machine path; any of them can be a link to wherever the bytes are.
+# This file also marks alive's root: scripts find data/ beside it.
+
+data:          ./data          # takes, answer indexes, voice and face working state
+checkpoints:   ./checkpoints   # the trained models, per creator (not in git)
+
+externals:
+  vhap:        ./externals/vhap        # face tracker      ShenhanQian/VHAP 4b64ab7 + env/patches/vhap.patch
+  stavatar:    ./externals/stavatar    # face renderer     JiankuoZhao/STAvatar 9f9ba1b + env/patches/stavatar.patch
+  f5_tts:      ./externals/F5-TTS      # voice model code  SWivid/F5-TTS 2832525
+  llm:         anthropic               # key in data/answers/.protokey, never in this file
+
+licensed:      # supplied by each user; README.md, "Licensed files you supply yourself"
+  flame:            externals/{vhap,stavatar}/.../flame/flame2023.pkl
+  audio_encoder:    data/face/onnx/{audio_encoder,animation_decoder}.onnx   # NVIDIA Audio2Face-3D
+  metahuman_rig:    data/face/{assets,head,offset}/                        # from the MetaHuman archetype
+
+envs:          # env/README.md builds them; each can be overridden by its variable
+  voice:       ~/.venvs/vc-f5                  # ENV_F5
+  voice_prep:  ~/.venvs/vc-prep                # ENV_PREP
+  face:        ~/miniconda3/envs/stavatar      # ENV_STAVATAR / ENV
+  tracker:     ~/miniconda3/envs/vhap          # ENV_VHAP
+  faceid:      ~/miniconda3/envs/faceid        # ENV_FACEID
+  speech_enc:  ~/.venvs/mh-offset

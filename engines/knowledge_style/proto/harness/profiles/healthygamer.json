@@ -1,0 +1,143 @@
+{
+  "creator": "healthygamer",
+  "min_k": 10,
+  "expand": 3,
+  "word_cap": 330,
+  "promoted": {
+    "arm": "nocap",
+    "command": "harness/loop.py --controller controller_deploy.md --require-cites --min-k 15 --expand 2 --full-text --max-retries 0 --no-judge",
+    "note": "BASELINES.md's own promoted arm -- min_k/expand/word_cap here are NOT the tune.py-derived values above (10/3/330): nocap overrides word_cap to none and widens min_k/expand, kept because the wider, uncapped arm measured better held-out (39/218 failing vs the capped arm's 48/218), not because it was re-derived from this corpus. --commit was never tried on this arm; BASELINES.md's 'narrow' arm showed --commit helping (faithfulness 0.929->0.978) but bundled it with a tight word-cap that caused separate regressions, so it was never isolated here the way it has been for huberman.",
+    "flags": {
+      "controller": "controller_deploy.md", "require_cites": true, "min_k": 15,
+      "expand": 2, "full_text": true, "word_cap": null, "max_retries": 0,
+      "no_judge": true, "hard_turns": 8, "commit": false
+    },
+    "held_fail": 39,
+    "held_n": 218,
+    "measured": {
+      "failing_any_measure": 4, "n": 100
+    }
+  },
+  "derived": {
+    "target_recall": 0.95,
+    "reached": 0.962,
+    "mean_pool": 156.0,
+    "essential_passages": 316,
+    "questions": 100,
+    "n_chunks": 292,
+    "n_takes": 17,
+    "answer_words_p90": 331,
+    "grid": [
+      {
+        "k": 6,
+        "expand": 1,
+        "recall": 0.8354430379746836,
+        "pool": 71.17
+      },
+      {
+        "k": 6,
+        "expand": 2,
+        "recall": 0.8860759493670886,
+        "pool": 95.09
+      },
+      {
+        "k": 6,
+        "expand": 3,
+        "recall": 0.9082278481012658,
+        "pool": 112.93
+      },
+      {
+        "k": 10,
+        "expand": 1,
+        "recall": 0.9050632911392406,
+        "pool": 105.25
+      },
+      {
+        "k": 10,
+        "expand": 2,
+        "recall": 0.9462025316455697,
+        "pool": 135.38
+      },
+      {
+        "k": 10,
+        "expand": 3,
+        "recall": 0.9620253164556962,
+        "pool": 156.02
+      },
+      {
+        "k": 15,
+        "expand": 1,
+        "recall": 0.9367088607594937,
+        "pool": 139.79
+      },
+      {
+        "k": 15,
+        "expand": 2,
+        "recall": 0.9620253164556962,
+        "pool": 173.55
+      },
+      {
+        "k": 15,
+        "expand": 3,
+        "recall": 0.9778481012658228,
+        "pool": 195.47
+      },
+      {
+        "k": 20,
+        "expand": 1,
+        "recall": 0.9462025316455697,
+        "pool": 167.78
+      },
+      {
+        "k": 20,
+        "expand": 2,
+        "recall": 0.9683544303797469,
+        "pool": 201.82
+      },
+      {
+        "k": 20,
+        "expand": 3,
+        "recall": 0.9810126582278481,
+        "pool": 222.67
+      },
+      {
+        "k": 25,
+        "expand": 1,
+        "recall": 0.9651898734177216,
+        "pool": 191.12
+      },
+      {
+        "k": 25,
+        "expand": 2,
+        "recall": 0.9810126582278481,
+        "pool": 223.73
+      },
+      {
+        "k": 25,
+        "expand": 3,
+        "recall": 0.9873417721518988,
+        "pool": 242.5
+      },
+      {
+        "k": 40,
+        "expand": 1,
+        "recall": 0.9936708860759493,
+        "pool": 237.92
+      },
+      {
+        "k": 40,
+        "expand": 2,
+        "recall": 0.9968354430379747,
+        "pool": 262.5
+      },
+      {
+        "k": 40,
+        "expand": 3,
+        "recall": 0.9968354430379747,
+        "pool": 274.1
+      }
+    ],
+    "queries_from": "work/healthygamer/reports/loop100_trace"
+  },
+  "note": "Derived, not authored. Re-run harness/tune.py when the corpus changes. The prompts carry nothing creator-specific; these three numbers are the whole per-creator surface."
+}

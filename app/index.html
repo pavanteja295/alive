@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ask {{NAME}}</title>
+<style>
+  :root{
+    --bg:#0c0f13; --panel:#141920; --line:#232b35; --ink:#e6ebf0; --dim:#8a97a5;
+    --accent:#4db6a4; --live:#e2b04a; --err:#e07a6a;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:light){ :root{
+    --bg:#eef1f4; --panel:#fff; --line:#dbe1e7; --ink:#141b24; --dim:#5d6b79;
+    --accent:#177063; --live:#8a6a12; --err:#a8432e;
+  }}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);
+       display:flex;flex-direction:column;min-height:100%}
+
+  header{display:flex;align-items:center;gap:16px;padding:12px 20px}
+  header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-.01em}
+  header nav{margin-left:auto;display:flex;gap:4px}
+  header nav a, header nav button{color:var(--dim);text-decoration:none;font:13px var(--sans);
+    background:none;border:0;padding:6px 10px;border-radius:6px;cursor:pointer}
+  header nav a:hover, header nav button:hover{color:var(--ink);background:var(--panel)}
+
+  main{flex:1;display:flex;flex-direction:column;align-items:center;
+       padding:0 16px 20px;gap:14px;min-height:0}
+
+  /* him */
+  .stage{position:relative;width:min(100%, calc((100vh - 230px) * 16 / 9), 1280px);
+         aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;
+         box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .pill{position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px;
+        background:rgba(10,12,15,.62);color:#e6ebf0;backdrop-filter:blur(6px);
+        padding:6px 12px 6px 10px;border-radius:99px;font:12.5px var(--sans)}
+  .pill i{width:8px;height:8px;border-radius:50%;background:#6b7785;display:block}
+  .pill.thinking i{background:#e2b04a;animation:pulse 1.2s ease-in-out infinite}
+  .pill.speaking i{background:#4db6a4}
+  .pill .secs{font-family:var(--mono);opacity:.75;font-variant-numeric:tabular-nums}
+  @keyframes pulse{50%{opacity:.25}}
+  .caption{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);
+           width:min(86%, 900px);text-align:center;pointer-events:none}
+  .caption span{display:inline;background:rgba(8,10,12,.72);color:#fff;
+           font-size:clamp(14px, 2.1vw, 22px);line-height:1.55;padding:3px 10px;
+           border-radius:6px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+  .caption:empty{display:none}
+  .warm{position:absolute;inset:0;display:grid;place-items:center;color:#8a97a5;
+        font-size:14px}
+  .tap{position:absolute;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);
+       color:#fff;font-size:16px;cursor:pointer;border:0;width:100%}
+
+  /* the label is ON the picture, so a screen recording or a screenshot carries it */
+  .aitag{position:absolute;top:14px;right:14px;background:rgba(10,12,15,.66);color:#fff;
+         backdrop-filter:blur(6px);font:600 12px var(--sans);letter-spacing:.04em;
+         padding:6px 11px;border-radius:99px;pointer-events:none}
+  .disclose{margin:12px 0 0;text-align:center;font-size:12px;color:var(--dim)}
+
+  /* asking */
+  .ask{width:min(100%, 820px)}
+  form{display:flex;gap:8px}
+  input[type=text]{flex:1;min-width:0;background:var(--panel);color:var(--ink);
+    border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:inherit;font-size:15.5px}
+  input[type=text]:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  form button{background:var(--accent);color:#08110f;border:0;border-radius:10px;
+    padding:0 22px;font:inherit;font-weight:650;cursor:pointer}
+  form button:disabled{opacity:.45;cursor:default}
+  @media (prefers-color-scheme:light){form button{color:#fff}}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;justify-content:center}
+  .chip{background:transparent;color:var(--dim);border:1px solid var(--line);
+    border-radius:99px;padding:5px 12px;font:12.5px var(--sans);cursor:pointer}
+  .chip:hover{color:var(--ink);border-color:var(--accent)}
+
+  /* where the time went: always on screen, because it is what gets worked on */
+  .timing{width:min(100%, 820px);font-size:12px;color:var(--dim)}
+  .bar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--panel);
+       border:1px solid var(--line)}
+  .bar i{display:block;height:100%;min-width:2px;transition:flex-grow .25s linear}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px}
+  .legend span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .legend em{width:9px;height:9px;border-radius:2px;display:block}
+  .legend b{color:var(--ink);font:600 12px var(--mono);font-variant-numeric:tabular-nums}
+  .legend .tot{margin-left:auto} .legend .tot b{color:var(--accent)}
+  .sub2{margin-top:5px;font:11px var(--mono);color:var(--dim);min-height:1em}
+
+  /* details, out of the way */
+  aside{position:fixed;top:0;right:0;bottom:0;width:min(420px, 100%);background:var(--panel);
+        border-left:1px solid var(--line);transform:translateX(100%);transition:transform .2s;
+        display:flex;flex-direction:column;z-index:5}
+  aside.open{transform:none}
+  aside .hd{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+  aside .hd b{font-size:14px} aside .hd button{margin-left:auto;background:none;border:0;
+        color:var(--dim);font-size:18px;cursor:pointer}
+  aside .bd{flex:1;overflow-y:auto;padding:14px 16px}
+  .nums{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);
+        border-radius:8px;overflow:hidden;margin-bottom:14px}
+  .nums div{padding:9px 10px;border-right:1px solid var(--line)}
+  .nums div:last-child{border-right:0}
+  .nums b{display:block;font:600 18px var(--mono);font-variant-numeric:tabular-nums}
+  .nums span{font-size:11px;color:var(--dim)}
+  .tl{list-style:none;margin:0 0 14px;padding:0 0 0 12px;border-left:2px solid var(--line)}
+  .tl li{display:flex;gap:10px;font:12px var(--mono);padding:2px 0}
+  .tl .t{color:var(--dim);min-width:50px;text-align:right;font-variant-numeric:tabular-nums}
+  .tl li.hit .w{color:var(--accent)} .tl li.bad .w{color:var(--err)}
+  .full{white-space:pre-wrap;font-size:13.5px;color:var(--ink)}
+  .full .rest{color:var(--dim)}
+  .meta{font:11px var(--mono);color:var(--dim);margin-top:8px}
+  @media (max-width:600px){ header{padding:10px 16px} main{padding:0 16px 16px} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Ask {{NAME}}</h1>
+  <nav>
+    <button type="button" id="dbtn">Details</button>
+  </nav>
+</header>
+
+<main>
+  <div class="stage">
+    <canvas id="cv" width="1280" height="720"></canvas>
+    <div class="warm" id="warm">getting him ready…</div>
+    <div class="pill" id="pill"><i></i><span id="ptext">listening</span><span class="secs" id="psecs"></span></div>
+    <div class="caption" id="cap"></div>
+    <div class="aitag" title="the face, voice and words are generated">AI-generated</div>
+    <button class="tap" id="tap" type="button">tap to hear him</button>
+  </div>
+
+  <div class="ask">
+    <form id="f">
+      <input type="text" id="q" placeholder="ask {{NAME}} something…" autocomplete="off">
+      <button id="go">Ask</button>
+    </form>
+    <div class="chips" id="chips"></div>
+    <p class="disclose">AI-generated. The face, the voice and the answer are made by models
+      from {{NAME}}'s public videos. {{NAME}} did not say this.</p>
+  </div>
+  <div class="timing" id="timing" hidden>
+    <div class="bar" id="bar"></div>
+    <div class="legend" id="legend"></div>
+    <div class="sub2" id="sub2"></div>
+  </div>
+</main>
+
+<aside id="det">
+  <div class="hd"><b>What happened</b><button type="button" id="dclose" aria-label="close">×</button></div>
+  <div class="bd">
+    <div class="nums">
+      <div><b id="n_think">—</b><span>writing the answer</span></div>
+      <div><b id="n_voice">—</b><span>first audio</span></div>
+      <div><b id="n_face">—</b><span>he starts talking</span></div>
+    </div>
+    <ul class="tl" id="tl"></ul>
+    <div class="full" id="full"></div>
+    <div class="meta" id="meta"></div>
+  </div>
+</aside>
+
+<script>
+const $ = s => document.querySelector(s);
+const FPS = 30, FADE_MS = 350;
+const SAMPLES = /*SAMPLES*/[];
+
+for (const s of SAMPLES){
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'chip'; b.textContent = s;
+  b.onclick = () => { $('#q').value = s; $('#f').requestSubmit(); };
+  $('#chips').appendChild(b);
+}
+$('#dbtn').onclick = () => $('#det').classList.toggle('open');
+$('#dclose').onclick = () => $('#det').classList.remove('open');
+
+/* ---------------------------------------------------------------- frames */
+function b64blob(b64){
+  const bin = atob(b64), u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Blob([u], {type:'image/jpeg'});
+}
+async function ndjson(url, onLine){
+  const r = await fetch(url), rd = r.body.getReader(), dec = new TextDecoder();
+  let buf = '';
+  for (;;){
+    const c = await rd.read();
+    if (c.done) break;
+    buf += dec.decode(c.value, {stream:true});
+    let nl;
+    while ((nl = buf.indexOf('\n')) >= 0){
+      const line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+      if (!line.trim()) continue;
+      let m; try { m = JSON.parse(line); } catch { continue; }
+      if (onLine(m) === false) return;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------- player */
+// Two sources of pictures. REST: a loop of him at rest, generated once from silence. SPEAK: the current answer, frame n shown at
+// second n/30 of the answer's own audio. Switching between them crossfades, because
+// the two come from different real clips and the body would otherwise jump.
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const rest = [];                      // Blobs
+let speak = null;                     // {frames: Map i->Blob, audio, got, ended}
+let shown = null, fadeFrom = null, fadeT0 = 0, busy = false, lastKey = '';
+
+// FORWARD ONLY. Played back and forth, his real head movement reversed every few
+// seconds and read as shaking his head. At the wrap the body jumps back to the start of
+// the clip, so the wrap crossfades instead.
+let lastRest = -1;
+function restIndex(){
+  const n = rest.length; if (n < 2) return 0;
+  const k = Math.floor(performance.now() / 1000 * FPS) % n;
+  if (k < lastRest) startFade();
+  lastRest = k;
+  return k;
+}
+function startFade(){
+  if (shown){ if (fadeFrom && fadeFrom !== shown) fadeFrom.close?.(); fadeFrom = shown; shown = null; fadeT0 = performance.now(); }
+}
+function pick(){
+  if (speak && !speak.ended && speak.playing){
+    const i = Math.floor(speak.audio.currentTime * FPS);
+    let j = i; while (j >= 0 && !speak.frames.has(j)) j--;
+    for (const k of speak.frames.keys()) if (k < j) speak.frames.delete(k);
+    return j >= 0 ? ['s' + j, speak.frames.get(j)] : null;
+  }
+  if (rest.length){ const k = restIndex(); return ['r' + k, rest[k]]; }
+  return null;
+}
+async function tick(){
+  requestAnimationFrame(tick);
+  const fading = fadeFrom && performance.now() - fadeT0 < FADE_MS;
+  const p = pick();
+  if (!p || busy || (p[0] === lastKey && !fading)) return;
+  busy = true;
+  try {
+    const bm = p[0] === lastKey && shown ? shown : await createImageBitmap(p[1]);
+    if (shown && shown !== bm && shown !== fadeFrom) shown.close();
+    shown = bm; lastKey = p[0];
+    const a = fadeFrom ? Math.min((performance.now() - fadeT0) / FADE_MS, 1) : 1;
+    if (fadeFrom && a < 1){ ctx.globalAlpha = 1; ctx.drawImage(fadeFrom, 0, 0, cv.width, cv.height); }
+    ctx.globalAlpha = a; ctx.drawImage(bm, 0, 0, cv.width, cv.height); ctx.globalAlpha = 1;
+    if (fadeFrom && a >= 1){ if (fadeFrom !== shown) fadeFrom.close(); fadeFrom = null; }
+    $('#warm').style.display = 'none';
+  } catch {}
+  busy = false;
+}
+requestAnimationFrame(tick);
+
+async function loadRest(){
+  let state = '';
+  await ndjson('/idle', m => {
+    if (m.end){ state = m.idle; return false; }
+    rest.push(b64blob(m.b64));
+  });
+  if (!rest.length){
+    $('#warm').textContent = 'getting him ready… (' + (state || 'waiting for the face service') + ')';
+    setTimeout(loadRest, 4000);
+  }
+}
+loadRest();
+
+/* ---------------------------------------------------------------- captions */
+let capChunks = [];
+function setCaptions(text){
+  // whole sentences, then no more than ~13 words on screen at once
+  capChunks = [];
+  for (const s of text.split(/(?<=[.!?])\s+/)){
+    const w = s.split(/\s+/).filter(Boolean);
+    for (let i = 0; i < w.length; i += 13) capChunks.push(w.slice(i, i + 13));
+  }
+}
+function captionAt(t, dur){
+  const total = capChunks.reduce((a, c) => a + c.length, 0);
+  if (!total || !dur) return '';
+  let acc = 0;
+  for (const c of capChunks){ acc += c.length; if (acc / total * dur >= t) return c.join(' '); }
+  return '';
+}
+function showCap(s){
+  const el = $('#cap');
+  if (!s){ el.textContent = ''; return; }
+  if (el.dataset.s === s) return;
+  el.dataset.s = s; el.innerHTML = ''; const sp = document.createElement('span');
+  sp.textContent = s; el.appendChild(sp);
+}
+setInterval(() => {
+  if (speak && speak.playing && !speak.ended)
+    showCap(captionAt(speak.audio.currentTime, speak.audio.duration));
+}, 120);
+
+/* ---------------------------------------------------------------- status */
+let tAsk = 0, timer = null;
+function status(kind, text){
+  $('#pill').className = 'pill ' + kind; $('#ptext').textContent = text;
+  clearInterval(timer); $('#psecs').textContent = '';
+  if (kind === 'thinking'){
+    timer = setInterval(() => $('#psecs').textContent =
+      Math.floor((performance.now() - tAsk) / 1000) + 's', 250);
+  }
+}
+function row(t, text, cls){
+  const li = document.createElement('li'); li.className = cls || '';
+  li.innerHTML = '<span class="t"></span><span class="w"></span>';
+  li.querySelector('.t').textContent = t == null ? '' : t.toFixed(2) + 's';
+  li.querySelector('.w').textContent = text;
+  $('#tl').appendChild(li);
+}
+
+/* ---------------------------------------------------------------- timing */
+// Each stage runs from the event that starts it to the event that ends it, on the
+// demo server's clock. The one running now grows live, so a stall is visible.
+const STAGES = [
+  ['answer',      'writing the answer',  '#e2b04a'],
+  ['audio_first', 'voice: first sound',  '#7fb3e0'],
+  ['audio_done',  'voice: the rest',     '#4f86c6'],
+  ['face_job',    'hand to the face',    '#a98bd6'],
+  ['first_frame', 'face: first frame',   '#4db6a4'],
+];
+let ev = {}, tLive = null;
+function drawTiming(){
+  const now = tLive == null ? null : (performance.now() - tLive.wall) / 1000 + tLive.t;
+  let prev = 0, total = 0;
+  const bar = $('#bar'), leg = $('#legend');
+  bar.innerHTML = ''; leg.innerHTML = '';
+  for (const [k, label, col] of STAGES){
+    let d = null;
+    if (k in ev) d = ev[k] - prev;
+    else if (now != null && !Object.keys(ev).some(x => STAGES.findIndex(s => s[0] === x) >
+             STAGES.findIndex(s => s[0] === k))) { d = Math.max(now - prev, 0); }
+    if (d == null) continue;
+    const i = document.createElement('i'); i.style.background = col; i.style.flexGrow = Math.max(d, .01);
+    bar.appendChild(i);
+    const sp = document.createElement('span');
+    sp.innerHTML = `<em style="background:${col}"></em>${label} <b>${d.toFixed(d < 10 ? 2 : 1)}s</b>`
+                 + (k in ev ? '' : ' …');
+    leg.appendChild(sp);
+    total = prev + d;
+    if (!(k in ev)) break;
+    prev = ev[k];
+  }
+  const t = document.createElement('span'); t.className = 'tot';
+  t.innerHTML = `he starts talking after <b>${total.toFixed(1)}s</b>`;
+  leg.appendChild(t);
+}
+setInterval(() => { if (tLive) drawTiming(); }, 200);
+
+/* ---------------------------------------------------------------- speaking */
+function play(job){
+  const audio = new Audio('/face/audio?job=' + encodeURIComponent(job));
+  const S = speak = {frames:new Map(), audio, playing:false, ended:false};
+  const begin = () => {
+    if (S.playing || speak !== S || !S.frames.size || audio.readyState < 3) return;
+    audio.play().then(() => {
+      S.playing = true; startFade(); status('speaking', 'speaking');
+    }).catch(() => {
+      const tap = $('#tap'); tap.style.display = 'grid';
+      tap.onclick = () => { tap.style.display = 'none'; begin(); };
+    });
+  };
+  audio.addEventListener('canplaythrough', begin);
+  audio.addEventListener('ended', () => {
+    S.ended = true; startFade(); showCap(''); status('', 'listening');
+  });
+  ndjson('/face/frames?job=' + encodeURIComponent(job), m => {
+    if (speak !== S) return false;
+    if (m.end) return false;
+    S.frames.set(m.i, b64blob(m.b64));
+    if (!S.playing) begin();
+  });
+}
+
+$('#f').onsubmit = async ev => {
+  ev.preventDefault();
+  const q = $('#q').value.trim();
+  if (!q) return;
+  $('#go').disabled = true;
+  if (speak){ speak.audio.pause(); speak.ended = true; startFade(); speak = null; }
+  showCap(''); $('#tl').innerHTML = ''; $('#full').textContent = ''; $('#meta').textContent = '';
+  for (const id of ['n_think','n_voice','n_face']) $('#'+id).textContent = '—';
+  tAsk = performance.now(); status('thinking', 'thinking');
+  ev = {}; tLive = {t:0, wall:performance.now()}; $('#sub2').textContent = '';
+  $('#timing').hidden = false; drawTiming();
+  row(0, q);
+
+  let job;
+  try {
+    job = (await (await fetch('/go', {method:'POST',
+      headers:{'content-type':'application/json'}, body: JSON.stringify({q})})).json()).job;
+  } catch { status('', 'could not reach the server'); $('#go').disabled = false; return; }
+
+  await ndjson('/events?job=' + job, m => {
+    if (m.kind === 'eof') return false;
+    handle(m);
+  });
+  $('#go').disabled = false;
+};
+
+function handle(m){
+  if (STAGES.some(s => s[0] === m.kind)){ ev[m.kind] = m.t; tLive = {t:m.t, wall:performance.now()}; }
+  if (m.kind === 'first_frame'){ tLive = null; drawTiming(); }
+  if (m.kind === 'error'){ tLive = null; drawTiming(); }
+  if (m.kind === 'first_frame' && m.face_stages){
+    const st = m.face_stages, ms = v => (v / 1000).toFixed(2) + 's';
+    $('#sub2').textContent = 'inside the face: ' + Object.entries(st)
+      .filter(([, v]) => v >= 5).map(([k, v]) => `${k} ${ms(v)}`).join(' · ');
+  }
+  if (m.kind === 'done' && m.render_fps){
+    $('#sub2').textContent += ` · drawn at ${m.render_fps} fps (${m.realtime_x}x real time)`;
+  }
+  switch (m.kind){
+    case 'stage': row(m.t, m.text); break;
+    case 'answer': {
+      $('#n_think').textContent = m.t.toFixed(1) + 's';
+      row(m.t, `answer written, ${m.words} words`, 'hit');
+      setCaptions(m.spoken);
+      const full = $('#full'); full.textContent = m.spoken;
+      if (m.trimmed){
+        const r = document.createElement('span'); r.className = 'rest';
+        r.textContent = ' ' + m.text.slice(m.spoken.length).trim(); full.appendChild(r);
+      }
+      $('#meta').textContent = `${m.cited} passages cited · ${m.searched} searches`
+        + (m.trimmed ? ' · grey text was not spoken (longer than one answer holds)' : '');
+      status('thinking', 'finding the words');
+      break;
+    }
+    case 'audio_first':
+      $('#n_voice').textContent = m.t.toFixed(2) + 's'; row(m.t, 'first audio', 'hit'); break;
+    case 'audio_done': row(m.t, `${m.seconds}s of speech`); break;
+    case 'face_job': row(m.t, 'face started'); play(m.job); break;
+    case 'first_frame':
+      $('#n_face').textContent = m.t.toFixed(2) + 's'; row(m.t, 'first frame', 'hit'); break;
+    case 'done': row(m.t, `${m.frames} frames`); break;
+    case 'error':
+      row(m.t, 'failed: ' + m.text, 'bad'); status('', 'something failed, see Details'); break;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<title>Three Loops</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --ink:#18222c; --ink-soft:#4a5a67; --ink-faint:#7b8b95;
+    --paper:#f6f7f4; --surface:#ffffff; --surface-2:#eef1ed;
+    --rule:#d8ded9; --rule-hard:#b9c3bc;
+    --dep:#2f6f5e; --har:#a8562c; --warn:#8a6d1f; --dead:#98a3a8;
+    --dep-wash:#e6efeb; --har-wash:#f6e9e1; --warn-wash:#f5efdc;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ink:#e4e9e5; --ink-soft:#a8b5ad; --ink-faint:#7d8a83;
+      --paper:#151a18; --surface:#1d2422; --surface-2:#242c29;
+      --rule:#2f3a36; --rule-hard:#41504a;
+      --dep:#6fc0a6; --har:#e09163; --warn:#ccae5c; --dead:#6b7672;
+      --dep-wash:#1c2b26; --har-wash:#2e211a; --warn-wash:#2a2517;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e4e9e5; --ink-soft:#a8b5ad; --ink-faint:#7d8a83;
+    --paper:#151a18; --surface:#1d2422; --surface-2:#242c29;
+    --rule:#2f3a36; --rule-hard:#41504a;
+    --dep:#6fc0a6; --har:#e09163; --warn:#ccae5c; --dead:#6b7672;
+    --dep-wash:#1c2b26; --har-wash:#2e211a; --warn-wash:#2a2517;
+  }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Source Sans 3","Helvetica Neue",Arial,sans-serif;
+    font-size:16.5px; line-height:1.6; padding-inline:20px; padding-block:0;
+  }
+  .wrap{max-width:860px; margin:0 auto; padding-block:44px 80px;}
+  h1,h2{font-family:"Newsreader",Georgia,serif; font-weight:600; text-wrap:balance; line-height:1.18;}
+  h1{font-size:2.5rem; margin:0 0 .3rem;}
+  h2{font-size:1.55rem; margin:3rem 0 .2rem; padding-top:1.3rem; border-top:1px solid var(--rule);}
+  .dek{font-family:"Newsreader",Georgia,serif; font-size:1.2rem; font-style:italic;
+       color:var(--ink-soft); margin:0 0 .4rem; max-width:58ch;}
+  .meta{font-family:"IBM Plex Mono",monospace; font-size:.73rem; letter-spacing:.06em;
+        text-transform:uppercase; color:var(--ink-faint); margin-bottom:2.4rem;}
+  p{max-width:66ch; margin:.8rem 0;}
+  code{font-family:"IBM Plex Mono",monospace; font-size:.85em;
+       background:var(--surface-2); padding:.1em .34em; border-radius:3px;}
+  strong{font-weight:600;}
+  figure{margin:1.8rem 0;}
+  figure svg{display:block; width:100%; height:auto; max-width:100%;}
+  figcaption{font-size:.85rem; color:var(--ink-soft); margin-top:.5rem; max-width:64ch;}
+  .scroll{overflow-x:auto; margin:1.4rem 0;}
+  table{border-collapse:collapse; width:100%; font-size:.9rem; min-width:460px;}
+  th,td{text-align:left; padding:.48rem .7rem; border-bottom:1px solid var(--rule); vertical-align:top;}
+  th{font-family:"IBM Plex Mono",monospace; font-size:.69rem; text-transform:uppercase;
+     letter-spacing:.07em; color:var(--ink-faint); font-weight:400;
+     border-bottom:1px solid var(--rule-hard);}
+  td.num{text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;}
+  .cite{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--ink-faint);}
+  .flag{background:var(--warn-wash); border-left:3px solid var(--warn);
+        padding:.9rem 1.1rem; margin:1.4rem 0; font-size:.94rem; border-radius:0 4px 4px 0;}
+  .flag p{margin:.3rem 0;}
+  .flag .k{font-family:"IBM Plex Mono",monospace; font-size:.7rem; text-transform:uppercase;
+           letter-spacing:.09em; color:var(--warn); display:block; margin-bottom:.35rem; font-weight:600;}
+  ul{max-width:66ch; padding-left:1.15rem;} li{margin:.35rem 0;}
+</style>
+
+<div class="wrap">
+
+<h1>Three Loops</h1>
+<p class="dek">The answering system already had a loop. The benchmark split it in half to measure retrieval, and the harness built a third loop across the halves.</p>
+<p class="meta">alive / engines / knowledge_style &middot; 17 September 2026</p>
+
+<h2>The real system is one conversation</h2>
+
+<p><span class="cite">agent.py:229</span> &nbsp;<code>run(question, &hellip;, max_turns=5)</code></p>
+
+<figure>
+<svg viewBox="0 0 860 210" role="img" aria-label="The deployed answering function: one conversation that searches, sees results, and either searches again or answers, up to five turns.">
+  <defs><marker id="m1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">
+    <text x="0" y="12" font-size="10.5" letter-spacing="1.1" fill="#7b8b95">ONE PROMPT, ONE MODEL, UP TO FIVE ROUNDS</text>
+
+    <rect x="0" y="62" width="96" height="40" rx="4" fill="none" stroke="#b9c3bc"/>
+    <text x="48" y="86" text-anchor="middle">question</text>
+    <line x1="96" y1="82" x2="150" y2="82" stroke="#b9c3bc" marker-end="url(#m1)" color="#b9c3bc"/>
+
+    <rect x="152" y="40" width="300" height="122" rx="5" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.6"/>
+    <text x="164" y="60" fill="#2f6f5e" font-weight="600" font-size="10.5">THE CONVERSATION</text>
+    <text x="164" y="82" fill="#2f6f5e" font-size="10.5">emit SEARCH lines</text>
+    <text x="164" y="100" fill="#2f6f5e" font-size="10.5">read the spans that come back</text>
+    <text x="164" y="118" fill="#2f6f5e" font-size="10.5">search again, or write the answer</text>
+    <path d="M300,128 C300,150 210,150 210,128" fill="none" stroke="#2f6f5e" stroke-width="1.4" marker-end="url(#m1)" color="#2f6f5e"/>
+    <text x="256" y="156" text-anchor="middle" fill="#2f6f5e" font-size="9.5">up to 5 turns</text>
+
+    <line x1="452" y1="82" x2="506" y2="82" stroke="#2f6f5e" marker-end="url(#m1)" color="#2f6f5e"/>
+    <rect x="508" y="62" width="104" height="40" rx="4" fill="none" stroke="#2f6f5e"/>
+    <text x="560" y="86" text-anchor="middle" fill="#2f6f5e">answer</text>
+
+    <text x="640" y="72" font-size="10.5">Query writing and</text>
+    <text x="640" y="88" font-size="10.5">answering are the same</text>
+    <text x="640" y="104" font-size="10.5">call, in one context.</text>
+  </g>
+</svg>
+<figcaption>Round two sees round one's passages in full, alongside the identity prompt and the instruction to search in his vocabulary. The model deciding what is missing is the same model that will write the answer.</figcaption>
+</figure>
+
+<h2>The benchmark cut it in half</h2>
+
+<p>To measure retrieval on its own, the benchmark runs only the search half and throws the answer away, then hands the queries to a separate assembling call. Both halves are real code from the deployed path &mdash; but the conversation between them is gone.</p>
+
+<figure>
+<svg viewBox="0 0 860 250" role="img" aria-label="The benchmark splits the one conversation into a query-writing half and an assembling half, with the loop removed.">
+  <defs><marker id="m2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">
+    <text x="0" y="12" font-size="10.5" letter-spacing="1.1" fill="#7b8b95">TWO CALLS, NOTHING BETWEEN THEM</text>
+
+    <rect x="0" y="46" width="250" height="86" rx="5" fill="none" stroke="#2f6f5e" stroke-width="1.5"/>
+    <text x="12" y="66" fill="#2f6f5e" font-weight="600" font-size="10.5">QUERY WRITING</text>
+    <text x="12" y="84" fill="#2f6f5e" font-size="10">retrieval_bench.py:82</text>
+    <text x="12" y="102" fill="#2f6f5e" font-size="10">same prompt, same exemplars</text>
+    <text x="12" y="119" fill="#2f6f5e" font-size="10">the answer it writes is DISCARDED</text>
+
+    <path d="M118,132 C118,158 62,158 62,132" fill="none" stroke="#98a3a8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#m2)" color="#98a3a8"/>
+    <text x="126" y="152" fill="#98a3a8" font-size="9.5">turns=4 available &mdash; every arm ran turns=1</text>
+
+    <line x1="250" y1="88" x2="312" y2="88" stroke="#b9c3bc" stroke-width="1.5" marker-end="url(#m2)" color="#b9c3bc"/>
+    <rect x="314" y="62" width="126" height="48" rx="4" fill="var(--surface-2)" stroke="#b9c3bc"/>
+    <text x="377" y="82" text-anchor="middle" font-size="10">a list of queries</text>
+    <text x="377" y="98" text-anchor="middle" font-size="10" fill="#7b8b95">passed as DATA</text>
+
+    <line x1="440" y1="88" x2="502" y2="88" stroke="#b9c3bc" stroke-width="1.5" marker-end="url(#m2)" color="#b9c3bc"/>
+
+    <rect x="504" y="46" width="250" height="86" rx="5" fill="none" stroke="#2f6f5e" stroke-width="1.5"/>
+    <text x="516" y="66" fill="#2f6f5e" font-weight="600" font-size="10.5">ASSEMBLING</text>
+    <text x="516" y="84" fill="#2f6f5e" font-size="10">answer_bench.py:170</text>
+    <text x="516" y="102" fill="#2f6f5e" font-size="10">searches those queries again,</text>
+    <text x="516" y="119" fill="#2f6f5e" font-size="10">writes the answer, one call</text>
+
+    <text x="0" y="192" font-size="10.5" fill="#8a6d1f">The assembler cannot ask for anything. It receives a fixed pool and writes.</text>
+    <text x="0" y="210" font-size="10.5" fill="#8a6d1f">The query writer never learns what the answer needed.</text>
+    <text x="0" y="234" font-size="10.5" fill="#a8562c">This split, not the deployed design, is what the harness was built on top of.</text>
+  </g>
+</svg>
+<figcaption>The split exists for a good reason &mdash; retrieval cannot be scored alone while it is entangled with answering. The cost is that the benchmark's "baseline" is the real system with its loop switched off.</figcaption>
+</figure>
+
+<h2>Where the harness actually attaches</h2>
+
+<p>The harness is called <em>after</em> the queries exist. It never sees the question before retrieval has happened, so it cannot write the first queries &mdash; which is why its gap check writes its own, and writes them worse.</p>
+
+<figure>
+<svg viewBox="0 0 860 330" role="img" aria-label="The harness control surface: query writing, search and pooling happen before it is called; it controls extra searches, the relevance filter, the closing instruction and the turn budget.">
+  <defs><marker id="m3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">
+
+    <text x="0" y="12" font-size="10.5" letter-spacing="1.1" fill="#98a3a8">OUT OF REACH — DECIDED BEFORE THE HARNESS RUNS</text>
+    <rect x="0" y="24" width="470" height="76" rx="5" fill="none" stroke="#98a3a8" stroke-dasharray="5 3"/>
+    <text x="14" y="46" fill="#98a3a8">[1] query writing</text>
+    <text x="14" y="64" fill="#98a3a8">[2] search &mdash; word overlap, 292 passages, top 6 + neighbours</text>
+    <text x="14" y="82" fill="#98a3a8">[3] pool &mdash; dedup, ~41 passages</text>
+    <text x="486" y="56" fill="#98a3a8" font-size="10">arrives as</text>
+    <text x="486" y="72" fill="#98a3a8" font-size="10">item["queries"]</text>
+
+    <line x1="235" y1="100" x2="235" y2="126" stroke="#98a3a8" stroke-width="1.4" marker-end="url(#m3)" color="#98a3a8"/>
+    <line x1="0" y1="118" x2="860" y2="118" stroke="#a8562c" stroke-width="1.2" stroke-dasharray="6 4"/>
+    <text x="612" y="113" fill="#a8562c" font-size="10">the harness starts here</text>
+
+    <text x="0" y="146" font-size="10.5" letter-spacing="1.1" fill="#a8562c">THE CONTROL SURFACE</text>
+
+    <rect x="0" y="158" width="470" height="52" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.5"/>
+    <text x="14" y="178" fill="#a8562c" font-weight="600">[4] extra searches</text>
+    <text x="14" y="196" fill="#a8562c" font-size="10">names what is missing, then writes its OWN query for it</text>
+    <path d="M100,210 C100,232 40,232 40,210" fill="none" stroke="#a8562c" stroke-width="1.3" marker-end="url(#m3)" color="#a8562c"/>
+    <text x="112" y="228" fill="#a8562c" font-size="9.5">2 rounds, stops when a search finds nothing new</text>
+
+    <rect x="0" y="244" width="470" height="34" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.5"/>
+    <text x="14" y="265" fill="#a8562c" font-weight="600">[5] relevance filter &mdash; decides what reaches the assembler</text>
+
+    <rect x="0" y="288" width="470" height="34" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.5"/>
+    <text x="14" y="309" fill="#a8562c" font-weight="600">[6] the closing instruction, turn budget, tool availability</text>
+
+    <line x1="470" y1="262" x2="530" y2="262" stroke="#a8562c" stroke-width="1.5" marker-end="url(#m3)" color="#a8562c"/>
+    <rect x="532" y="238" width="160" height="48" rx="4" fill="none" stroke="#2f6f5e" stroke-width="1.5"/>
+    <text x="612" y="258" text-anchor="middle" fill="#2f6f5e" font-size="10">[7] ASSEMBLE + PARSE</text>
+    <text x="612" y="275" text-anchor="middle" fill="#2f6f5e" font-size="10">unchanged, shared code</text>
+    <line x1="692" y1="262" x2="746" y2="262" stroke="#2f6f5e" stroke-width="1.5" marker-end="url(#m3)" color="#2f6f5e"/>
+    <text x="754" y="266" fill="#2f6f5e">answer</text>
+  </g>
+</svg>
+<figcaption>Solid orange is what the harness decides. Dashed grey is fixed before it is invoked. The persona, the 18 verbatim speech samples, the required answer format and the search mechanics are all outside its reach &mdash; deliberately, because that is what makes the comparison fair.</figcaption>
+</figure>
+
+<h2>So the same job is being done three times</h2>
+
+<figure>
+<svg viewBox="0 0 860 236" role="img" aria-label="Three loops compared: the real system's five-turn loop never benchmarked, the benchmark's replica run at one turn, and the harness's gap loop at two to three rounds.">
+  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">
+    <text x="0" y="12" font-size="10.5" letter-spacing="1.1" fill="#7b8b95">WHO DECIDES WHAT TO SEARCH FOR NEXT</text>
+
+    <rect x="0" y="28" width="860" height="58" rx="5" fill="none" stroke="#2f6f5e" stroke-width="1.6"/>
+    <text x="14" y="48" fill="#2f6f5e" font-weight="600">1 &nbsp;THE REAL LOOP</text>
+    <text x="150" y="48" fill="#2f6f5e" font-size="10">agent.py:229 &nbsp;&middot;&nbsp; max_turns=5 &nbsp;&middot;&nbsp; one conversation, full persona in context</text>
+    <text x="14" y="70" fill="#8a6d1f" font-size="10.5">NEVER BENCHMARKED &mdash; no arm in any result we have runs this</text>
+
+    <rect x="0" y="96" width="860" height="58" rx="5" fill="none" stroke="#98a3a8" stroke-width="1.4"/>
+    <text x="14" y="116" fill="#98a3a8" font-weight="600">2 &nbsp;THE BENCHMARK'S REPLICA</text>
+    <text x="230" y="116" fill="#98a3a8" font-size="10">retrieval_bench.py:82 &nbsp;&middot;&nbsp; supports turns=4 &nbsp;&middot;&nbsp; same prompt</text>
+    <text x="14" y="138" fill="#98a3a8" font-size="10.5">RUN AT turns=1 IN EVERY ARM &mdash; this is what we have been calling "deployed"</text>
+
+    <rect x="0" y="164" width="860" height="58" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.6"/>
+    <text x="14" y="184" fill="#a8562c" font-weight="600">3 &nbsp;THE HARNESS LOOP</text>
+    <text x="180" y="184" fill="#a8562c" font-size="10">harness/ladder.py &nbsp;&middot;&nbsp; 2&ndash;3 rounds &nbsp;&middot;&nbsp; a separate call, no persona, no exemplars</text>
+    <text x="14" y="206" fill="#a8562c" font-size="10.5">MEASURED: reaches 79% of the needed passages, against 85% when the model drives itself</text>
+  </g>
+</svg>
+<figcaption>Loops 1 and 2 are the same design, one being a benchmark copy of the other. Loop 3 is a reimplementation with less context, and it is measurably worse at the one thing it exists to do.</figcaption>
+</figure>
+
+<div class="flag">
+  <span class="k">what this means for every number reported so far</span>
+  <p>Each arm labelled <strong>deployed k=6</strong> ran the query writer at <code>turns=1</code>. The deployed default is <code>max_turns=5</code>.</p>
+  <p>So "the harness beats deployed" may partly mean <strong>"a loop beats no loop"</strong> &mdash; which was never in question. The comparison that matters, loop against loop, has not been run.</p>
+</div>
+
+<h2>What is worth keeping</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>harness component</th><th>counterpart below it</th><th>verdict</th></tr></thead>
+  <tbody>
+    <tr><td><strong>[4]</strong> gap check and extra searches</td><td>loops 1 and 2 already do this, with more context</td><td>a worse duplicate &mdash; likely delete</td></tr>
+    <tr><td><strong>[5]</strong> relevance filter</td><td><strong>none.</strong> Nothing below filters passages before assembling</td><td>the only genuinely new component</td></tr>
+    <tr><td><strong>[6]</strong> closing instruction</td><td>fixed text in the deployed path</td><td>useful, cheap, unproven</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The filter is also the only piece whose mechanism was measured before its outcome, because retrieval is deterministic and set overlap against the oracle is a count rather than a judgement: <strong>80 passages down to 30, every essential passage kept, precision 4.6&times;.</strong></p>
+
+<h2>The order to settle it in</h2>
+
+<ul>
+  <li><strong>Open the two runs that already exist.</strong> <code>bench_turns1.json</code> and <code>bench_turns4.json</code> are loop 2 at one round and at four, already on disk. Scoring them on the four measures needs no generation and no new code, and it says what forcing the existing loop is worth against the harness's 79%.</li>
+  <li><strong>Then decide where the loop belongs</strong> &mdash; one conversation that searches until satisfied, or staged calls between searches. Every intervention that gave the model less context has lost, five times out of five.</li>
+  <li><strong>Latency is the real trade.</strong> Loop 1 is sequential calls with growing context; four rounds is unlikely to fit 60 seconds. The staged version fits in 38.</li>
+  <li><strong>Keep the filter either way.</strong> It is orthogonal to which loop wins, and it is the one thing here with no counterpart in the system below.</li>
+</ul>
+
+<p class="meta" style="margin-top:2.6rem">Derived document. Owners are the code cited throughout, <code>SYSTEM.md</code> and <code>METRICS.md</code>.</p>
+
+</div>

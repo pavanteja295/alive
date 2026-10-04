@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Why The Harness Failed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,300..700&display=swap">
+<style>
+:root{--paper:#faf8f5;--raise:#fffefc;--ink:#1a1714;--mut:#6b625a;--faint:#8d8478;
+--line:#e0d9d0;--hair:#eee9e2;--ochre:#a8622a;--ochre-soft:#f2e6da;
+--good:#2f6b4f;--good-soft:#e2ede6;--bad:#9c3b2a;--bad-soft:#f6e3de;
+--blue:#3a5a8c;--blue-soft:#e3e9f2;
+--serif:Newsreader,Georgia,serif;--sans:Archivo,-apple-system,"Segoe UI",sans-serif;
+--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+--paper:#191714;--raise:#211e1a;--ink:#ece7df;--mut:#9d9488;--faint:#7d7568;
+--line:#332e27;--hair:#282420;--ochre:#d9924f;--ochre-soft:#3a2b1d;
+--good:#76b891;--good-soft:#1e2e26;--bad:#d98770;--bad-soft:#33221e;
+--blue:#8aa9d8;--blue-soft:#1f2733}}
+:root[data-theme="dark"]{--paper:#191714;--raise:#211e1a;--ink:#ece7df;--mut:#9d9488;
+--faint:#7d7568;--line:#332e27;--hair:#282420;--ochre:#d9924f;--ochre-soft:#3a2b1d;
+--good:#76b891;--good-soft:#1e2e26;--bad:#d98770;--bad-soft:#33221e;
+--blue:#8aa9d8;--blue-soft:#1f2733}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--serif);
+-webkit-font-smoothing:antialiased}
+.page{max-width:900px;margin:0 auto;padding:0 20px 90px}
+h1{font:600 clamp(32px,5.6vw,50px)/1.05 var(--serif);letter-spacing:-.02em;margin:0}
+h2{font:600 clamp(23px,3.2vw,30px)/1.18 var(--serif);margin:0 0 6px;letter-spacing:-.012em}
+h3{font:600 19px/1.3 var(--serif);margin:28px 0 8px}
+h4{font:600 12px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+color:var(--mut);margin:0 0 8px}
+p{margin:0 0 1em}
+header{padding:58px 0 28px}
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;
+color:var(--ochre);margin-bottom:18px}
+.stamp{font:400 12px/1.7 var(--mono);color:var(--faint);margin-top:20px}
+section{padding:36px 0;border-top:1px solid var(--hair)}
+.secno{font:500 12px/1 var(--mono);color:var(--ochre);letter-spacing:.1em;margin-bottom:10px}
+.lede{font-size:1.12em;line-height:1.5}
+.box{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+padding:16px 18px;margin:0 0 1em}
+.box.bad{background:var(--bad-soft);border-color:var(--bad)}
+.box.good{background:var(--good-soft);border-color:var(--good)}
+.box.key{background:var(--ochre-soft);border-color:var(--ochre)}
+.box p:last-child{margin:0}
+pre{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+padding:14px 16px;overflow-x:auto;font:400 12.5px/1.55 var(--mono);margin:0 0 1em}
+pre .c{color:var(--faint)}pre .g{color:var(--good)}pre .b{color:var(--bad)}
+cite{display:block;font:400 11.5px/1.5 var(--mono);color:var(--faint);
+font-style:normal;margin:-.5em 0 1em}
+.tw{overflow-x:auto;margin:0 0 1em}
+table{border-collapse:collapse;width:100%;min-width:520px;font:400 14.5px/1.45 var(--sans)}
+th{text-align:left;font:600 11px/1.3 var(--sans);letter-spacing:.07em;text-transform:uppercase;
+color:var(--mut);padding:0 12px 8px 0;border-bottom:1px solid var(--line);vertical-align:bottom}
+td{padding:9px 12px 9px 0;border-bottom:1px solid var(--hair);vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+tr:last-child td{border-bottom:none}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.g{color:var(--good);font-weight:600}.b{color:var(--bad);font-weight:600}.m{color:var(--mut)}
+code{font:500 .86em var(--mono);color:var(--mut)}
+ul,ol{margin:0 0 1em;padding-left:1.2em}li{margin-bottom:.45em}li::marker{color:var(--faint)}
+figure{margin:0 0 1em}
+.fig{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+padding:18px 14px 10px;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:580px}
+figcaption{font:400 13px/1.5 var(--sans);color:var(--mut);padding-top:8px}
+svg text{font-family:Archivo,sans-serif}
+.nb{fill:var(--raise);stroke:var(--line);stroke-width:1}
+.nb-a{fill:var(--ochre-soft);stroke:var(--ochre);stroke-width:1.2}
+.nb-b{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.nb-g{fill:var(--good-soft);stroke:var(--good);stroke-width:1.2}
+.nt{fill:var(--ink);font-size:12.5px;font-weight:500}
+.ns{fill:var(--mut);font-size:11px}
+.nk{fill:var(--faint);font-size:10px;font-family:var(--mono);letter-spacing:.05em}
+.ed{stroke:var(--faint);stroke-width:1.3;fill:none}
+.ed-a{stroke:var(--ochre);stroke-width:1.6;fill:none}
+.axl{stroke:var(--line);stroke-width:1}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">failure analysis</div>
+  <h1>Why the harness failed</h1>
+  <p class="lede m" style="margin-top:16px;max-width:62ch">The loop exists to improve the answer. It did not. Four faults, all in the harness rather than the idea, three of them fixed. And the measurement that condemned it was itself broken.</p>
+  <div class="stamp">16 September 2026 &middot; paths relative to engines/knowledge_style/proto/</div>
+</header>
+
+<!-- ===================== 1 -->
+<section>
+  <div class="secno">01</div>
+  <h2>What the loop was supposed to buy</h2>
+  <p>The vanilla workflow writes four queries, retrieves once, and answers. It cannot react to what came back. The loop exists so four things become possible:</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:38%">the loop should allow</th><th>because vanilla cannot</th></tr></thead>
+      <tbody>
+        <tr><td>a query that found nothing gets rewritten</td><td>nothing tells it a query failed</td></tr>
+        <tr><td>a half-answered question gets the other half searched for</td><td>it never asks what is missing</td></tr>
+        <tr><td>noise gets judged and set aside</td><td>54% of what it sends cannot answer the question, unexamined</td></tr>
+        <tr><td>an unsupported claim gets caught before the person sees it</td><td>nothing checks the draft</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>All four are real gaps.</strong> The question is only whether my implementation delivered them, and it did not.</p>
+</section>
+
+<!-- ===================== 2 -->
+<section>
+  <div class="secno">02</div>
+  <h2>Fault 1 &mdash; the budget ate the answer</h2>
+  <div class="box bad">
+    <p><strong>23 of 100 questions produced no answer at all.</strong> All 23 hit the turn ceiling.</p>
+  </div>
+  <p>The budget counted turns, and a search cost the same as an answer. Nothing reserved turns for finishing, and the model was never told what it was spending.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:34%">per question</th><th>the 77 that answered</th><th>the 23 that did not</th></tr></thead>
+      <tbody>
+        <tr><td>searches</td><td class="num">7.04</td><td class="num b">11.65</td></tr>
+        <tr><td>reads</td><td class="num">3.92</td><td class="num b">5.13</td></tr>
+        <tr><td>passages pooled</td><td class="num">68</td><td class="num b">107</td></tr>
+        <tr><td>drafted anything</td><td class="num">all</td><td class="num b">under half</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>It failed on the questions where it searched hardest</strong> &mdash; the hard ones. So the 77 that answered were a biased, easier sample, and every number computed from them was flattered.</p>
+  <div class="box good">
+    <h4>fixed</h4>
+    <p>Warn at two turns remaining, and instruct it to answer with what it has or say the archive does not cover it. <strong>99 of 100 answered.</strong></p>
+  </div>
+  <cite>harness/run.py:116</cite>
+</section>
+
+<!-- ===================== 3 -->
+<section>
+  <div class="secno">03</div>
+  <h2>Fault 2 &mdash; a wasted search looked productive</h2>
+  <p>This is the one that most directly destroyed the loop's whole purpose.</p>
+  <pre><span class="c">tools.py, the index builder</span>
+rows = self.pool[-only_new:] <span class="b">if only_new else self.pool</span>
+
+<span class="c">only_new == 0 means NOTHING new. But:</span>
+&gt;&gt;&gt; pool = ['a','b','c']
+&gt;&gt;&gt; pool[-0:]
+<span class="b">['a', 'b', 'c']</span>   <span class="c"># the whole list, not nothing</span></pre>
+  <cite>tools.py:144 &mdash; fixed, now returns "nothing new" explicitly</cite>
+  <div class="box bad">
+    <p><strong>A search that found nothing new returned the entire pool as if it were fresh results.</strong> So a repeated or useless query was indistinguishable from a productive one.</p>
+    <p style="margin-top:.7em">The loop's first purpose is reacting to a bad query. With this bug there was no bad query &mdash; every search looked like it worked. <strong>It was not a loop. It was one retrieval repeated, with the feedback disconnected.</strong></p>
+  </div>
+  <div class="box good">
+    <h4>fixed, and the fix surfaced something</h4>
+    <p>Search now reports plain facts: how many are new, how many were already held, and <strong>which of the query's words appear nowhere in the archive at all</strong>.</p>
+    <p style="margin-top:.7em">First thing it revealed: <strong>he has never once said the word "procrastination."</strong> The asker's term for the thing is not his term. Queries built on it were partly dead and nothing said so.</p>
+  </div>
+  <cite>tools.py:109-142</cite>
+</section>
+
+<!-- ===================== 4 -->
+<section>
+  <div class="secno">04</div>
+  <h2>Fault 3 &mdash; the harness threw away finished answers</h2>
+  <p class="lede">Found only by reading the model's own narration. No metric would have caught it.</p>
+  <p>Ten questions where the harness lost and vanilla did not. Captured what the model said at every turn.</p>
+  <pre><span class="c">Q: "I've been running every morning for about eight months..."</span>
+  turn 3   <span class="b">wrote the complete answer, as prose</span>       called no tool
+  turn 4   "I'll verify the remaining passages"          called read_all
+  turn 5   <span class="b">wrote the answer again, slightly shorter</span>   called no tool</pre>
+  <div class="box bad">
+    <p>My loop saw no tool call, replied <em>"Call a tool"</em>, and the model wrote its answer again.</p>
+    <p style="margin-top:.7em"><strong>16 finished answers thrown away across ten questions &mdash; 1.6 per question, and every single question did it.</strong> Each redraft is shorter and sheds specifics.</p>
+    <p style="margin-top:.7em">On those same ten it had read <strong>54 passages</strong>. It was never under-retrieving. <strong>It was being made to repeat itself.</strong></p>
+  </div>
+  <cite>harness/run.py:124-127 before &middot; :131 after &middot; traces in /tmp/cot.json</cite>
+  <div class="box good">
+    <h4>fixed, atomically</h4>
+    <p>A substantial block of prose with no tool call <em>is</em> the answer. One condition, one line.</p>
+    <pre style="margin:.7em 0 0"><span class="g">if text and len(text.split()) &gt;= 90 and read_nums:
+    return text.strip(), {...}</span></pre>
+  </div>
+  <div class="box key">
+    <h4>the method point</h4>
+    <p>The scores said the loop was structurally worse at not omitting things. The narration said the model answered correctly first time and was ordered to do it again. <strong>When an arm loses and the mechanism is not obvious, read what the model said, not only what it scored.</strong></p>
+  </div>
+</section>
+
+<!-- ===================== 5 -->
+<section>
+  <div class="secno">05</div>
+  <h2>Fault 4 &mdash; it is not a superset, so the comparison was never fair</h2>
+  <p>I described this as adding a loop. It replaced five things at once.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:22%"></th><th style="width:28%">vanilla</th><th style="width:28%">harness</th><th>consequence</th></tr></thead>
+      <tbody>
+        <tr><td>instructions</td><td class="num">194 words</td><td class="num b">1,397 words</td><td>7x more text competing with 5,418 words of his speech</td></tr>
+        <tr><td>passages delivered</td><td class="g">all 43, full text</td><td class="b">an index; text on request</td><td>the model can fail to look</td></tr>
+        <tr><td>position</td><td class="g">one block, before "answer now"</td><td class="b">across 6-7 turns</td><td>early passages end far back in a long conversation</td></tr>
+        <tr><td>stopping</td><td>always answers</td><td>a judge decides</td><td>a decision point is a failure point</td></tr>
+        <tr><td>protocol</td><td>free text</td><td>native tool calls</td><td>fault 3</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="box bad">
+    <p><strong>A fair test would start by doing exactly what vanilla does</strong> &mdash; four searches, all 43 passages in full &mdash; and only then optionally continue. Then it could only match or beat it. As built it is a different pipeline that happens to loop.</p>
+  </div>
+  <p><strong>Not yet fixed.</strong> This is the next change, and it is the one that makes the comparison mean something.</p>
+</section>
+
+<!-- ===================== 6 -->
+<section>
+  <div class="secno">06</div>
+  <h2>And the measurement that condemned it was broken twice</h2>
+
+  <div class="box bad">
+    <h4>judge 1 &mdash; compared to one reference answer</h4>
+    <p>Each question was generated from a single passage, and that passage became the only correct answer. He covers the same ground across 17 videos, so an answer built from other things he genuinely said scored as wrong.</p>
+    <p style="margin-top:.7em"><strong>Proof: across 600 answers it never once returned a match.</strong> A measure that cannot return its own pass value is measuring distance from one reference, not quality.</p>
+    <p style="margin-top:.7em">Every number that condemned the harness &mdash; omissions at 29-34% against 18% &mdash; came from this.</p>
+  </div>
+
+  <div class="box bad">
+    <h4>judge 2 &mdash; asked "does this answer the question", and could not see incompleteness</h4>
+    <p>Adversarially tested. It correctly caught off-topic and vacuous answers and refusals. On this question it failed:</p>
+    <pre style="margin:.7em 0"><span class="c">"Why do I keep putting things off, and what should I actually do about it?"</span>
+  an answer covering the cause and the remedy    <span class="g">FULLY</span>
+  an answer covering only the cause              <span class="b">FULLY</span>   <span class="c">← wrong</span>
+  an answer covering only the remedy             <span class="b">FULLY</span>   <span class="c">← wrong</span></pre>
+    <p>It has no idea what a complete answer contains, so it sees a coherent answer to a real question and calls it complete. On this judge every arm scored 91-97% and the differences vanished &mdash; it manufactured success where judge 1 manufactured catastrophe.</p>
+  </div>
+
+  <div class="box good">
+    <h4>judge 3 &mdash; split the question first, then score per part</h4>
+    <p>The question is decomposed by a separate call that never sees any answer. Then each part is checked independently.</p>
+    <pre style="margin:.7em 0">split: 1. why do I procrastinate / what causes it
+       2. what should I actually do to stop
+
+  cause and remedy    <span class="g">2/2  complete</span>
+  cause only          <span class="g">1/2  incomplete</span>   <span class="c">← caught</span>
+  remedy only         <span class="g">1/2  incomplete</span>   <span class="c">← caught</span>
+  off topic           <span class="g">0/2  incomplete</span></pre>
+    <p><strong>Validated adversarially before being run on anything</strong> &mdash; which is the discipline both earlier judges skipped.</p>
+  </div>
+  <cite>judge.py &middot; judge2.py &middot; rejudge.py &middot; rejudge2.py</cite>
+</section>
+
+<!-- ===================== 7 -->
+<section>
+  <div class="secno">07</div>
+  <h2>Where this leaves it</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:44%">fault</th><th style="width:16%">state</th><th>what it cost</th></tr></thead>
+      <tbody>
+        <tr><td>budget reserved no turns for answering</td><td class="g">fixed</td><td>23 of 100 unanswered; the rest a biased sample</td></tr>
+        <tr><td>a wasted search looked productive</td><td class="g">fixed</td><td>the loop had no reason to vary a query &mdash; it was one retrieval repeated</td></tr>
+        <tr><td>finished answers rejected for not being tool calls</td><td class="g">fixed</td><td>1.6 redrafts per question, shedding content each time</td></tr>
+        <tr><td>not a superset of vanilla</td><td class="b">open</td><td>the comparison is not yet fair</td></tr>
+        <tr><td>judge measured the wrong thing, twice</td><td class="g">third judge built and validated</td><td>eleven interventions aimed at the wrong target</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="box key">
+    <p><strong>The honest position: the loop has not been given a fair test yet.</strong> Three of its four faults were mine and are fixed. The fourth means it still is not vanilla-plus-a-loop. And every score so far came from a judge that could not measure the thing being optimised.</p>
+    <p style="margin-top:.7em">What was definitely learned is smaller and more useful than any of the arms: <strong>he never says "procrastination"</strong>; a model given the choice always answers early; and a metric nobody validated cost more than every bug combined.</p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

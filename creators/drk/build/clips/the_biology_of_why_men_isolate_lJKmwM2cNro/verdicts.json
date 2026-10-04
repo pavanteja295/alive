@@ -1,0 +1,37 @@
+{
+"0":  {"verdict":"keep","kind":"centred","note":"clean full-frame talking head"},
+"2":  {"verdict":"keep","kind":"centred","note":"clean"},
+"4":  {"verdict":"keep","kind":"centred","note":"clean"},
+"9":  {"verdict":"keep","kind":"centred","note":"clean, largest cluster"},
+"10": {"verdict":"keep","kind":"centred","note":"clean"},
+"12": {"verdict":"keep","kind":"centred","note":"clean"},
+"14": {"verdict":"keep","kind":"centred","note":"orange/purple cards flank him at the frame EDGES; face centred and unoccluded, and the 3.2x face crop excludes most of the cards"},
+"15": {"verdict":"keep","kind":"centred","note":"push-in framing, face 0.209 vs 0.174; same room, same camera, just tighter. clean"},
+"18": {"verdict":"keep","kind":"centred","note":"clean"},
+"20": {"verdict":"keep","kind":"centred","note":"clean"},
+"22": {"verdict":"keep","kind":"centred","note":"cards at frame edges, as c14"},
+"23": {"verdict":"keep","kind":"centred","note":"clean"},
+"29": {"verdict":"keep","kind":"centred","note":"push-in, split out of c15 by subclustering"},
+"30": {"verdict":"keep","kind":"centred","note":"cards at edges, split out of c14"},
+"31": {"verdict":"keep","kind":"centred","note":"cards at edges, split out of c14"},
+
+"3":  {"verdict":"keep","kind":"panel","note":"side-by-side, assorted graphics left"},
+"5":  {"verdict":"keep","kind":"panel","note":"side-by-side, white paper graphic"},
+"7":  {"verdict":"keep","kind":"panel","note":"side-by-side, dark chemistry graphics"},
+"11": {"verdict":"keep","kind":"panel","note":"side-by-side"},
+"13": {"verdict":"keep","kind":"panel","note":"side-by-side, dark graphics"},
+"17": {"verdict":"keep","kind":"panel","note":"side-by-side, yellow-highlight paper"},
+"21": {"verdict":"keep","kind":"panel","note":"side-by-side"},
+"24": {"verdict":"keep","kind":"panel","note":"side-by-side, chemistry"},
+"28": {"verdict":"keep","kind":"panel","note":"17 frames, split out of c15 by subclustering"},
+
+"1":  {"verdict":"drop","kind":"graphic","note":"phone screenshots, no face (conf -1)"},
+"6":  {"verdict":"drop","kind":"graphic","note":"'How Coaching Can Help You' slide; detector fires on the CARTOON characters, face_w 0.048"},
+"16": {"verdict":"drop","kind":"graphic","note":"HG promo cards, no face"},
+"19": {"verdict":"drop","kind":"graphic","note":"HG logo sting and game footage, no face"},
+"25": {"verdict":"drop","kind":"graphic","note":"HG logo animation, face_w 0.041"},
+"26": {"verdict":"drop","kind":"graphic","note":"pink 'Something Special is Coming' outro banner, no face, 1 contiguous span"},
+"27": {"verdict":"drop","kind":"graphic","note":"HG logo, face_w 0.049"},
+
+"8":  {"verdict":"drop","kind":"different_shoot","note":"DIFFERENT RECORDING: brighter room, bookshelf and lamp, polo not hoodie, face 0.251 vs 0.174. One contiguous span of 214 frames. This is the case no pixel threshold in the earlier pipeline could reach -- clustering isolated it unaided."}
+}

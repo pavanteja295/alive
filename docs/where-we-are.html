@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Where We Are</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,300..700&display=swap">
+<style>
+:root{
+  --paper:#faf8f5; --raise:#fffefc; --ink:#1a1714; --mut:#6b625a; --faint:#8d8478;
+  --line:#e0d9d0; --hair:#eee9e2; --ochre:#a8622a; --ochre-soft:#f2e6da;
+  --good:#2f6b4f; --good-soft:#e2ede6; --bad:#9c3b2a; --bad-soft:#f6e3de;
+  --serif:Newsreader,Georgia,serif; --sans:Archivo,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#191714; --raise:#211e1a; --ink:#ece7df; --mut:#9d9488; --faint:#7d7568;
+  --line:#332e27; --hair:#282420; --ochre:#d9924f; --ochre-soft:#3a2b1d;
+  --good:#76b891; --good-soft:#1e2e26; --bad:#d98770; --bad-soft:#33221e;
+}}
+:root[data-theme="dark"]{
+  --paper:#191714; --raise:#211e1a; --ink:#ece7df; --mut:#9d9488; --faint:#7d7568;
+  --line:#332e27; --hair:#282420; --ochre:#d9924f; --ochre-soft:#3a2b1d;
+  --good:#76b891; --good-soft:#1e2e26; --bad:#d98770; --bad-soft:#33221e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:400 17px/1.6 var(--serif);-webkit-font-smoothing:antialiased}
+.page{max-width:820px;margin:0 auto;padding:0 20px 90px}
+h1{font:600 clamp(34px,6vw,52px)/1.05 var(--serif);letter-spacing:-.02em;margin:0}
+h2{font:600 clamp(23px,3vw,30px)/1.2 var(--serif);margin:0 0 6px;letter-spacing:-.01em}
+h3{font:600 19px/1.3 var(--serif);margin:26px 0 8px}
+h4{font:600 12px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--mut);margin:0 0 8px}
+p{margin:0 0 1em}
+header{padding:64px 0 32px}
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ochre);margin-bottom:18px}
+.stamp{font:400 12px/1.7 var(--mono);color:var(--faint);margin-top:20px}
+section{padding:34px 0;border-top:1px solid var(--hair)}
+.lede{font-size:1.12em;line-height:1.5}
+.box{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+  padding:16px 18px;margin:0 0 1em}
+.box.bad{background:var(--bad-soft);border-color:var(--bad)}
+.box.good{background:var(--good-soft);border-color:var(--good)}
+.box.key{background:var(--ochre-soft);border-color:var(--ochre)}
+.box p:last-child{margin:0}
+.tw{overflow-x:auto;margin:0 0 1em}
+table{border-collapse:collapse;width:100%;min-width:420px;font:400 14.5px/1.45 var(--sans)}
+th{text-align:left;font:600 11px/1.3 var(--sans);letter-spacing:.07em;
+  text-transform:uppercase;color:var(--mut);padding:0 12px 8px 0;
+  border-bottom:1px solid var(--line)}
+td{padding:8px 12px 8px 0;border-bottom:1px solid var(--hair);vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+tr:last-child td{border-bottom:none}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.g{color:var(--good);font-weight:600}
+.b{color:var(--bad);font-weight:600}
+.m{color:var(--mut)}
+ul,ol{margin:0 0 1em;padding-left:1.2em}
+li{margin-bottom:.4em}
+li::marker{color:var(--faint)}
+code{font:500 .86em var(--mono);color:var(--mut)}
+figure{margin:0 0 1em}
+.fig{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+  padding:18px 14px 10px;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:540px}
+figcaption{font:400 13px/1.5 var(--sans);color:var(--mut);padding-top:8px}
+svg text{font-family:Archivo,sans-serif}
+.nb{fill:var(--raise);stroke:var(--line);stroke-width:1}
+.nb-a{fill:var(--ochre-soft);stroke:var(--ochre);stroke-width:1.2}
+.nb-b{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.nb-g{fill:var(--good-soft);stroke:var(--good);stroke-width:1.2}
+.nt{fill:var(--ink);font-size:12.5px;font-weight:500}
+.ns{fill:var(--mut);font-size:11px}
+.nk{fill:var(--faint);font-size:10px;font-family:var(--mono);letter-spacing:.05em}
+.ed{stroke:var(--faint);stroke-width:1.3;fill:none}
+.ed-a{stroke:var(--ochre);stroke-width:1.6;fill:none}
+.axl{stroke:var(--line);stroke-width:1}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">state of play</div>
+  <h1>Where we are</h1>
+  <p class="lede m" style="margin-top:16px;max-width:60ch">Everything measured on the knowledge half of the pipeline, what it means, and the one thing wrong with the measurement that has not been fixed.</p>
+  <div class="stamp">16 September 2026 &middot; 100 questions &middot; nothing here is from memory, every number is in a file under proto/work/healthygamer/reports/</div>
+</header>
+
+<section>
+  <h2>The thing being measured</h2>
+  <p>Someone asks a question. The system finds passages from his transcripts and writes an answer. That is two model calls and one search.</p>
+</section>
+
+<section>
+  <h2>1 &nbsp;What actually runs</h2>
+
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 880 240" role="img" aria-label="The loop: one call writes queries, search returns passages, a second call writes the answer.">
+        <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,1 L7,4 L0,7 z" fill="var(--ochre)"/></marker>
+          <marker id="b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,1 L7,4 L0,7 z" fill="var(--faint)"/></marker></defs>
+
+        <rect class="nb" x="14" y="96" width="112" height="44" rx="2"/>
+        <text class="nt" x="26" y="123">a question</text>
+        <path class="ed-a" d="M126,118 H168" marker-end="url(#a)"/>
+
+        <rect class="nb nb-a" x="174" y="80" width="186" height="76" rx="2"/>
+        <text class="nk" x="186" y="98">call 1</text>
+        <text class="nt" x="186" y="118">who he is, 18 real</text>
+        <text class="nt" x="186" y="134">passages, how to search</text>
+        <text class="ns" x="186" y="150">~5,800 words in</text>
+        <path class="ed-a" d="M360,118 H404" marker-end="url(#a)"/>
+        <text class="nk" x="366" y="110">4 queries</text>
+
+        <rect class="nb nb-g" x="410" y="88" width="160" height="60" rx="2"/>
+        <text class="nk" x="422" y="106">search</text>
+        <text class="nt" x="422" y="126">no model at all.</text>
+        <text class="nt" x="422" y="142">word matching</text>
+        <path class="ed-a" d="M570,118 H614" marker-end="url(#a)"/>
+        <text class="nk" x="574" y="110">43 passages</text>
+
+        <rect class="nb nb-a" x="620" y="80" width="246" height="76" rx="2"/>
+        <text class="nk" x="632" y="98">call 2</text>
+        <text class="nt" x="632" y="118">everything above, plus the</text>
+        <text class="nt" x="632" y="134">43 passages, then "answer now"</text>
+        <text class="ns" x="632" y="150">~19,000 words in</text>
+
+        <path class="ed" d="M743,156 V186 H420 V196" marker-end="url(#b)" stroke-dasharray="4 4"/>
+        <text class="nk" x="432" y="182">it may search again instead. it never does.</text>
+        <rect class="nb nb-b" x="290" y="196" width="300" height="32" rx="2"/>
+        <text class="nt" x="302" y="217" fill="var(--bad)">budget is 5 rounds. it uses 1, always.</text>
+      </svg>
+    </div>
+    <figcaption>Measured on every question in every run ever logged: one round, then it answers.</figcaption>
+  </figure>
+
+  <div class="box">
+    <h4>the numbers behind that picture</h4>
+    <ul style="margin:0">
+      <li>4 queries per question, written by the model</li>
+      <li>each query returns 6 passages plus the one either side of each &mdash; <strong>20% of what gets sent matched nothing at all</strong>, it is just neighbours of things that matched</li>
+      <li>43 passages pooled, about 13,000 words</li>
+      <li>of those 43, about <strong>8 can actually answer the question</strong> and 33 cannot</li>
+      <li>the model draws on about <strong>4</strong> of the 43</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>2 &nbsp;The testbed</h2>
+  <p>Four tools. The first two score without any model, so they are exact and cheap. The last two need a judge.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:30%">tool</th><th>what it answers</th><th style="width:15%">model calls</th></tr></thead>
+      <tbody>
+        <tr><td><strong>retrieval</strong><br><code>retrieval_bench.py</code></td><td>did the passages come back</td><td class="num g">none</td></tr>
+        <tr><td><strong>relevance</strong><br><code>relevance_bench.py</code></td><td>can each returned passage answer the question</td><td class="num">1 per 12 passages</td></tr>
+        <tr><td><strong>selection</strong><br><code>filter_bench.py</code></td><td>which passages the answer's claims came from</td><td class="num">2 per question</td></tr>
+        <tr><td><strong>answer</strong><br><code>answer_bench.py</code></td><td>is the answer grounded, and how does it compare to his real answer</td><td class="num">3 per question</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>The question set:</strong> 100 questions, fixed, stratified across three difficulties &mdash; answerable from one passage, from several in one video, from passages in different videos. Same 100 every run, so arms are comparable.</p>
+  <p><strong>Where they came from:</strong> each question was generated from a passage of his transcript, paired with his own words as the reference answer. So every question is answerable, and none is out of his domain.</p>
+</section>
+
+<section>
+  <h2>3 &nbsp;The metrics, and the one that is wrong</h2>
+
+  <div class="box good">
+    <h4>fixed &mdash; retrieval</h4>
+    <p>Retrieval used to be scored by whether it returned <em>the exact passages his reference answer happened to use</em>. He covers the same ground across many videos, so a passage that genuinely answers the question was counted as a failure twice over. <strong>Now a judge reads each passage against the question instead.</strong> Precision went from 0.080 to 0.202 &mdash; the old number was understating it two and a half times.</p>
+  </div>
+
+  <div class="box bad">
+    <h4>not fixed &mdash; the answer</h4>
+    <p><strong>The answer judge still treats his one reference answer as the only correct answer.</strong> So an answer built from other things he really said, which answers the question well, is scored as wrong &mdash; either as adding something or as missing something.</p>
+    <p><strong>The evidence that this is broken: across 600 answers, not one has ever been marked as matching.</strong> Zero, in every arm, at every setting. A metric that cannot return its own pass value is not measuring quality. It is measuring distance from one particular answer.</p>
+    <p style="margin-top:.7em"><strong>So the two numbers being optimised are the wrong two numbers</strong>, and that is a better explanation for eight failed attempts than anything else in this document.</p>
+  </div>
+
+  <h3>What the fix is</h3>
+  <p>Same shape as the retrieval fix. Ask the judge whether the answer <em>answers the question</em>, coherently, from his material &mdash; not whether it matches one reference.</p>
+  <ul>
+    <li><strong>missing</strong> should mean it left out something the question needed, not something he happened to say elsewhere</li>
+    <li><strong>contradicts</strong> is already right &mdash; reversing something he said is wrong however you measure it</li>
+  </ul>
+  <p>Of the two goal metrics, <strong>contradicts survives the correction and missing does not.</strong></p>
+</section>
+
+<section>
+  <h2>4 &nbsp;Every result, and which to trust</h2>
+
+  <h3>Retrieval</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>setting</th><th>passages sent</th><th>can answer</th><th>cannot</th><th>precision</th></tr></thead>
+      <tbody>
+        <tr><td>6 per query &mdash; <strong>deployed</strong></td><td class="num">41</td><td class="num">8.2</td><td class="num">33</td><td class="num">0.202</td></tr>
+        <tr><td>25 per query</td><td class="num">128</td><td class="num g">15.3</td><td class="num">113</td><td class="num">0.119</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="m" style="font-size:.95em">Trust these. Judged against the question, no reference-answer problem.</p>
+
+  <h3>How much the model uses</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>setting</th><th>good passages used</th><th>claims from good</th><th>claims from bad</th><th>claims from nothing</th></tr></thead>
+      <tbody>
+        <tr><td>6 per query</td><td class="num">2.4 of 8.2 &mdash; <span class="b">29%</span></td><td class="num">53%</td><td class="num b">37%</td><td class="num">11%</td></tr>
+        <tr><td>25 per query</td><td class="num">3.5 of 15.3 &mdash; <span class="b">23%</span></td><td class="num">63%</td><td class="num b">30%</td><td class="num">7%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="m" style="font-size:.95em">Trust these. They do not use the reference answer at all.</p>
+
+  <h3>The answer &mdash; suspect, for the reason in section 3</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>arm</th><th>grounded</th><th>matched</th><th>added</th><th>missing</th><th>contradicts</th></tr></thead>
+      <tbody>
+        <tr><td>6 per query &mdash; deployed</td><td class="num">0.891</td><td class="num b">0</td><td class="num">66</td><td class="num">21</td><td class="num">13</td></tr>
+        <tr><td>25 per query</td><td class="num">0.931</td><td class="num b">0</td><td class="num">71</td><td class="num g">18</td><td class="num">11</td></tr>
+        <tr><td><strong>25 + told which passages are relevant</strong></td><td class="num">0.918</td><td class="num b">0</td><td class="num">73</td><td class="num">20</td><td class="num g">7</td></tr>
+        <tr><td>25 + told to use only 2 or 3 passages</td><td class="num">0.918</td><td class="num b">0</td><td class="num">64</td><td class="num">20</td><td class="num b">16</td></tr>
+        <tr><td>25 + told to cover every relevant point</td><td class="num">0.952</td><td class="num b">0</td><td class="num">70</td><td class="num">19</td><td class="num">11</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="m" style="font-size:.95em"><strong>Grounded</strong> and <strong>contradicts</strong> survive the metric problem. <strong>Matched, added</strong> and <strong>missing</strong> do not.</p>
+</section>
+
+<section>
+  <h2>5 &nbsp;What was tried</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:44%">control</th><th>what happened</th></tr></thead>
+      <tbody>
+        <tr><td>send 25 passages per query instead of 6</td><td class="g">worked. contradicts 13 &rarr; 11, missing 21 &rarr; 18</td></tr>
+        <tr><td><strong>tell the model which passages are relevant</strong></td><td class="g">worked. contradicts 11 &rarr; <strong>7</strong>. missing unchanged</td></tr>
+        <tr><td>show the match score on each passage</td><td class="g">worked. missing 26 &rarr; 21</td></tr>
+        <tr><td>narrow to the passages most queries agreed on</td><td class="b">much worse. recall 0.68 &rarr; 0.34</td></tr>
+        <tr><td>narrow by taking each query's best in turn</td><td class="b">worse. 0.56</td></tr>
+        <tr><td>narrow by re-scoring against the question</td><td class="b">worse. 0.43</td></tr>
+        <tr><td>tell it to concentrate on 2 or 3 passages</td><td class="b">worse. contradicts 11 &rarr; 16</td></tr>
+        <tr><td>tell it to cover every relevant point</td><td class="b">no change</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="box key">
+    <p><strong>The pattern is consistent.</strong> Every control that gave the model <em>less</em> made it worse. Every control that gave it <em>more information</em> made it better. Narrowing failed because the model is already narrow &mdash; it reads four passages out of forty-three.</p>
+  </div>
+</section>
+
+<section>
+  <h2>6 &nbsp;Controls not yet tried</h2>
+  <ul>
+    <li><strong>Make it search again for what is missing.</strong> The five-round budget exists and is never used. Nothing has made it use round two.</li>
+    <li><strong>Make it read every passage separately</strong>, then write from the notes. Forces all fifteen good passages through instead of four.</li>
+    <li><strong>Check the answer against the passages and cut unsupported claims.</strong></li>
+    <li><strong>Drop the 20% of passages that matched nothing</strong> &mdash; pure padding from the neighbour expansion.</li>
+    <li><strong>Train a small model to do the relevance judging</strong>, so the one control that clearly worked is affordable at serve time. There are 16,717 judged passage-question pairs on disk already.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>7 &nbsp;Reasons to distrust this document</h2>
+  <p>Six measurement bugs were found in one day, every one by a number looking wrong rather than by anything crashing.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:52%">bug</th><th>what it did to the numbers</th></tr></thead>
+      <tbody>
+        <tr><td>a double space in a third of the reference labels</td><td>understated retrieval by 0.19</td></tr>
+        <tr><td>the grounding judge only read the first quarter of the passages</td><td>made better retrieval look like worse grounding</td></tr>
+        <tr><td>search returned passages in transcript order, not best-first</td><td>silently broke all three narrowing attempts</td></tr>
+        <tr><td>a setting was read from the command line and never applied</td><td>three different orderings reported one result</td></tr>
+        <tr><td>the match score was dropped from the prompt</td><td>measured a model denied a signal the real one gets</td></tr>
+        <tr><td>the fix for that never got wired up</td><td>every passage displayed a score of zero</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Four assertions were added so the next one raises instead of scoring. <strong>The other thing missing is a noise floor:</strong> no arm has been run twice, so no one knows how much of a 2 or 3 point difference is real.</p>
+</section>
+
+<section>
+  <h2>8 &nbsp;The state, in five lines</h2>
+  <ol>
+    <li><strong>Retrieval is fine.</strong> It was never the problem; the old metric was scoring it against the wrong thing.</li>
+    <li><strong>The model reads about four passages</strong> out of forty-three, whatever it is given, and roughly a third of its claims rest on passages that cannot answer the question.</li>
+    <li><strong>One control clearly works:</strong> telling it which passages are relevant. Contradictions fall by a third.</li>
+    <li><strong>Missing-content has not improved</strong> beyond the cutoff change, and the metric for it is broken anyway.</li>
+    <li><strong>The answer judge needs correcting before any further control is worth testing</strong>, or the search is being run against the wrong target.</li>
+  </ol>
+</section>
+
+</div>
+</body>
+</html>

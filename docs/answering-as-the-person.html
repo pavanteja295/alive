@@ -1,0 +1,695 @@
+<title>Answering as the Person</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+:root{
+  --paper:#f2f5f7; --surface:#ffffff; --sunk:#e7edf0;
+  --ink:#101820; --body:#2d3b45; --muted:#5f6f7a; --faint:#8a9aa4;
+  --line:#d3dce1; --rule:#aebcc4;
+  --accent:#a5601a; --accent-soft:#f6ece0;
+  --chip:#f2f5f7;
+  --rely:#2f6b52; --rely-soft:#e4efe9;
+  --corr:#a5601a; --corr-soft:#f6ece0;
+  --weak:#9c4a45; --weak-soft:#f7e8e7;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0c1216; --surface:#141c22; --sunk:#101820;
+  --ink:#e9eff3; --body:#bdcbd4; --muted:#8797a2; --faint:#63737e;
+  --line:#243038; --rule:#39474f;
+  --accent:#dc9a4f; --accent-soft:#251c11;
+  --chip:#0c1216;
+  --rely:#63b892; --rely-soft:#0f2019;
+  --corr:#dc9a4f; --corr-soft:#251c11;
+  --weak:#dd8b85; --weak-soft:#241413;
+}}
+:root[data-theme="dark"]{
+  --paper:#0c1216; --surface:#141c22; --sunk:#101820;
+  --ink:#e9eff3; --body:#bdcbd4; --muted:#8797a2; --faint:#63737e;
+  --line:#243038; --rule:#39474f;
+  --accent:#dc9a4f; --accent-soft:#251c11;
+  --chip:#0c1216;
+  --rely:#63b892; --rely-soft:#0f2019;
+  --corr:#dc9a4f; --corr-soft:#251c11;
+  --weak:#dd8b85; --weak-soft:#241413;
+}
+*{box-sizing:border-box}
+body{background:var(--paper); color:var(--body);
+  font-family:Newsreader,Georgia,serif; font-size:17.5px; line-height:1.65;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px; margin:0 auto; padding:0 30px 110px}
+.prose{max-width:66ch}
+h1,h2,h3,h4,.eyebrow,.chip,.tag,th,.lbl,.cap{font-family:Archivo,system-ui,sans-serif}
+code,pre,.mono,.k,.n{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+.mast{padding:74px 0 30px; border-bottom:2px solid var(--ink); margin-bottom:12px}
+.eyebrow{font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 20px}
+h1{font-family:Archivo,sans-serif; font-size:clamp(38px,6vw,60px); line-height:1.02;
+  font-weight:700; letter-spacing:-.028em; color:var(--ink); margin:0 0 22px; text-wrap:balance}
+.lede{font-size:21px; line-height:1.5; margin:0; max-width:58ch; color:var(--body)}
+.lede b{color:var(--ink); font-weight:600}
+.meta{margin-top:26px; font-size:13px; color:var(--faint); font-family:Archivo,sans-serif}
+
+.stats{display:flex; flex-wrap:wrap; gap:0; margin:30px 0 0; border-top:1px solid var(--line)}
+.stat{flex:1 1 128px; padding:14px 18px 14px 0; border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat .v{font-family:"JetBrains Mono",monospace; font-size:19px; font-weight:500;
+  color:var(--ink); font-variant-numeric:tabular-nums; display:block; line-height:1.3}
+.stat .l{font-family:Archivo,sans-serif; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--faint); display:block; margin-top:3px}
+
+nav.toc{margin:0 0 66px; padding:20px 0 0; font-family:Archivo,sans-serif; font-size:13.5px}
+nav.toc ol{margin:0; padding:0; list-style:none; columns:2; column-gap:44px}
+nav.toc li{margin-bottom:7px; break-inside:avoid}
+nav.toc a{color:var(--muted); text-decoration:none; display:flex; gap:10px}
+nav.toc a:hover{color:var(--accent)}
+nav.toc .n{color:var(--faint); font-variant-numeric:tabular-nums; min-width:18px}
+
+section{margin:0 0 62px; scroll-margin-top:20px}
+h2{font-size:12px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--ink); margin:0 0 26px; padding-bottom:11px; border-bottom:1px solid var(--rule);
+  display:flex; gap:14px; align-items:baseline}
+h2 .n{color:var(--accent); font-variant-numeric:tabular-nums}
+h3{font-family:Archivo,sans-serif; font-size:19px; font-weight:600; color:var(--ink);
+  margin:36px 0 12px; letter-spacing:-.012em}
+h4{font-family:Archivo,sans-serif; font-size:14px; font-weight:600; color:var(--ink);
+  margin:26px 0 9px; letter-spacing:-.005em}
+p{margin:0 0 16px}
+a{color:var(--accent)}
+strong{color:var(--ink); font-weight:600}
+ul,ol{margin:0 0 16px; padding-left:22px; max-width:66ch}
+li{margin-bottom:9px}
+li::marker{color:var(--faint)}
+code{font-size:.83em; background:var(--sunk); padding:1.5px 5px; border-radius:2px; color:var(--ink)}
+
+figure{margin:26px 0 24px; border:1px solid var(--line); background:var(--surface)}
+figure .svgbox{overflow-x:auto; padding:26px 26px 6px}
+figure svg{display:block; max-width:100%; height:auto; min-width:520px; color:var(--body)}
+figcaption{font-family:Archivo,sans-serif; font-size:12.5px; line-height:1.5;
+  color:var(--muted); padding:0 26px 18px; max-width:76ch}
+figcaption b{color:var(--ink); font-weight:600}
+.s-ink{fill:var(--ink)} .s-body{fill:var(--body)} .s-faint{fill:var(--faint)}
+.s-acc{fill:var(--accent)} .s-rely{fill:var(--rely)} .s-weak{fill:var(--weak)}
+.st-line{stroke:var(--rule); fill:none} .st-ink{stroke:var(--ink); fill:none}
+.st-acc{stroke:var(--accent); fill:none} .st-rely{stroke:var(--rely); fill:none}
+.st-weak{stroke:var(--weak); fill:none}
+.bx{fill:var(--surface); stroke:var(--rule)}
+.bx-sunk{fill:var(--sunk); stroke:var(--rule)}
+.bx-acc{fill:var(--accent-soft); stroke:var(--accent)}
+.bx-rely{fill:var(--rely-soft); stroke:var(--rely)}
+.bx-weak{fill:var(--weak-soft); stroke:var(--weak)}
+text{font-family:Archivo,system-ui,sans-serif; font-size:12.5px}
+text.m{font-family:"JetBrains Mono",monospace; font-size:11px}
+text.lb{font-size:10.5px; letter-spacing:.09em; text-transform:uppercase}
+text.big{font-size:14px; font-weight:600}
+
+.tw{overflow-x:auto; border:1px solid var(--line); margin:0 0 20px}
+table{width:100%; border-collapse:collapse; font-size:15.5px; background:var(--surface)}
+th{text-align:left; font-size:10.5px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); padding:12px 16px; border-bottom:1px solid var(--rule); white-space:nowrap}
+td{padding:12px 16px; border-bottom:1px solid var(--line); vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.k{font-size:13px; color:var(--ink); white-space:nowrap}
+td.lbl{font-weight:600; color:var(--ink); font-family:Archivo,sans-serif; font-size:14.5px}
+.num{font-variant-numeric:tabular-nums}
+
+.rule{border-left:3px solid var(--accent); background:var(--accent-soft);
+  padding:15px 20px; margin:0 0 20px; font-size:16.5px}
+.rule b{color:var(--ink)}
+.note{border-left:3px solid var(--rule); padding:13px 20px; margin:0 0 20px;
+  font-size:15.5px; color:var(--muted)}
+.note b{color:var(--ink)}
+
+ol.dec{counter-reset:d; list-style:none; padding:0; max-width:none}
+ol.dec li{counter-increment:d; position:relative; padding:0 0 15px 46px; margin:0 0 15px;
+  border-bottom:1px solid var(--line); font-size:16px}
+ol.dec li:last-child{border-bottom:0}
+ol.dec li::before{content:counter(d); position:absolute; left:0; top:1px;
+  font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:700;
+  color:var(--chip); background:var(--ink); width:26px; height:22px;
+  display:flex; align-items:center; justify-content:center; font-variant-numeric:tabular-nums}
+ol.dec b{color:var(--ink)}
+
+.tag{display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:3px 8px; line-height:1.4; white-space:nowrap}
+.tag.deep{background:var(--ink); color:var(--chip)}
+.tag.ok{border:1px solid var(--rule); color:var(--muted)}
+.tag.no{border:1px dashed var(--rule); color:var(--faint)}
+.tag.rely{background:var(--rely); color:var(--surface)}
+.tag.corr{border:1px solid var(--corr); color:var(--corr)}
+.tag.weak{border:1px dashed var(--weak); color:var(--weak)}
+
+.cite{font-family:"JetBrains Mono",monospace; font-size:.8em; color:var(--muted); white-space:nowrap}
+.cc{font-variant-numeric:tabular-nums; font-weight:500}
+.cc.r{color:var(--rely)} .cc.c{color:var(--corr)} .cc.w{color:var(--weak)}
+
+.foot{border-top:1px solid var(--rule); padding-top:24px; font-size:14px; color:var(--muted);
+  font-family:Archivo,sans-serif}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:640px){nav.toc ol{columns:1} .stat{flex-basis:50%}}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Project 1 &middot; knowledge + style engine</p>
+  <h1>Answering as the Person</h1>
+  <p class="lede">Building a system that answers a question the way one specific creator would, from nothing but their public archive. The obvious formulation of that goal is <b>wrong in two ways</b>, and the literature already says which half works.</p>
+  <p class="meta">Owner file: <code>engines/knowledge_style/FRAMING.md</code> &middot; derived narrative, edit the owner &middot; 2026-09-05</p>
+
+  <div class="stats">
+    <div class="stat"><span class="v">17</span><span class="l">takes on disk</span></div>
+    <div class="stat"><span class="v">6.09 h</span><span class="l">runtime</span></div>
+    <div class="stat"><span class="v">69,366</span><span class="l">words of ASR</span></div>
+    <div class="stat"><span class="v">190</span><span class="l">words / minute</span></div>
+    <div class="stat"><span class="v">54</span><span class="l">papers surveyed</span></div>
+  </div>
+</header>
+
+<nav class="toc"><ol>
+  <li><a href="#s1"><span class="n">1</span> Introduction</a></li>
+  <li><a href="#s2"><span class="n">2</span> How much to trust any of this</a></li>
+  <li><a href="#s3"><span class="n">3</span> Problem statement</a></li>
+  <li><a href="#s4"><span class="n">4</span> The measurement problem</a></li>
+  <li><a href="#s5"><span class="n">5</span> Related work, curated</a></li>
+  <li><a href="#s6"><span class="n">6</span> What a baseline must satisfy</a></li>
+  <li><a href="#s7"><span class="n">7</span> Why whole-archive context fails</a></li>
+  <li><a href="#s8"><span class="n">8</span> The scoreboard</a></li>
+  <li><a href="#s9"><span class="n">9</span> The baseline</a></li>
+  <li><a href="#s10"><span class="n">10</span> The ladder</a></li>
+  <li><a href="#s11"><span class="n">11</span> Deliberately not building</a></li>
+  <li><a href="#s12"><span class="n">12</span> Extrapolation</a></li>
+</ol></nav>
+
+<section id="s1">
+  <h2><span class="n">01</span> Introduction</h2>
+  <p class="prose">A person with a large public archive answers the same questions many times. People ask them anyway, because the answer they want is not a fact but a <strong>position</strong>: how this particular person frames the problem, what they refuse to concede, where they land. The archive contains hundreds of hours of exactly that, and it is unsearchable in the way that matters. You cannot ask it a question.</p>
+  <p class="prose">We want to build the thing you can ask. Given a creator's archive and a question they have never been asked in those words, produce the answer they would have given: their position, their reasoning, their words. Not a search over their videos, and not a general assistant that has read them. A <strong>replacement for the person answering directly</strong>, good enough that someone who knows their work cannot tell.</p>
+
+  <h3>The naive formulation is wrong in two ways</h3>
+  <p class="prose"><strong>It is the wrong conditional.</strong> The archive is the person talking to a camera for twenty minutes, unprompted and edited. A user asking a question wants ninety seconds back. The corpus samples <code>p(text | topic, broadcast)</code> and we deploy at <code>p(text | question, conversation)</code>. Matching the corpus distribution literally produces a model that opens every reply with "Today we're going to talk about."</p>
+  <p class="prose"><strong>It targets the half that does not work.</strong> The obvious reading of "sound like them" is style transfer, and that is where this literature has spent its effort and where it keeps failing. The best-validated negative result is <span class="cite">2509.14543</span> (EMNLP 2025): over 400 real authors and 40,000+ generations per model, LLMs approximate style in structured domains like news and email and <strong>fail on informal, conversational writing</strong>, which is the end of the spectrum spoken monologue sits at. Meanwhile the best-validated positive result simulates a person from a two-hour interview and predicts their held-out survey responses at <strong>83% of that person's own two-week test-retest consistency</strong> (<span class="cite">2411.10109</span>, 311 citations), against 74% from demographics alone.</p>
+
+  <div class="rule prose">Reproducing <b>how</b> a person writes is unsolved and possibly not the valuable part. Predicting <b>what position</b> a person takes already works, from far less data than we have.</div>
+
+  <p class="prose">So this is not a style-transfer project with a knowledge component bolted on. It is a position-prediction project that has to speak in the right voice at the end. That ordering is the opposite of where the field's effort sits, and the opposite of where our own paper shelf sits: six of its twelve buckets feed surface style, two feed evaluation, and evaluation is the thing that does not exist.</p>
+</section>
+
+<section id="s2">
+  <h2><span class="n">02</span> How much to trust any of this</h2>
+  <p class="prose">Most recent work in this area is arXiv-only with near-zero citations, and the temptation is to treat a 2026 preprint's headline number as fact because it is recent and specific. Citation counts pulled from Semantic Scholar on 2026-09-04.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Tier</th><th>Papers</th><th>How it is used here</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="lbl"><span class="tag rely">Relied on</span></td>
+        <td><span class="cite">2307.03172</span> lost-in-the-middle, TACL <span class="cc r">4899</span><br>
+            <span class="cite">2411.10109</span> persona agents <span class="cc r">311</span><br>
+            <span class="cite">2010.05700</span> STRAP, EMNLP <span class="cc r">289</span><br>
+            <span class="cite">2502.05589</span> SeCom, ICLR <span class="cc r">101</span><br>
+            <span class="cite">2204.04907</span> style reps <span class="cc r">101</span><br>
+            <span class="cite">2410.13070</span> chunking, NAACL <span class="cc r">69</span><br>
+            <span class="cite">2410.12757</span> StyleDistance <span class="cc r">35</span><br>
+            <span class="cite">2306.00539</span> TST eval, ACL <span class="cc r">20</span><br>
+            <span class="cite">2509.14543</span> imitation, EMNLP <span class="cc r">13</span><br>
+            <span class="cite">2311.07564</span> speech AV, TACL <span class="cc r">10</span></td>
+        <td>Load-bearing. A design decision may rest on these.</td>
+      </tr>
+      <tr>
+        <td class="lbl"><span class="tag corr">Corroboration</span></td>
+        <td><span class="cite">2604.04853</span> MemMachine <span class="cc c">12</span><br>
+            <span class="cite">2603.26680</span> AlpsBench, SIGIR <span class="cc c">6</span><br>
+            <span class="cite">2601.15300</span> context degradation <span class="cc c">6</span></td>
+        <td>May support a decision already justified by the tier above. Never the sole reason.</td>
+      </tr>
+      <tr>
+        <td class="lbl"><span class="tag weak">Noted only</span></td>
+        <td><span class="cite">2604.26460</span> authorship gap <span class="cc w">0</span><br>
+            <span class="cite">2603.29454</span> impersonation <span class="cc w">0</span><br>
+            <span class="cite">2603.23219</span> AI authorship <span class="cc w">0</span><br>
+            <span class="cite">2606.26185</span> reproducibility <span class="cc w">1</span><br>
+            <span class="cite">2603.23069</span> AuthorMix <span class="cc w">1</span><br>
+            <span class="cite">2505.07888</span> ZeroStylus <span class="cc w">2</span><br>
+            <span class="cite">2509.24147</span> LOT <span class="cc w">3</span></td>
+        <td>Interesting framings and useful vocabulary. No decision may depend on their numbers.</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="note prose"><b>Two consequences worth stating.</b> The <span class="cite">2604.26460</span> calibration result sits in the bottom tier, so its figures (four methods at 0.484&ndash;0.508 against a 0.626 cross-author floor) are a hypothesis, not evidence. What survives is its <em>method</em>: calibrate a scale before reading it, which costs nothing and is right regardless. And every 2026 arXiv number here should be assumed unreplicated, <b>including the ones that agree with us</b>.</div>
+</section>
+
+<section id="s3">
+  <h2><span class="n">03</span> Problem statement</h2>
+
+  <h3>What we are given</h3>
+  <p class="prose">A corpus of monologue takes by one person. Today: 17 takes, 6.09 hours, 69,366 words of ASR transcript at 190 wpm, with aligned audio and video. The archive supports scaling to several hundred takes, on the order of 1.2M words, roughly 1.6M tokens.</p>
+  <p class="prose">That number matters because it crosses a threshold the literature is explicit about. <span class="cite">2212.08986</span> sets the high-resource bar for authorship style transfer at <strong>&gt;100,000 words</strong> of target-author text and studies the low-resource case below it. At 300 takes we are an order of magnitude <em>above</em> the bar. Every mechanism designed to compensate for scarcity, style embeddings, exemplar conditioning, adapter mixing, soft style prompts, is solving a problem we do not have.</p>
+
+  <h3>What we want</h3>
+  <p class="prose">Given a question <code>q</code>, produce <code>r</code> drawn from <code>p(r | q)</code>: what the person would say if asked. This factors into four terms whose difficulty is wildly uneven.</p>
+
+  <figure>
+    <div class="svgbox">
+      <svg viewBox="0 0 880 320" role="img" aria-label="The four terms of the factorization: stance prediction works, argument arc is unstudied, surface wording fails, and format is a data-selection decision rather than a modelling problem.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--weak)"/>
+          </marker>
+        </defs>
+
+        <text x="10" y="34" class="lb s-faint">Input</text>
+        <rect x="10" y="46" width="86" height="42" class="bx-sunk"/>
+        <text x="53" y="72" class="m s-ink" text-anchor="middle">question q</text>
+
+        <line x1="98" y1="67" x2="140" y2="67" class="st-line" marker-end="url(#ar)"/>
+
+        <rect x="142" y="46" width="164" height="42" class="bx-rely"/>
+        <text x="224" y="72" class="big s-ink" text-anchor="middle">1 &middot; stance</text>
+        <line x1="308" y1="67" x2="348" y2="67" class="st-line" marker-end="url(#ar)"/>
+
+        <rect x="350" y="46" width="164" height="42" class="bx"/>
+        <text x="432" y="72" class="big s-ink" text-anchor="middle">2 &middot; arc</text>
+        <line x1="516" y1="67" x2="556" y2="67" class="st-line" marker-end="url(#ar)"/>
+
+        <rect x="558" y="46" width="164" height="42" class="bx-weak"/>
+        <text x="640" y="72" class="big s-ink" text-anchor="middle">3 &middot; words</text>
+        <line x1="724" y1="67" x2="764" y2="67" class="st-line" marker-end="url(#ar)"/>
+
+        <rect x="766" y="46" width="86" height="42" class="bx-sunk"/>
+        <text x="809" y="72" class="m s-ink" text-anchor="middle">answer r</text>
+
+        <text x="224" y="112" class="s-body" text-anchor="middle">which position they take</text>
+        <text x="432" y="112" class="s-body" text-anchor="middle">what is conceded, in what order</text>
+        <text x="640" y="112" class="s-body" text-anchor="middle">lexicon, rhythm, filler, idiom</text>
+
+        <text x="224" y="136" class="lb s-rely" text-anchor="middle">Works &middot; 83% of self-consistency</text>
+        <text x="432" y="136" class="lb s-faint" text-anchor="middle">Unstudied &middot; no block owns it</text>
+        <text x="640" y="136" class="lb s-weak" text-anchor="middle">Fails &middot; detectable</text>
+
+        <line x1="10" y1="176" x2="852" y2="176" class="st-line" stroke-dasharray="2 4"/>
+        <text x="10" y="206" class="lb s-faint">Term 4 &middot; format, not learned but chosen</text>
+
+        <rect x="10" y="220" width="340" height="70" class="bx"/>
+        <text x="180" y="246" class="big s-ink" text-anchor="middle">what the corpus samples</text>
+        <text x="180" y="270" class="m s-body" text-anchor="middle">p(text | topic, broadcast)</text>
+
+        <rect x="502" y="220" width="350" height="70" class="bx"/>
+        <text x="677" y="246" class="big s-ink" text-anchor="middle">where we deploy</text>
+        <text x="677" y="270" class="m s-body" text-anchor="middle">p(text | question, conversation)</text>
+
+        <line x1="352" y1="255" x2="498" y2="255" class="st-weak" stroke-dasharray="6 4" marker-end="url(#arw)"/>
+        <text x="425" y="243" class="lb s-weak" text-anchor="middle">mismatch</text>
+        <text x="425" y="283" class="s-body" text-anchor="middle">20 min, unprompted</text>
+        <text x="425" y="299" class="s-body" text-anchor="middle">vs 90 s, answering</text>
+      </svg>
+    </div>
+    <figcaption><b>The four terms, and where each one stands.</b> Term 1 is solved by the literature, term 3 is where it keeps failing, term 2 is owned by nothing in our current design, and term 4 is not a modelling problem at all: it is a data-selection commitment that has to be made before anything downstream is well-posed.</figcaption>
+  </figure>
+
+  <h3>The claim being tested</h3>
+  <p class="prose">Everything in this system is a residual on a generic engine. For the intelligence half the baseline is a frontier LLM that has read the public internet, and the residual is whatever that model does not already get right about the person.</p>
+  <div class="rule prose"><b>H</b> &mdash; a frontier LLM plus this person's verbatim archive predicts their positions on unseen questions at a level distinguishable from the same model without the archive, and the gap is large enough to be worth engineering.</div>
+  <p class="prose"><code>H</code> has never been measured for this person, and no retrieval, adapter or steering result means anything until it is. It is <code>problems.md</code> K1 and it is the first experiment.</p>
+</section>
+
+<section id="s4">
+  <h2><span class="n">04</span> The measurement problem</h2>
+  <p class="prose">"Indistinguishable" needs an operational definition, and the field does not have a trustworthy one.</p>
+  <ul class="prose">
+    <li><span class="cite">2306.00539</span> (ACL) meta-analyses the field and finds not only a standardization gap but a <strong>validation gap</strong>: few automated metrics have ever been checked against human judgement.</li>
+    <li><span class="cite">2010.05700</span> (STRAP), surveying 23 style-transfer papers, found the automatic metrics gameable and had to propose fixes.</li>
+    <li><span class="cite">2311.07564</span> (TACL) shows authorship models transfer to speech but <strong>degrade sharply under topic control</strong>, and that plain character n-grams are competitive with neural models there. Our takes are topic-separated by construction, so an uncontrolled discriminator wins by reading the topic and tells us nothing.</li>
+  </ul>
+  <p class="prose">The methodological fix is cheap: <strong>calibrate the scale before using it.</strong> Establish the human ceiling and the cross-author floor with the same metric on the same data, then place every method between them. Both anchors are already on disk.</p>
+</section>
+
+<section id="s5">
+  <h2><span class="n">05</span> Related work, curated</h2>
+  <p class="prose">54 papers were surveyed. Most are not relevant, and saying which and why is the useful part.</p>
+
+  <h3>Person simulation: evidence the target is reachable</h3>
+  <p class="prose"><span class="cite">2411.10109</span> is the load-bearing result. 1,052 Americans, two-hour semi-structured interviews on the American Voices Project schedule, agents built from the transcripts, scored on held-out General Social Survey items. Interview-grounded agents reach 83% of the participant's own two-week test-retest consistency; demographics-only reach 74%; both combined reach 86%. Three things transfer: <strong>text transcripts of a person talking are sufficient input</strong>, <strong>two hours is enough</strong> and we have three times that, and <strong>the right ceiling is the person's own self-consistency</strong>, because people do not agree with themselves.</p>
+
+  <h3>The negative results, which are the important ones</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Paper</th><th>Finding</th><th>Trust</th></tr></thead>
+    <tbody>
+      <tr><td class="k">2509.14543<br><span class="cite">EMNLP</span></td><td>400+ real authors, 40,000+ generations per model. LLMs approximate style in <strong>structured</strong> domains and fail on <strong>informal, conversational</strong> ones. Spoken monologue is the informal end.</td><td><span class="tag rely">Relied on</span></td></tr>
+      <tr><td class="k">2603.29454</td><td>GPT-4o impersonation under four prompting conditions across three genres does not evade forensic authorship verification.</td><td><span class="tag weak">Noted</span></td></tr>
+      <tr><td class="k">2603.23219</td><td>Frontier models mimicking Whitman, Wordsworth, Trump and Obama remain highly detectable under BERT plus XGBoost over LIWC features.</td><td><span class="tag weak">Noted</span></td></tr>
+      <tr><td class="k">2604.26460</td><td>Four inference-time personalization methods land below the cross-author floor on a calibrated authorship scale.</td><td><span class="tag weak">Noted</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose">Only the first is well-validated, but four independent evaluations pointing the same direction is worth something even when three of them are unreviewed. We should expect our style layer to be detectable, and should not spend the project's risk budget there.</p>
+
+  <h3>Where the supervised signal comes from</h3>
+  <p class="prose"><span class="cite">2010.05700</span> (STRAP) is the recipe everything reuses: reformulate style transfer as paraphrase generation, run the person's text through a paraphraser to strip style, train the inverse map from stripped back to original. It manufactures a parallel corpus from one-sided data, which is our situation exactly. Its ancestry is back-translation; <span class="cite">1808.09381</span> is the large-data study and finds <strong>sampled or noised</strong> synthetic sources give a much stronger signal than beam or greedy ones, which is a directly applicable knob.</p>
+
+  <h3>Machinery we are skipping, and why</h3>
+  <p class="prose">TinyStyler, SETTP, AuthorMix and the low-resource authorship line are all explicitly built for scarcity: authorship embeddings, transferable prompts, layer-wise adapter mixing. They exist to work around not having data. <span class="cite">2312.17242</span> (StyleMC) is the honest counter-evidence to our route, finding instruction-tuned models struggle to reproduce author style <em>demonstrated in a prompt</em>, but its regime is a small writing sample and ours is 100x that. It names the experiment rather than settling it.</p>
+  <p class="prose">Two exceptions worth keeping. <span class="cite">2505.00679</span> (register analysis) is prompt-only and describes the exemplar's register instead of pasting exemplars, the cheapest available upgrade to a context baseline. <span class="cite">2505.07888</span> (ZeroStylus) is the only surveyed work operating at term 2, extracting sentence-level <em>and</em> paragraph-level template repositories and arguing paragraph structure cannot be reached by sentence-level rewriting. Same argument as our K4, arrived at independently.</p>
+
+  <h3>Retrieval and memory</h3>
+  <p class="prose">LaMP, LongLaMP and HYDRA are the retrieval-personalization line; HYDRA's <strong>reranker over retrieved history</strong> is the reusable part, its cross-user factorization is not, since we serve one subject at a time. On the memory side, MemMachine and MemPalace both preserve verbatim episodes and refuse extraction, which is our standing K3 position. <span class="cite">2603.26680</span> (AlpsBench, SIGIR) supplies the outside evidence: over 2,500 real dialogue sequences, models <strong>fail to reliably extract latent traits</strong>, which is where an extraction-first index loses what it cannot recover. LightRAG and RAG-Anything index by LLM entity extraction and therefore reverse K3.</p>
+</section>
+
+<section id="s6">
+  <h2><span class="n">06</span> What a baseline must satisfy</h2>
+  <p class="prose">The goal is <strong>one baseline that is stable and scales</strong>, not the best achievable system. Everything below is chosen because it is boring, replicated, and does not change shape when the corpus grows 100x.</p>
+  <ol class="dec prose">
+    <li><b>Invariant to corpus growth.</b> The corpus goes from 6 hours to several hundred. A component whose cost or accuracy is a function of total corpus size is not a baseline, it is a demo that expires.</li>
+    <li><b>Reproducible enough to detect a 5% change.</b> If re-running the same configuration moves the number more than a real improvement would, the scoreboard cannot rank anything and every later decision is noise.</li>
+    <li><b>One moving part at a time.</b> Each rung adds exactly one thing, so a regression has one suspect.</li>
+  </ol>
+</section>
+
+<section id="s7">
+  <h2><span class="n">07</span> Why whole-archive context fails</h2>
+  <p class="prose">The least-action route is "frontier model plus large verbatim context." That was decided against a 50&ndash;90k word corpus, roughly 92k tokens, comfortably inside any modern window. It does not survive the scale we are planning for. Two reasons, and the order matters: the first needs no citation at all.</p>
+
+  <figure>
+    <div class="svgbox">
+      <svg viewBox="0 0 880 330" role="img" aria-label="Comparison of two architectures. Whole-archive context sends the entire corpus into the model on every query, so cost grows linearly with corpus size. Retrieval sends a fixed number of chunks, so cost is flat regardless of corpus size.">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="ar2r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--rely)"/>
+          </marker>
+        </defs>
+
+        <text x="10" y="20" class="lb s-weak">A &middot; whole archive in context &mdash; instrument, not baseline</text>
+        <rect x="10" y="34" width="128" height="72" class="bx-sunk"/>
+        <text x="74" y="60" class="s-ink" text-anchor="middle">archive</text>
+        <text x="74" y="80" class="m s-body" text-anchor="middle">300 takes</text>
+        <text x="74" y="96" class="m s-faint" text-anchor="middle">1.6M tok</text>
+
+        <line x1="140" y1="70" x2="196" y2="70" class="st-weak" marker-end="url(#ar2)" stroke="var(--weak)"/>
+        <text x="168" y="60" class="lb s-weak" text-anchor="middle">all of it</text>
+        <text x="168" y="92" class="lb s-weak" text-anchor="middle">every query</text>
+
+        <rect x="198" y="34" width="300" height="72" class="bx-weak"/>
+        <text x="348" y="58" class="big s-ink" text-anchor="middle">context window</text>
+        <text x="266" y="80" class="m s-faint" text-anchor="middle">start</text>
+        <rect x="292" y="70" width="112" height="14" class="bx-weak"/>
+        <text x="348" y="81" class="lb s-weak" text-anchor="middle">degraded middle</text>
+        <text x="430" y="80" class="m s-faint" text-anchor="middle">end</text>
+        <text x="348" y="99" class="m s-body" text-anchor="middle">2307.03172 &middot; TACL &middot; 4899 cites</text>
+
+        <line x1="500" y1="70" x2="556" y2="70" class="st-line" marker-end="url(#ar2)"/>
+        <rect x="558" y="34" width="110" height="72" class="bx"/>
+        <text x="613" y="76" class="big s-ink" text-anchor="middle">model</text>
+
+        <rect x="690" y="34" width="162" height="72" class="bx-weak"/>
+        <text x="771" y="58" class="lb s-weak" text-anchor="middle">cost per query</text>
+        <text x="771" y="84" class="big s-weak" text-anchor="middle">linear in corpus</text>
+        <text x="771" y="100" class="m s-faint" text-anchor="middle">17x at 300 takes</text>
+
+        <line x1="10" y1="140" x2="852" y2="140" class="st-line"/>
+
+        <text x="10" y="176" class="lb s-rely">B &middot; retrieval &mdash; the baseline</text>
+        <rect x="10" y="190" width="128" height="72" class="bx-sunk"/>
+        <text x="74" y="216" class="s-ink" text-anchor="middle">archive</text>
+        <text x="74" y="236" class="m s-body" text-anchor="middle">any size</text>
+        <text x="74" y="252" class="m s-faint" text-anchor="middle">grows freely</text>
+
+        <line x1="140" y1="226" x2="196" y2="226" class="st-rely" marker-end="url(#ar2r)"/>
+        <text x="168" y="216" class="lb s-rely" text-anchor="middle">indexed</text>
+        <text x="168" y="248" class="lb s-rely" text-anchor="middle">once</text>
+
+        <rect x="198" y="190" width="142" height="72" class="bx-rely"/>
+        <text x="269" y="216" class="big s-ink" text-anchor="middle">fixed-size</text>
+        <text x="269" y="234" class="big s-ink" text-anchor="middle">chunks</text>
+        <text x="269" y="252" class="m s-body" text-anchor="middle">verbatim + timestamp</text>
+
+        <line x1="342" y1="226" x2="396" y2="226" class="st-rely" marker-end="url(#ar2r)"/>
+        <text x="369" y="216" class="lb s-rely" text-anchor="middle">top k</text>
+
+        <rect x="398" y="190" width="160" height="72" class="bx-rely"/>
+        <text x="478" y="216" class="big s-ink" text-anchor="middle">expand hit with</text>
+        <text x="478" y="234" class="big s-ink" text-anchor="middle">surrounding window</text>
+        <text x="478" y="252" class="m s-body" text-anchor="middle">~8k tok assembled</text>
+
+        <line x1="560" y1="226" x2="556" y2="226" class="st-line"/>
+        <line x1="560" y1="226" x2="616" y2="226" class="st-rely" marker-end="url(#ar2r)"/>
+        <rect x="618" y="190" width="50" height="72" class="bx"/>
+        <text x="643" y="232" class="big s-ink" text-anchor="middle">model</text>
+
+        <rect x="690" y="190" width="162" height="72" class="bx-rely"/>
+        <text x="771" y="214" class="lb s-rely" text-anchor="middle">cost per query</text>
+        <text x="771" y="240" class="big s-rely" text-anchor="middle">flat in corpus</text>
+        <text x="771" y="256" class="m s-faint" text-anchor="middle">same at 17 or 3000</text>
+
+        <text x="10" y="300" class="lb s-faint">The one edge that changes</text>
+        <text x="10" y="318" class="s-body">A sends the whole archive on every call. B sends a fixed budget. Everything else is identical.</text>
+      </svg>
+    </div>
+    <figcaption><b>The architectural choice, drawn as the single edge that differs.</b> Both paths end at the same model with the same question. A's inbound edge carries the entire corpus and grows with it; B's carries a fixed token budget forever. That edge is the whole of test 1, and it is arithmetic rather than a research finding.</figcaption>
+  </figure>
+
+  <p class="prose"><strong>Cost and latency are linear in corpus size.</strong> Every query pays for the whole archive. Going from 17 takes to 300 multiplies the per-query bill by roughly 17x and buys nothing, because the answer to any one question depends on a small fraction of it. No paper can overturn this.</p>
+  <p class="prose"><strong>Accuracy is not uniform across a long window.</strong> <span class="cite">2307.03172</span> (Liu et al., TACL, 4899 citations) is the well-replicated result: performance is highest when the relevant span sits at the beginning or end of the context and degrades substantially in the middle. A larger window does not fix this, it enlarges the middle. Our archive has no privileged ordering, so relevant material lands mid-context by default.</p>
+  <div class="note prose">A weaker preprint, <span class="cite">2601.15300</span>, reports catastrophic degradation past 40&ndash;50% of maximum context with F1 falling 0.55 to 0.30. It is 6 citations, arXiv only, and tests exactly one small open model. <b>Corroboration and nothing more.</b> An earlier draft of this document leaned on it, and on 2026 vendor-blog benchmark tables naming models that could not be verified to exist. Both are struck. The argument above does not need them.</div>
+  <div class="rule prose">Putting the whole archive in context is a <b>measurement instrument</b>, not a baseline. It is available to us exactly now, at 92k tokens, and stops being trustworthy well before the archive is complete. Use it while it exists to establish what "all the evidence, perfectly retrieved" is worth, then never ship it.</div>
+</section>
+
+<section id="s8">
+  <h2><span class="n">08</span> The scoreboard, built first</h2>
+  <p class="prose">Two independent problems: the scale is uncalibrated, and the measurements are noisy. Both have cheap fixes and neither is optional.</p>
+
+  <figure>
+    <div class="svgbox">
+      <svg viewBox="0 0 880 250" role="img" aria-label="A calibrated measurement scale. The floor is the same person compared against a different creator; the ceiling is the person compared against themselves on held-out takes. Every method is placed on the segment between them, and a method scoring below the floor is not personalizing at all.">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <text x="10" y="24" class="lb s-faint">Both anchors are already on disk</text>
+
+        <rect x="10" y="40" width="196" height="62" class="bx-sunk"/>
+        <text x="108" y="63" class="big s-ink" text-anchor="middle">takes/huberman</text>
+        <text x="108" y="82" class="m s-body" text-anchor="middle">25 GB, different creator</text>
+        <text x="108" y="96" class="lb s-faint" text-anchor="middle">sets the floor</text>
+
+        <rect x="674" y="40" width="178" height="62" class="bx-sunk"/>
+        <text x="763" y="63" class="big s-ink" text-anchor="middle">held-out takes</text>
+        <text x="763" y="82" class="m s-body" text-anchor="middle">same person, unseen</text>
+        <text x="763" y="96" class="lb s-faint" text-anchor="middle">sets the ceiling</text>
+
+        <line x1="108" y1="104" x2="108" y2="140" class="st-line" marker-end="url(#ar3)"/>
+        <line x1="763" y1="104" x2="763" y2="140" class="st-line" marker-end="url(#ar3)"/>
+
+        <line x1="60" y1="158" x2="830" y2="158" class="st-ink" stroke-width="1.5"/>
+        <line x1="108" y1="146" x2="108" y2="170" class="st-weak" stroke-width="2.5"/>
+        <line x1="763" y1="146" x2="763" y2="170" class="st-rely" stroke-width="2.5"/>
+
+        <rect x="108" y="152" width="655" height="12" fill="var(--rely-soft)" stroke="none"/>
+        <line x1="60" y1="158" x2="830" y2="158" class="st-ink" stroke-width="1.5"/>
+        <line x1="108" y1="146" x2="108" y2="170" class="st-weak" stroke-width="2.5"/>
+        <line x1="763" y1="146" x2="763" y2="170" class="st-rely" stroke-width="2.5"/>
+
+        <text x="108" y="188" class="lb s-weak" text-anchor="middle">FLOOR</text>
+        <text x="108" y="204" class="s-body" text-anchor="middle">a different person</text>
+        <text x="763" y="188" class="lb s-rely" text-anchor="middle">CEILING</text>
+        <text x="763" y="204" class="s-body" text-anchor="middle">their own self-consistency</text>
+
+        <text x="435" y="140" class="lb s-faint" text-anchor="middle">every method is placed here</text>
+        <text x="435" y="188" class="s-body" text-anchor="middle">L0 &nbsp; L1-oracle &nbsp; L2 &nbsp; L3 &nbsp; L4</text>
+
+        <line x1="60" y1="146" x2="60" y2="170" class="st-line"/>
+        <text x="60" y="188" class="lb s-faint" text-anchor="middle">below</text>
+        <text x="60" y="204" class="s-weak" text-anchor="middle" font-size="11">not</text>
+        <text x="60" y="218" class="s-weak" text-anchor="middle" font-size="11">personalizing</text>
+
+        <text x="10" y="242" class="s-body">Uncalibrated, a method scoring 0.50 looks like partial success. Against a 0.63 floor it is worse than picking a stranger.</text>
+      </svg>
+    </div>
+    <figcaption><b>Calibrate before reading.</b> The instrument is a segment, not a number. A second creator's archive supplies the floor and held-out takes by the same person supply the ceiling, so any method's absolute score becomes interpretable. A metric that cannot separate these two creators is not a metric.</figcaption>
+  </figure>
+
+  <h3>Controlling the noise</h3>
+  <p class="prose">The protocol below is ordinary measurement discipline and needs no citation to justify: run it more than once, report the spread, pin the versions. The recent preprints are useful for <em>how badly</em> it goes wrong rather than for whether to do it.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Role</th><th>Choice</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">Primary metric</td><td>character n-grams</td><td><span class="cite">2311.07564</span> finds them competitive with neural models on speech, and they are deterministic and free</td></tr>
+      <tr><td class="lbl">Secondary</td><td>one neural AV model</td><td>reported separately, never averaged in</td></tr>
+      <tr><td class="lbl">Tertiary</td><td>LLM judge</td><td>position-randomized, chance-corrected with kappa, never primary, never from the generator's own family</td></tr>
+      <tr><td class="lbl">Repetition</td><td>5 to 10 rollouts per question</td><td>report mean and standard deviation</td></tr>
+      <tr><td class="lbl">Pinning</td><td>model version, seed, sampling params, evaluator</td><td>recorded per run</td></tr>
+      <tr><td class="lbl">Aggregation</td><td>none</td><td>a single score collapses the tradeoff; STRAP found aggregate style metrics gameable</td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose">Test 2 is satisfied when the spread across rollouts is smaller than the effect we intend to detect. If it is not, no rung below can be ranked, and that is the finding.</p>
+</section>
+
+<section id="s9">
+  <h2><span class="n">09</span> The baseline, specified boringly</h2>
+  <p class="prose">Every choice here is the dull one, and each has a citation saying the clever alternative did not pay.</p>
+
+  <figure>
+    <div class="svgbox">
+      <svg viewBox="0 0 880 260" role="img" aria-label="The baseline pipeline. The question goes directly to the model; the retrieval index sits beside the model as a resource it queries, rather than as a stage the question passes through. The manner adapter is present but disabled at this rung.">
+        <defs>
+          <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="ar4s" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M10,0 L0,5 L10,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <text x="10" y="22" class="lb s-faint">Build &middot; offline, once per corpus version</text>
+        <rect x="10" y="34" width="120" height="52" class="bx-sunk"/>
+        <text x="70" y="55" class="s-ink" text-anchor="middle">.json3</text>
+        <text x="70" y="72" class="m s-body" text-anchor="middle">ASR, uncleaned</text>
+
+        <line x1="132" y1="60" x2="176" y2="60" class="st-line" marker-end="url(#ar4)"/>
+        <text x="154" y="50" class="lb s-faint" text-anchor="middle">split</text>
+
+        <rect x="178" y="34" width="150" height="52" class="bx-rely"/>
+        <text x="253" y="55" class="s-ink" text-anchor="middle">fixed-size chunks</text>
+        <text x="253" y="72" class="m s-body" text-anchor="middle">+ overlap, + timestamp</text>
+
+        <line x1="330" y1="60" x2="374" y2="60" class="st-line" marker-end="url(#ar4)"/>
+        <text x="352" y="50" class="lb s-faint" text-anchor="middle">embed</text>
+
+        <rect x="376" y="34" width="150" height="52" class="bx-rely"/>
+        <text x="451" y="55" class="s-ink" text-anchor="middle">hybrid index</text>
+        <text x="451" y="72" class="m s-body" text-anchor="middle">lexical + vector</text>
+
+        <line x1="10" y1="112" x2="852" y2="112" class="st-line" stroke-dasharray="2 4"/>
+
+        <text x="10" y="140" class="lb s-faint">Serve &middot; per query</text>
+
+        <rect x="10" y="154" width="104" height="48" class="bx-sunk"/>
+        <text x="62" y="183" class="s-ink" text-anchor="middle">question</text>
+
+        <line x1="116" y1="178" x2="270" y2="178" class="st-ink" marker-end="url(#ar4)"/>
+        <text x="193" y="168" class="lb s-ink" text-anchor="middle">passes straight through</text>
+
+        <rect x="272" y="148" width="150" height="60" class="bx"/>
+        <text x="347" y="176" class="big s-ink" text-anchor="middle">frontier LLM</text>
+        <text x="347" y="194" class="m s-faint" text-anchor="middle">no adapter, no steering</text>
+
+        <line x1="451" y1="88" x2="451" y2="132" class="st-rely"/>
+        <line x1="451" y1="132" x2="428" y2="132" class="st-rely"/>
+        <line x1="428" y1="132" x2="428" y2="160" class="st-rely" marker-end="url(#ar4)" stroke="var(--rely)"/>
+        <line x1="424" y1="196" x2="470" y2="196" class="st-rely" marker-start="url(#ar4s)" stroke="var(--rely)"/>
+        <text x="530" y="140" class="lb s-rely" text-anchor="middle">queries as a resource</text>
+        <text x="530" y="158" class="s-body" text-anchor="middle">retrieve top k, then expand</text>
+        <text x="530" y="174" class="s-body" text-anchor="middle">each hit with its surrounding</text>
+        <text x="530" y="190" class="s-body" text-anchor="middle">transcript window</text>
+        <text x="530" y="208" class="lb s-faint" text-anchor="middle">beside the chain, not in it</text>
+
+        <line x1="424" y1="178" x2="700" y2="178" class="st-ink" marker-end="url(#ar4)"/>
+        <rect x="702" y="154" width="150" height="48" class="bx-sunk"/>
+        <text x="777" y="176" class="s-ink" text-anchor="middle">answer</text>
+        <text x="777" y="193" class="m s-faint" text-anchor="middle">right content, own voice</text>
+
+        <rect x="702" y="216" width="150" height="34" class="bx" stroke-dasharray="4 3"/>
+        <text x="777" y="238" class="m s-faint" text-anchor="middle">manner adapter &middot; L4, off</text>
+      </svg>
+    </div>
+    <figcaption><b>The serve path, and the one structural commitment in it.</b> The question does not pass through retrieval on its way to the model. The index sits beside the model as a resource it queries, which is what makes one-shot retrieval and multi-turn querying the same shape and leaves room for the model to decide how much it needs.</figcaption>
+  </figure>
+
+  <div class="tw"><table>
+    <thead><tr><th>Decision</th><th>Choice</th><th>Why not the clever thing</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">Index unit</td><td>fixed-size chunks with overlap</td><td><span class="cite">2410.13070</span> (NAACL Findings, 69 cites) tested semantic chunking on document retrieval, evidence retrieval and answer generation and found <strong>fixed-size consistently outperformed it</strong>. Honest tension: <span class="cite">2502.05589</span> (ICLR, 101) finds segment-level beats turn-, session- and summary-level on <em>dialogue</em>. Different data, so not a contradiction, but fixed-size takes the slot because it is the null hypothesis and the study that directly tested replacing it came back negative</td></tr>
+      <tr><td class="lbl">Chunk content</td><td>verbatim, take id + timestamp as metadata</td><td>K3. <span class="cite">2603.26680</span> finds models fail to reliably extract latent traits, so extraction loses what it cannot recover</td></tr>
+      <tr><td class="lbl">Retrieval</td><td>hybrid lexical + vector, then rerank</td><td>the shape kotaemon and HYDRA both settle on. No graph, no entity extraction</td></tr>
+      <tr><td class="lbl">Context assembly</td><td>expand each hit with its surrounding window</td><td>a hit at 14:32 is meaningless without the 90 seconds around it. Small chunks retrieve well and starve the generator</td></tr>
+      <tr><td class="lbl">Generation</td><td>frontier model, no adapter, no steering</td><td>every intervention optimizes something not yet shown to work</td></tr>
+      <tr><td class="lbl">Transcript cleanup</td><td>none</td><td><span class="cite">2311.07564</span>: normalized lowercase transcripts work as well or better. Do not prettify ASR</td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose">That is the whole baseline. It is deliberately unremarkable, it is flat in corpus size, and every part of it has a published negative result protecting it from being replaced by something fancier.</p>
+</section>
+
+<section id="s10">
+  <h2><span class="n">10</span> The ladder</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Rung</th><th>What is added</th><th>What it tests</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">L0</td><td>bare frontier model, told who the person is</td><td>K1: how much is already in the weights</td><td><span class="tag ok">Control</span></td></tr>
+      <tr><td class="lbl">L1-oracle</td><td>entire archive in context, no retrieval</td><td>the ceiling of perfect retrieval</td><td><span class="tag no">Expires ~40 takes</span></td></tr>
+      <tr><td class="lbl">L2</td><td>the baseline in section 9</td><td>how much of L1-oracle survives retrieval</td><td><span class="tag deep">Ship this</span></td></tr>
+      <tr><td class="lbl">L3</td><td>stance card, always present, never retrieved</td><td>term 2, the unowned middle</td><td><span class="tag no">Later</span></td></tr>
+      <tr><td class="lbl">L4</td><td>manner adapter on STRAP pairs</td><td>term 3, surface</td><td><span class="tag no">Later, may not pay</span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="rule prose"><b>L1 is not a rung, it is a measuring stick.</b> The gap between L1-oracle and L2 is the retrieval loss, and it is the only number that says whether the retrieval design is good enough. Running L1 later is impossible, so it has to happen while the corpus is still small.</div>
+
+  <h3>The day-one experiment</h3>
+  <ol class="dec prose">
+    <li>Hold out 3 to 4 takes. Never index them, never train on them.</li>
+    <li>Pull 30 questions those takes answer.</li>
+    <li>Frontier model, remaining transcripts verbatim in context, no retrieval, no adapter.</li>
+    <li>Place outputs on the calibrated scale, with rollouts and variance, and read them next to the real answers.</li>
+  </ol>
+  <p class="prose">It measures K1, tests <code>H</code>, sets the L1-oracle ceiling that L2 will be judged against, and tells us which of the four terms is broken. It also has to happen before the corpus grows past the point where it is possible.</p>
+</section>
+
+<section id="s11">
+  <h2><span class="n">11</span> Deliberately not building yet</h2>
+  <p class="prose">Each of these is real, several are well-evidenced, and none belong in a first baseline. Recorded so the decision is visible rather than forgotten.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Deferred</th><th>Why not now</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">Graph / entity-extraction indexing<br><span class="cite">LightRAG, RAG-Anything</span></td><td>reverses K3, and adds an LLM pass over the whole corpus to the build</td></tr>
+      <tr><td class="lbl">Segment-level memory<br><span class="cite">2502.05589 SeCom</span></td><td><strong>the strongest deferral here, and not deferred for weakness.</strong> ICLR, 101 citations. Deferred on <em>domain</em>: it segments multi-session dialogue and our takes are continuous monologue with no turn or session boundaries for its segmenter to key on. It is the named first upgrade to L2</td></tr>
+      <tr><td class="lbl">Adapters, steering, ReFT, DPO, proxy-tuning</td><td>optimizing a system not yet shown to work</td></tr>
+      <tr><td class="lbl">Best-of-N with a style scorer</td><td>gated on prompting visibly under-committing</td></tr>
+      <tr><td class="lbl">Register-analysis prompting<br><span class="cite">2505.00679</span></td><td>genuinely cheap, but still a second variable. Add as the first L2 variant, not inside the baseline</td></tr>
+      <tr><td class="lbl">Multi-turn persona decay fixes<br><span class="cite">2605.10664</span></td><td>only matters once the product is multi-turn, and the failure is known with a known fix</td></tr>
+      <tr><td class="lbl">Trained interleaved retrieval<br><span class="cite">2505.19300</span></td><td>far past where we are</td></tr>
+    </tbody>
+  </table></div>
+  <div class="rule prose">The baseline is allowed to be beaten. It is <b>not allowed to be unstable</b>. A 2% win that adds a build-time LLM pass, a second failure mode, or a new dependency on a moving model costs more than it returns at this stage.</div>
+</section>
+
+<section id="s12">
+  <h2><span class="n">12</span> Extrapolation</h2>
+  <p class="prose">The mission is not a creator chatbot. It is a system that models a specific person well enough to think, speak and appear as them, and then, for the user rather than a creator, stops reproducing them and starts complementing them.</p>
+
+  <h4>The ladder ports whole</h4>
+  <p class="prose">Its rungs are about a person's archive, not about whose archive. In Project 2 the archive is the user's own accumulating interaction rather than a public back-catalogue, and the same L0&ndash;L4 questions are asked of it. The machinery ports, the data never merges.</p>
+
+  <h4>Perception replaces ingest, and nothing else moves</h4>
+  <p class="prose">Project 1 reads a public archive; Project 2 perceives its user continuously. Both collapse to the same thing, transcripts of a person being themselves, which is precisely the input <span class="cite">2411.10109</span> shows is sufficient. The layer boundary absorbs the change.</p>
+
+  <h4>The calibration trick ports, but the target inverts</h4>
+  <p class="prose">For mimicry the ceiling is the person's own self-consistency and the floor is a different person, both measurable, both on disk. <strong>Complementation has neither.</strong> There is no held-out record of what someone would have said about something they never addressed, so the cross-author floor has no analogue and the human ceiling is undefined.</p>
+  <div class="note prose">Section 8 solves the measurement problem for the half that has ground truth and <b>provides no route at all</b> for the half that does not. That should be said plainly rather than papered over, because the second half is the actual claim.</div>
+
+  <h4>The gap representation is the bridge</h4>
+  <p class="prose">Complementation needs the model to represent what the person does <em>not</em> hold: positions not taken, blind spots. The stance card at L3 is the same object with the sign flipped. Built as "these are their standing positions," its complement is computable; built as an opaque adapter, it is not. That is the one design choice here with real Project 2 consequences, and it argues for L3 being readable even if a learned version scores better.</p>
+
+  <h4>What does not port</h4>
+  <p class="prose">The manner adapter, because Project 2's register is conversational rather than broadcast and its evaluation inverts: sounding like the person stops being the test and becomes the delivery vehicle. And every number in section 5, because they were measured on Reddit, news and email, not on one person speaking for six hours.</p>
+</section>
+
+<section id="s13">
+  <h2><span class="n">13</span> Open, and load-bearing</h2>
+  <ol class="dec prose">
+    <li><b>Monologue or conversational?</b> Term 4. A commitment, not a measurement. Nothing downstream is well-posed until it is made, and it is the one question on this page that only a person can answer.</li>
+    <li><b>K1 is unmeasured.</b> Everything above is conditional on it.</li>
+    <li><b>Does H hold at all?</b> If a frontier model with the archive in context is indistinguishable from one without, the intelligence half is a retrieval product and the research is entirely in the face.</li>
+  </ol>
+</section>
+
+<p class="foot">Derived from <code>engines/knowledge_style/FRAMING.md</code>. Component decisions live in the block READMEs and <code>problems.md</code>; external work in each component's <code>REFERENCES.md</code>. When something changes, edit the owner and rebuild this page, never both.</p>
+
+</div>

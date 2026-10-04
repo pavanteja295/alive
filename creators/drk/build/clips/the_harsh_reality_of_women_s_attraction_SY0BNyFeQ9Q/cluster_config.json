@@ -1,0 +1,8 @@
+{
+ "k": 28,
+ "subcluster": [
+  10
+ ],
+ "sub_k": 4,
+ "n_clusters": 31
+}

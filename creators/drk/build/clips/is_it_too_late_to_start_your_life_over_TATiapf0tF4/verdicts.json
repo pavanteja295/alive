@@ -1,0 +1,35 @@
+{
+"_": "Take 3 is a LIVESTREAM VOD -- a third format. Neither take 1 (talking head + graphics) nor take 2 (reaction + screenshots) looks like this. Asymmetric cost: when unsure, drop.",
+
+"0":  {"verdict":"keep","kind":"centred","note":"full-frame, fireplace room, live chat panel down the right; face unoccluded"},
+"4":  {"verdict":"keep","kind":"centred","note":"full-frame + chat panel"},
+"6":  {"verdict":"keep","kind":"centred","note":"full-frame + chat panel"},
+"8":  {"verdict":"keep","kind":"centred","note":"full-frame + chat panel"},
+"10": {"verdict":"keep","kind":"centred","note":"full-frame + chat panel, slightly tighter framing (w 0.209)"},
+"12": {"verdict":"keep","kind":"centred","note":"full-frame + chat panel"},
+"16": {"verdict":"keep","kind":"centred","note":"full-frame + chat panel, w 0.209"},
+"19": {"verdict":"keep","kind":"centred","note":"largest usable cluster, full-frame + chat panel"},
+"21": {"verdict":"keep","kind":"centred","note":"full-frame + chat panel"},
+"24": {"verdict":"keep","kind":"centred","note":"full-frame + chat panel"},
+"25": {"verdict":"keep","kind":"centred","note":"full-frame + chat panel"},
+
+"2":  {"verdict":"drop","kind":"small_inset","note":"SCREEN-SHARE layout: whiteboard app fills the frame, he is a small webcam inset top-right. Face w 0.059 = ~76px against 186-223px in takes 1-2. A 3.2x crop of a 76px face upscales ~2x to reach 512 and is soft. Dropped on the asymmetry rule."},
+"5":  {"verdict":"drop","kind":"small_inset","note":"webcam inset, w 0.070"},
+"7":  {"verdict":"drop","kind":"small_inset","note":"webcam inset, w 0.070 -- and the single LARGEST cluster in the take at 19.1%. Take 3's dominant layout is one the pipeline cannot use."},
+"13": {"verdict":"drop","kind":"small_inset","note":"webcam inset, w 0.070"},
+"14": {"verdict":"drop","kind":"small_inset","note":"webcam inset, w 0.070, cx 0.92"},
+"15": {"verdict":"drop","kind":"small_inset","note":"webcam inset, w 0.070"},
+"23": {"verdict":"drop","kind":"small_inset","note":"webcam inset, w 0.070, 10.0% of the take"},
+
+"1":  {"verdict":"drop","kind":"graphic","note":"no face (conf -1)"},
+"3":  {"verdict":"drop","kind":"graphic","note":"no face"},
+"11": {"verdict":"drop","kind":"graphic","note":"no face"},
+"17": {"verdict":"drop","kind":"graphic","note":"no face"},
+"18": {"verdict":"drop","kind":"graphic","note":"no face"},
+"22": {"verdict":"drop","kind":"graphic","note":"no face"},
+"26": {"verdict":"drop","kind":"graphic","note":"'Continue your journey' outro card"},
+"27": {"verdict":"drop","kind":"graphic","note":"no face"},
+
+"9":  {"verdict":"drop","kind":"different_shoot","note":"navy room, sofa, plant, different mic, green Subscribe animation -- the SAME promo setup identified as an ad in take 1 (c08). Different camera and distance, w 0.251."},
+"20": {"verdict":"drop","kind":"different_shoot","note":"same navy promo room as c09"}
+}

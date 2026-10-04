@@ -1,0 +1,2926 @@
+From 229dd16fb856d7e77a1fe8690e059a7ead7da6a9 Mon Sep 17 00:00:00 2001
+From: pavanteja295 <pavanteja295@users.noreply.github.com>
+Date: Fri, 18 Sep 2026 10:14:08 +0530
+Subject: [PATCH 1/8] Meshes that only the rig drives take no network offset
+
+head_assets_eyes.npz appends MetaHuman's two eyeballs after the head. They are
+rigid balls that rotate for gaze and nothing else, and an iris pattern does not
+change, so there is no per-frame deviation from the rig for a network to predict.
+
+Leaving them in the network's reach would not be neutral. The eyeball carries its
+own texture coordinates and 35.8% of its texels land on head surface in the
+shared atlas, so it would read the head's offset map and inherit the head's
+per-frame nudge as noise on geometry that should be still.
+
+The asset's own part table says where the head stops, so there is no threshold
+and nothing to tune: triangles past the head's last one are rig-only, and their
+blobs are forced back to the identity offset after the network runs. Identity is
+not all zeros -- the 14 channels are an xyz shift, a scale MULTIPLIER, a rotation
+quaternion in [r,x,y,z] order, a colour shift and an opacity shift, so scale is 1
+and the quaternion is [1,0,0,0].
+
+An asset without a part table behaves exactly as before, so runs on the old
+head_assets.npz are unaffected and remain comparable.
+
+  51,076 blobs, of which 3,072 are eyeball and rig-driven only
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ scene/mesh_gaussian_model.py | 356 +++++++++++++++++++++++++++++++++++
+ train.py                     | 120 ++++++++++--
+ 2 files changed, 465 insertions(+), 11 deletions(-)
+ create mode 100644 scene/mesh_gaussian_model.py
+
+diff --git a/scene/mesh_gaussian_model.py b/scene/mesh_gaussian_model.py
+new file mode 100644
+index 0000000..db289c4
+--- /dev/null
++++ b/scene/mesh_gaussian_model.py
+@@ -0,0 +1,356 @@
++"""Gaussians bound to a MetaHuman head mesh, in place of FLAME.
++
++Mirrors FlameGaussianModel's interface so Scene, train.py and the renderer are
++unchanged, but the geometry comes from cooked per-frame meshes rather than from a
++parametric model evaluated at run time.
++
++Per frame, `meshes/%05d.npz` carries:
++
++    verts        [24049, 3]  camera space, metres, head pose applied
++    verts_cano   [24049, 3]  expression only, no head pose
++    ctrl         [257]       251 driven raw controls + 6 head curves
++
++`pose_mode` selects which of the two the Gaussians bind to, and is the single
++variable in the pose ablation:
++
++    "posed"      bind to `verts`. Head pose lives inside the mesh, so it also lands
++                 in the displacement map. This is what FLAME/STAvatar do.
++    "canonical"  bind to `verts_cano`. The displacement map carries expression only,
++                 and the caller applies Pose[t] to the Gaussians after the offset
++                 network. Head pose is rigid (verified: isometry to 2.8e-14 cm,
++                 det(R) = 1.000000000000), so nothing is lost by factoring it out.
++
++Topology comes from head_assets.npz and never changes: faces index positions,
++uv_faces index the 24,408 layout entries. That split-index scheme is MetaHuman's,
++and the UVs are identical between the Identity and MetaHuman DNAs, so the atlas
++work survives a DNA swap untouched.
++"""
++from pathlib import Path
++import json
++from typing import Literal
++
++import json
++import numpy as np
++import torch
++
++from scene.gaussian_model import GaussianModel
++from utils.uv_utils import PositionMapGenerator, load_uv_region_masks
++from utils.mesh_sampling import hybrid_sampling_by_binding, reweight_uvcoords_by_barycoords
++
++
++class _Topology:
++    """Stands in for FlameGaussianModel.flame_model: the parts that are geometry."""
++    def __init__(self, faces, verts_uvs, textures_idx, v_template):
++        self.faces = faces
++        self.verts_uvs = verts_uvs
++        self.textures_idx = textures_idx
++        self.v_template = v_template
++
++
++class MeshGaussianModel(GaussianModel):
++    def __init__(self, sh_degree: int, assets_path: str, uv_size: int = 512,
++                 pose_mode: Literal["posed", "canonical"] = "posed",
++                 source_path: str | None = None):
++        super().__init__(sh_degree)
++        self._assets_dir = Path(assets_path).resolve().parent
++        a = np.load(assets_path)
++        faces_lay = torch.from_numpy(a["faces"].astype(np.int64))          # -> layout entries
++        pos_idx = torch.from_numpy(a["pos_idx"].astype(np.int64))          # layout -> position
++        self.flame_model = _Topology(
++            faces=pos_idx[faces_lay].cuda(),                               # -> positions
++            verts_uvs=torch.from_numpy(a["uvs"].astype(np.float32)).cuda(),
++            textures_idx=faces_lay.cuda(),
++            v_template=torch.from_numpy(a["canonical_m"].astype(np.float32)).cuda(),
++        )
++        self.uv_size = uv_size
++        self.pose_mode = pose_mode
++        # rigid_nerf.npz is per-take, so it lives with the dataset, not with the
++        # topology assets in head/.
++        self.source_path = Path(source_path) if source_path else None
++        self.flame_param = None
++        self.ctrl = None
++        self.mesh_paths = None       # set when the corpus is too large to hold in memory
++        self.num_timesteps = 1
++        self.binding = torch.arange(len(self.flame_model.faces)).cuda()
++        self.binding_counter = torch.ones(len(self.flame_model.faces),
++                                          dtype=torch.int32).cuda()
++
++        # WHICH TRIANGLES BELONG TO A MESH THE NETWORK MUST NOT TOUCH.
++        #
++        # head_assets_eyes.npz appends the two eyeballs after the head. They are rigid
++        # balls that only rotate for gaze, and an iris pattern does not change, so there
++        # is no per-frame deviation from the rig for a network to predict -- they want a
++        # fixed appearance and nothing else.
++        #
++        # Leaving them in would not be neutral. The eyeball carries its own texture
++        # coordinates and 35.8% of its texels land on head surface in the shared atlas,
++        # so it would read the head's offset map and inherit the head's per-frame nudge
++        # as noise. The asset's own part table says where the head stops; no threshold
++        # and nothing to tune.
++        self.n_head_faces = len(self.flame_model.faces)
++        self.rig_only_faces = None
++        if "parts" in a.files:
++            parts = json.loads(str(a["parts"]))
++            head = next((q for q in parts if q["name"].startswith("head_")), None)
++            if head is not None and len(parts) > 1:
++                self.n_head_faces = head["tri_offset"] + head["tri_count"]
++                self.rig_only_faces = self.n_head_faces
++                names = ", ".join(q["name"] for q in parts if q is not head)
++                print(f"[assets] {len(parts)} meshes; triangles past {self.n_head_faces} "
++                      f"({names}) are rig-driven only and take no network offset")
++
++    # ---------------------------------------------------------------- meshes --
++    def load_meshes(self, train_meshes, test_meshes, tgt_train_meshes, tgt_test_meshes):
++        if self.ctrl is not None:
++            return
++        meshes = {**train_meshes, **test_meshes}
++        tgt = {**tgt_train_meshes, **tgt_test_meshes}
++        src = meshes if len(tgt) == 0 else tgt
++        self.num_timesteps = max(src) + 1
++        V = self.flame_model.v_template.shape[0]
++        key = "verts" if self.pose_mode == "posed" else "verts_cano"
++
++        # LAZY WHEN THE CORPUS IS LARGE.
++        #
++        # Held in memory the two sequences cost num_timesteps * 24049 * 3 * 4 bytes each:
++        # fine for one take, 27.7 GB for 48,004 frames, which is the whole machine. The
++        # reader hands back a path per frame in that case and the vertices are read one
++        # frame at a time -- 577 KB per step, about 11 MB/s at 20 iterations a second.
++        self.mesh_paths = None
++        self.ctrl = torch.zeros(self.num_timesteps, 257)
++        if any('__path__' in v for v in src.values()):
++            self.mesh_paths = [None] * self.num_timesteps
++            for t, m in src.items():
++                self.mesh_paths[t] = m['__path__']
++                self.ctrl[t] = torch.from_numpy(np.asarray(m["ctrl"], np.float32))
++            missing = sum(p is None for p in self.mesh_paths)
++            if missing:
++                raise ValueError(f"{missing} timesteps have no mesh; the table is indexed "
++                                 f"by timestep and must have no holes")
++            self.verts_seq = self.verts_cano_seq = None
++            self.ctrl = self.ctrl.cuda()
++            print(f"[MeshGaussianModel] {self.num_timesteps} timesteps, binding to "
++                  f"'{key}' ({self.pose_mode} mode), ctrl {tuple(self.ctrl.shape)}, "
++                  f"meshes read per frame from disk")
++            self._lazy_key = key
++            self.rigid = None
++            if self.pose_mode == "canonical":
++                raise NotImplementedError("lazy meshes are posed-mode only for now")
++            return
++
++        self.verts_seq = torch.zeros(self.num_timesteps, V, 3)
++        self.verts_cano_seq = torch.zeros(self.num_timesteps, V, 3)
++        for t, m in src.items():
++            self.verts_seq[t] = torch.from_numpy(np.asarray(m[key], np.float32))
++            self.verts_cano_seq[t] = torch.from_numpy(np.asarray(m["verts_cano"], np.float32))
++            self.ctrl[t] = torch.from_numpy(np.asarray(m["ctrl"], np.float32))
++        # A merged multi-take dataset ships ctrl.npy instead of relying on the per-mesh
++        # ctrl, because the six head channels have to be re-referenced per take before
++        # they are comparable: each take's zero point is a single frame chosen by scoring
++        # against FRotator(0,90,0) in CAMERA space, and takes 3 and 4 differ by 3.88 deg
++        # of mean roll from that choice alone -- larger than the ~2.1 deg within-take std,
++        # so the network could read take identity off them more easily than expression.
++        # Rewriting it here rather than into every mesh npz avoids re-cooking ~7 GB.
++        if self.source_path is not None and (self.source_path / "ctrl.npy").exists():
++            c = np.load(self.source_path / "ctrl.npy")
++            if len(c) < self.num_timesteps:
++                raise ValueError(f"ctrl.npy has {len(c)} rows, dataset needs "
++                                 f"{self.num_timesteps}")
++            self.ctrl = torch.from_numpy(c[:self.num_timesteps].astype(np.float32))
++            print(f"[MeshGaussianModel] ctrl from ctrl.npy (gauge-corrected), "
++                  f"{tuple(self.ctrl.shape)}")
++
++        # The mesh sequences stay on the CPU and one frame is moved per step.
++        #
++        # On the GPU they cost num_timesteps * 24049 * 3 * 4 bytes EACH, which scales with
++        # dataset length and does not fit: 4.43 GB for 8,248 frames (that run peaked at
++        # 13.17 GB of a 15.92 GB card) and 6.85 GB for 12,743 -- essentially the whole card
++        # before a single Gaussian is allocated. Resident on the CPU, the per-step transfer
++        # is 24049*3*4 = 282 KB per tensor, about 3.7 MB/s at 6.5 it/s, which is free.
++        #
++        # In canonical mode the two sequences also held byte-identical data, since `key` is
++        # "verts_cano" and both were filled from m["verts_cano"] -- so one of them was pure
++        # duplication. They are aliased here rather than copied. Safe because every path
++        # that mutates vertices clones first: normalize_vertices() writes in place, and
++        # both call sites pass self.verts.clone().
++        # Pin FIRST, then alias: pin_memory() returns a NEW tensor, so aliasing before it
++        # is silently undone and both copies survive (3.42 GB each at 12,743 frames).
++        self.verts_cano_seq = self.verts_cano_seq.pin_memory()
++        if key == "verts_cano":
++            self.verts_seq = self.verts_cano_seq
++        else:
++            self.verts_seq = self.verts_seq.pin_memory()
++        self.ctrl = self.ctrl.cuda()
++
++        # In canonical mode the Gaussians bind to a pose-free mesh, so the rigid step
++        # has to be re-applied at render time. It cannot be taken from Pose[t] directly:
++        # cook_meshes applies the rotation in UE centimetres before to_nerf, while the
++        # Gaussians live in NeRF metres, so what is needed is the conjugation
++        # R_nerf = P^-1 R P, t_nerf = t @ P. make_rigid_nerf.py precomputes it and
++        # checks it against the cooked verts (9.8e-08 m) so no convention is re-derived
++        # here. quat encodes R_nerf.T -- means3D uses the row-vector form v @ R, while
++        # build_rotation and the rasteriser use the column form R v.
++        self.rigid = None
++        if self.pose_mode == "canonical":
++            if self.source_path is None:
++                raise ValueError("pose_mode='canonical' needs source_path to locate "
++                                 "rigid_nerf.npz")
++            f = self.source_path / "rigid_nerf.npz"
++            if not f.exists():
++                raise FileNotFoundError(
++                    f"pose_mode='canonical' needs the per-frame rigid transform at {f}. "
++                    f"Generate it with pipeline/make_rigid_nerf.py.")
++            r = np.load(f)
++            self.rigid = {k: torch.from_numpy(r[k].astype(np.float32)).cuda()
++                          for k in ("R", "t", "quat")}
++            n = self.rigid["R"].shape[0]
++            if n < self.num_timesteps:
++                raise ValueError(f"{f} covers {n} frames, dataset needs {self.num_timesteps}")
++        gb = self.num_timesteps * V * 3 * 4 / 2**30
++        print(f"[MeshGaussianModel] {self.num_timesteps} timesteps, binding to "
++              f"'{key}' ({self.pose_mode} mode), ctrl {tuple(self.ctrl.shape)}, "
++              f"meshes on CPU ({gb:.2f} GB"
++              f"{', aliased' if self.verts_cano_seq is self.verts_seq else ' x2'})"
++              f"{'' if self.rigid is None else ', rigid step from rigid_nerf.npz'}")
++
++    def select_mesh_by_timestep(self, timestep, original=False):
++        self.timestep = timestep
++        if self.mesh_paths is not None:
++            z = np.load(self.mesh_paths[timestep])
++            v = torch.from_numpy(np.asarray(z[self._lazy_key], np.float32))[None].cuda()
++            vc = (v if self._lazy_key == "verts_cano"
++                  else torch.from_numpy(np.asarray(z["verts_cano"], np.float32))[None].cuda())
++            self.update_mesh_properties(v, vc)
++            return
++        v = self.verts_seq[timestep][None].to("cuda", non_blocking=True)
++        vc = (v if self.verts_cano_seq is self.verts_seq
++              else self.verts_cano_seq[timestep][None].to("cuda", non_blocking=True))
++        self.update_mesh_properties(v, vc)
++
++    @property
++    def rigid_transform(self):
++        """(R, t, quat) for the current timestep, or None in posed mode -- there the
++        pose is already inside the mesh the Gaussians bind to, so re-applying it would
++        double it."""
++        if self.rigid is None:
++            return None
++        i = self.timestep
++        return self.rigid["R"][i], self.rigid["t"][i], self.rigid["quat"][i]
++
++    def update_mesh_properties(self, verts, verts_cano):
++        from pytorch3d.transforms import matrix_to_quaternion
++        from utils.graphics_utils import compute_face_orientation
++        faces = self.flame_model.faces
++        triangles = verts[:, faces]
++        self.face_center = triangles.mean(dim=-2).squeeze(0)
++        self.face_orien_mat, self.face_scaling = compute_face_orientation(
++            verts.squeeze(0), faces.squeeze(0), return_scale=True)
++        self.face_orien_quat = matrix_to_quaternion(self.face_orien_mat)
++        self.verts, self.faces, self.triangles = verts, faces, triangles
++        self.verts_cano = verts_cano
++
++    # ------------------------------------------------------------- uv inputs --
++    def uvcoords_sample(self):
++        fi, bc = hybrid_sampling_by_binding(
++            binding=self.binding, tex_coord=self.flame_model.verts_uvs,
++            uv_faces=self.flame_model.textures_idx, uv_size=self.uv_size)
++        return reweight_uvcoords_by_barycoords(
++            uvcoords=self.flame_model.verts_uvs, uvfaces=self.flame_model.textures_idx,
++            face_index=fi, bary_coords=bc)[..., :2]
++
++    def get_position_map(self):
++        self.map_generator = PositionMapGenerator(
++            verts=self.verts.clone(),
++            faces=self.flame_model.faces.unsqueeze(0),
++            uvfaces=self.flame_model.textures_idx.unsqueeze(0),
++            uv_coords=self.flame_model.verts_uvs.unsqueeze(0),
++            image_size=self.uv_size, uv_size=self.uv_size, device="cuda")
++        return self.map_generator.generate_position_map()
++
++    def get_vertex_displace_map(self):
++        # .clone(): normalize_vertices writes in place, and self.verts feeds the binding
++        return self.map_generator.displacement_map(self.verts.clone())
++
++    # 14 channels, in the order gaussian_renderer applies them: xyz shift, scale
++    # MULTIPLIER, rotation quaternion [r,x,y,z], colour shift, opacity shift. Identity is
++    # therefore not all zeros -- scale is 1 and the quaternion is [1,0,0,0].
++    IDENTITY_OFFSET = (0., 0., 0., 1., 1., 1., 1., 0., 0., 0., 0., 0., 0., 0.)
++
++    def freeze_rig_only(self, offset):
++        """Force blobs on rig-only meshes back to the identity offset."""
++        if self.rig_only_faces is None or offset is None:
++            return offset
++        m = self.binding >= self.rig_only_faces
++        if not bool(m.any()):
++            return offset
++        ident = offset.new_tensor(self.IDENTITY_OFFSET)
++        shape = [1] * (offset.dim() - 1) + [offset.shape[-1]]
++        mask = m.view(*([1] * (offset.dim() - 2)), -1, 1)
++        return torch.where(mask, ident.view(*shape), offset)
++
++    def get_uv_mask(self, path=None):
++        # Lives beside head_assets.npz, produced by pipeline/make_region_masks.py. The
++        # masks are cut at one resolution and the network runs at uv_size, so a
++        # size-matched file is preferred when one exists. Otherwise the only way to use
++        # these masks is to run the whole network at their resolution -- four times the
++        # work at 512, and it makes runs at different uv_size incomparable.
++        if path is None:
++            sized = self._assets_dir / f"uv_region_masks_{self.uv_size}.pkl"
++            path = str(sized if sized.exists()
++                       else self._assets_dir / "uv_region_masks.pkl")
++        self.uv_mask = load_uv_region_masks(path)
++        return self.uv_mask
++
++    # ------------------------------------------------------------ clustering --
++    def cluster_flame_conditions(self, dataset_len, use_keyframes=False, interval=25):
++        """Temporal ADC clustering, on the 257 control vector instead of FLAME params.
++
++        Same structure as the FLAME version -- PCA, normalise, adaptive k-means over
++        K in [5, 12] by silhouette -- but the feature is split into the two groups this
++        data actually has: 251 expression controls and 6 head values.
++
++        The split and the per-group normalisation matter. The controls are unit-range
++        and the head channels are degrees and centimetres spanning -15.17..8.61, so
++        clustering the raw 257 vector under a Euclidean metric would be decided almost
++        entirely by head pose. Normalising each group to unit norm first removes that.
++        """
++        from sklearn.cluster import KMeans
++        from sklearn.decomposition import PCA
++        from sklearn.metrics import silhouette_score
++
++        idxs = np.arange(dataset_len)
++        ctrl = self.ctrl[:dataset_len].detach().cpu().numpy()
++        expr_np, head_np = ctrl[:, :251], ctrl[:, 251:]
++
++        n_comp = min(12, expr_np.shape[0], expr_np.shape[1])
++        pca_expr = PCA(n_components=n_comp, random_state=42).fit_transform(expr_np)
++
++        def norm(x):
++            return x / (np.linalg.norm(x, axis=1, keepdims=True) + 1e-6)
++
++        feats = np.concatenate([norm(pca_expr) * (0.7 ** 0.5),
++                                norm(head_np) * (0.3 ** 0.5)], axis=1)
++
++        best_k, best_score, best_labels = None, -1, None
++        print("Searching optimal K based on silhouette score:")
++        for K in range(5, 13):
++            labels = KMeans(n_clusters=K, random_state=42, n_init=10).fit_predict(feats)
++            try:
++                score = silhouette_score(feats, labels, sample_size=min(3000, len(feats)),
++                                         random_state=42)
++            except ValueError:
++                continue
++            print(f"K={K}, silhouette score={score:.4f}")
++            if score > best_score:
++                best_k, best_score, best_labels = K, score, labels
++        print(f"\nSelected K = {best_k} with silhouette score = {best_score:.4f}")
++
++        clustered = [[] for _ in range(best_k)]
++        for frame_idx, label in zip(idxs, best_labels):
++            clustered[label].append(int(frame_idx))
++        return [sorted(set(c)) for c in clustered], best_k
++
++    @property
++    def condition(self):
++        """[T, 257] -- what DualBranchUNet consumes in place of FLAME's param dict."""
++        return self.ctrl
+diff --git a/train.py b/train.py
+index 6cb0f8b..b7a99e7 100644
+--- a/train.py
++++ b/train.py
+@@ -59,13 +59,58 @@ def training(
+     first_iter = 0
+     tb_writer = prepare_output_and_logger(dataset)
+ 
+-    gaussians = FlameGaussianModel(
+-        dataset.sh_degree,
+-        dataset.disable_flame_static_offset,
+-        dataset.not_finetune_flame_params,
+-    )
++    if dataset.mesh_assets:
++        from scene.mesh_gaussian_model import MeshGaussianModel
++        gaussians = MeshGaussianModel(
++            dataset.sh_degree, dataset.mesh_assets,
++            uv_size=dataset.uv_size, pose_mode=dataset.pose_mode,
++            source_path=dataset.source_path,
++        )
++    else:
++        gaussians = FlameGaussianModel(
++            dataset.sh_degree,
++            dataset.disable_flame_static_offset,
++            dataset.not_finetune_flame_params,
++        )
+ 
+     scene = Scene(dataset, gaussians)
++
++    # PER-RECORDING APPEARANCE.
++    # The per-frame network writes colour and opacity (channels 10:14) and is conditioned
++    # on the control values alone, so it has no legitimate way to know which recording a
++    # frame came from -- and it infers it from the expression, which is right on clips from
++    # a recording it trained on and wrong everywhere else. Given an explicit constant per
++    # recording it cannot drift inside a clip, and at inference one is chosen rather than
++    # predicted. Groups are read off the chunk directory names, so this needs no profile.
++    gaussians.timestep_group = None
++    if getattr(opt, "per_take_appearance", False):
++        import json as _json, os as _os
++        _g, _t2g = {}, {}
++        for _jf in ("transforms_train.json", "transforms_val.json", "transforms_test.json"):
++            _pth = _os.path.join(dataset.source_path, _jf)
++            if not _os.path.exists(_pth):
++                continue
++            for _fr in _json.load(open(_pth))["frames"]:
++                _chunk = _fr["file_path"].split("/images/")[0].split("/")[-1]
++                _name = _chunk.split("__c")[0].replace("predicted__", "")
++                _t2g.setdefault(int(_fr["timestep_index"]), _g.setdefault(_name, len(_g)))
++        if not _g:
++            raise SystemExit("per_take_appearance: no frames found to group. "
++                             "Chunk names are expected to look like <recording>__cNNN.")
++        _T = gaussians.num_timesteps
++        _map = torch.zeros(_T, dtype=torch.long)
++        for _k, _v in _t2g.items():
++            if _k < _T:
++                _map[_k] = _v
++        # KEPT ON THE CPU DELIBERATELY. It is indexed once per iteration and the result
++        # is converted to a Python int; doing that on a CUDA tensor forces a device
++        # synchronisation every step, which measured ~2.8x slower end to end.
++        gaussians.timestep_group = _map
++        gaussians.appearance_group_names = sorted(_g, key=_g.get)
++        print(f"[appearance] {len(_g)} groups: " +
++              ", ".join(f"{k}({sum(1 for v in _t2g.values() if v == _g[k])})" for k in _g))
++        gaussians.setup_appearance(len(_g))
++
+     gaussians.training_setup(opt)
+     camera_dataset = scene.getTrainCameras()
+     train_data_len = len(camera_dataset)
+@@ -74,9 +119,20 @@ def training(
+     position_map = gaussians.get_position_map()
+     uv_mask = gaussians.get_uv_mask()
+     uv_coords = gaussians.uvcoords_sample()
++    # The static appearance reference for the UNet encoder. FLAME datasets name this
++    # "<timestep>_<camera>.png"; take it from the first training frame instead so any
++    # dataset layout works.
+     ref_image_path = os.path.join(dataset.source_path, dataset.images, "00000_00.png")
++    if not os.path.exists(ref_image_path):
++        import json as _json
++        with open(os.path.join(dataset.source_path, "transforms_train.json")) as _f:
++            _fr = _json.load(_f)["frames"][0]["file_path"]
++        if not os.path.splitext(_fr)[1]:
++            _fr += ".png"
++        ref_image_path = os.path.join(dataset.source_path, _fr)
+     if not os.path.exists(ref_image_path):
+         raise FileNotFoundError(f"Reference image not found at: {ref_image_path}")
++    print(f"Reference image: {ref_image_path}")
+     reference_image = Image.open(ref_image_path).convert("RGB")
+     
+     #========== Initialize the network (DualBranchUNet) ==========
+@@ -86,6 +142,10 @@ def training(
+         uv_mask=uv_mask,
+         reference_image=reference_image,
+         position_map=position_map,
++        uv_size=dataset.uv_size,
++        # 257 driving a MetaHuman mesh, 118 driving FLAME. Read it off the model rather
++        # than trusting the network's default, which was the MetaHuman width.
++        condition_dim=gaussians.condition.shape[1],
+     )
+     dual_branch_net.to("cuda")
+     dual_branch_net.train()
+@@ -115,13 +175,18 @@ def training(
+ 
+     if opt.final_refine_epoch:
+         cluster_epoch_limit = opt.epochs - 1
++        # Same fix as scene/cluster_loader.py, which this one was missed by: eight
++        # persistent workers fork a parent holding ~3 GB of Camera objects and param
++        # dicts, and Python's refcounting privatises those pages, so the copies are
++        # real. 8 x 3 GB on a 29 GB machine is an OOM kill with no message that points
++        # here. Two non-persistent workers keep ahead of the loop.
+         full_loader = DataLoader(
+             camera_dataset,
+             batch_size=None,
+             shuffle=True,
+-            num_workers=8,
++            num_workers=2,
+             pin_memory=True,
+-            persistent_workers=True,
++            persistent_workers=False,
+         )
+ 
+     # construct test iterations and save iteraions
+@@ -182,7 +247,14 @@ def training(
+ 
+         # Forward pass through dual branch network
+         gt_image = viewpoint_cam.original_image.cuda()
+-        offset = dual_branch_net(gaussians.flame_param, viewpoint_cam.timestep, displacement_map)
++        offset = dual_branch_net(gaussians.condition, viewpoint_cam.timestep, displacement_map)
++        offset = gaussians.freeze_rig_only(offset)
++        if gaussians.timestep_group is not None:
++            # Concatenated rather than assigned in place, so the network receives gradient
++            # on the ten motion channels and none at all on the four appearance ones.
++            _grp = int(gaussians.timestep_group[viewpoint_cam.timestep])
++            offset = torch.cat([offset[..., :10],
++                                gaussians.appearance_of(_grp).unsqueeze(0)], dim=-1)
+         render_pkg = render(viewpoint_cam, gaussians, pipe, background, offset=offset)
+ 
+         (image, viewspace_point_tensor, visibility_filter, radii) = (
+@@ -201,6 +273,17 @@ def training(
+         losses["offset_scale_reg"] = (torch.abs(offset[0, :, 3:6] - 1).mean() * opt.lambda_offset_scale_reg)
+         losses["offset_color_reg"] = (torch.abs(offset[0, :, 10:13]).mean() * opt.lambda_offset_color_reg)
+ 
++        # How far a blob has slid from the triangle that drives it. Without this the
++        # position is free to wander onto a part of the face that moves differently,
++        # and the render still looks right on frames it was fitted to. Metres when
++        # metric_xyz, triangle widths otherwise.
++        if opt.lambda_xyz != 0 and gaussians.binding is not None:
++            slide = gaussians._xyz[visibility_filter]
++            if not opt.metric_xyz:
++                slide = slide * gaussians.face_scaling[gaussians.binding[visibility_filter]]
++            losses["xyz"] = (F.relu(slide.norm(dim=1) - opt.threshold_xyz).mean()
++                             * opt.lambda_xyz)
++
+         if opt.lambda_scale != 0:
+             losses["scale"] = (F.relu(torch.exp(gaussians._scaling[visibility_filter]) - 
+             opt.threshold_scale).norm(dim=1).mean() * opt.lambda_scale)
+@@ -270,6 +353,13 @@ def training(
+             if iteration in saving_iterations:
+                 print("[ITER {}] Saving Gaussians".format(iteration))
+                 scene.save(iteration)
++                if gaussians.timestep_group is not None:
++                    _out = os.path.join(scene.model_path,
++                                        f"point_cloud/iteration_{iteration}/appearance.pt")
++                    torch.save({"appearance": gaussians._appearance.detach().cpu(),
++                                "groups": gaussians.appearance_group_names,
++                                "channels": "10:14 -- shs dc rgb, then opacity"}, _out)
++                    print(f"\n[appearance] wrote {_out}")
+                 print("[ITER {}] Saving Network and Uv sample coordinates".format(iteration))
+                 save_dir = os.path.join(scene.model_path, f"param/iteration_{iteration}")
+                 os.makedirs(save_dir, exist_ok=True)
+@@ -327,13 +417,19 @@ def training_report(tb_writer, iteration, losses, elapsed, testing_iterations, s
+                 gt_image_cache = []
+                 vis_ct = 0
+                 for idx, viewpoint in tqdm(
+-                    enumerate(DataLoader(config["cameras"],shuffle=False,batch_size=None,num_workers=8)),
++                    enumerate(DataLoader(config["cameras"],shuffle=False,batch_size=None,num_workers=2)),
+                     total=len(config["cameras"]),
+                 ):
+ 
+                     scene.gaussians.select_mesh_by_timestep(viewpoint.timestep)
+                     vertex_displace_map = scene.gaussians.get_vertex_displace_map()
+-                    offset = dual_branch_net(scene.gaussians.flame_param, viewpoint.timestep, vertex_displace_map)
++                    offset = dual_branch_net(scene.gaussians.condition, viewpoint.timestep, vertex_displace_map)
++                    offset = scene.gaussians.freeze_rig_only(offset)
++                    if getattr(scene.gaussians, "timestep_group", None) is not None:
++                        _g = int(scene.gaussians.timestep_group[viewpoint.timestep])
++                        offset = torch.cat(
++                            [offset[..., :10],
++                             scene.gaussians.appearance_of(_g).unsqueeze(0)], dim=-1)
+ 
+                     image = torch.clamp(
+                         renderFunc(
+@@ -469,11 +565,13 @@ if __name__ == "__main__":
+     parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[], help="the iteration to save checkpoint")
+     parser.add_argument("--start_checkpoint", type=str, default=None)
+     parser.add_argument("--ptvsd", action="store_true", help="whether to debug")
++    parser.add_argument("--seed", type=int, default=58,
++                        help="RNG seed. Two runs differing only in this are the noise floor.")
+     args = parser.parse_args(sys.argv[1:])
+     print("Optimizing " + args.model_path)
+ 
+     # Initialize system state (RNG)
+-    safe_state(args.quiet)
++    safe_state(args.quiet, args.seed)
+     torch.cuda.set_device(torch.device("cuda:0"))
+ 
+     # save config.yml
+-- 
+2.53.0
+
+
+From 64450cd5b172ad6aa1e7aaf2ddc802dcddcfd861 Mon Sep 17 00:00:00 2001
+From: pavanteja295 <pavanteja295@users.noreply.github.com>
+Date: Fri, 18 Sep 2026 10:39:49 +0530
+Subject: [PATCH 2/8] Rasterise the UV maps from the head's triangles only
+
+MetaHuman authors one UV chart per material and every chart fills the whole 0-1
+tile, because in a normal renderer each material samples its own texture and
+overlap costs nothing. This code rasterises ONE shared map over every triangle it
+is given, so an appended mesh lands on top of the head's chart.
+
+Measured at uv_size 256 with the eyeballs appended: the head fills 62,362 texels
+on its own, and 627 of them -- 1.0% of the head's map -- are taken by eyeball
+geometry, where the position written is wrong by up to 730 mm. Contested is not
+the same as corrupted: the rasteriser resolves each contested texel and picks the
+head in 98.7% of them.
+
+Repacking the atlas fixes this and costs far more than it is worth here. It moves
+the head's own UVs, so the head stops being bit-identical to the existing asset,
+every region mask needs rebaking, and runs stop being comparable.
+
+None of that is needed, because a mesh the rig alone drives has nothing to look
+up. It takes no network offset, so it needs no presence in the map. Leaving it
+out is the whole fix.
+
+  position map and displacement map with the eyeballs appended are now
+  bit-identical to the head-only asset's, 0.000e+00 over 196,608 values
+
+The read side was already covered: freeze_rig_only forces every eyeball blob's
+offset back to identity after the network runs, so it does not matter which
+texel one of them samples. This closes the write side, which it did not.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ scene/mesh_gaussian_model.py | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/scene/mesh_gaussian_model.py b/scene/mesh_gaussian_model.py
+index db289c4..8fb6ce9 100644
+--- a/scene/mesh_gaussian_model.py
++++ b/scene/mesh_gaussian_model.py
+@@ -259,10 +259,28 @@ class MeshGaussianModel(GaussianModel):
+             face_index=fi, bary_coords=bc)[..., :2]
+ 
+     def get_position_map(self):
++        # THE MAPS ARE RASTERISED FROM THE HEAD'S TRIANGLES ONLY.
++        #
++        # MetaHuman authors one UV chart per material and every chart fills the whole
++        # 0-1 tile, because in a normal renderer each material samples its own texture
++        # and overlap costs nothing. This rasterises ONE shared map over every triangle
++        # it is given, so an appended mesh lands on top of the head's chart: measured at
++        # uv_size 256, the eyeballs take 627 texels the head owned, and the position
++        # written there is wrong by up to 730 mm.
++        #
++        # Repacking the atlas would fix it and cost far more than it is worth: it moves
++        # the head's own UVs, so the head stops being bit-identical to the existing
++        # asset, every region mask needs rebaking, and runs stop being comparable.
++        #
++        # None of that is necessary, because a rig-only mesh has nothing to look up. It
++        # takes no network offset, so it needs no presence in the map at all. Leaving it
++        # out is the whole fix, and it keeps the head's map identical to what a head-only
++        # asset produces.
++        nf = self.n_head_faces
+         self.map_generator = PositionMapGenerator(
+             verts=self.verts.clone(),
+-            faces=self.flame_model.faces.unsqueeze(0),
+-            uvfaces=self.flame_model.textures_idx.unsqueeze(0),
++            faces=self.flame_model.faces[:nf].unsqueeze(0),
++            uvfaces=self.flame_model.textures_idx[:nf].unsqueeze(0),
+             uv_coords=self.flame_model.verts_uvs.unsqueeze(0),
+             image_size=self.uv_size, uv_size=self.uv_size, device="cuda")
+         return self.map_generator.generate_position_map()
+-- 
+2.53.0
+
+
+From 49cfc46fcd089438115ed041c9fc7bc922d53151 Mon Sep 17 00:00:00 2001
+From: pavanteja295 <pavanteja295@users.noreply.github.com>
+Date: Fri, 18 Sep 2026 11:45:48 +0530
+Subject: [PATCH 3/8] Hold rig-only blobs on the surface they belong to
+
+An eyeball is a rigid sphere whose geometry we already know exactly. Blobs start
+at their triangle centres, which IS the ball's surface, so there is nothing about
+where they sit for the optimiser to discover -- only what they look like.
+
+Left free they leave. Measured on G1 at iteration 33,000:
+
+  on or inside the ball   61% of eyeball blobs   median opacity 0.03
+  15-25 mm out             36%                   median opacity 0.90
+  loose, past 25 mm         3%                   median opacity 0.91
+
+The optimiser evacuated the ball: everything still on it is switched off, and
+everything that left is opaque. The cause is that threshold_xyz is an ABSOLUTE
+10 mm, calibrated for a head 350 mm tall. Applied unchanged to a 26 mm eyeball,
+the leash is longer than the object, so a blob can leave the surface entirely
+without paying anything. The eyeballs are not drifting unusually -- head blobs
+drift further (7.86 mm median against 7.16 mm) -- they are simply an order of
+magnitude smaller than the thing the rule was written for.
+
+Two ways out, both here. threshold_xyz_rig shortens the leash to 1 mm for
+rig-only meshes. pin_rig_only, the default, drops their position gradient
+altogether, which is the honest statement of the situation: the geometry is
+known, so only colour, opacity and scale are fitted.
+
+This is also what makes gaze possible later. A blob pinned to the ball rotates
+with it correctly; one sitting 10 mm off sweeps an exaggerated arc.
+
+Both are no-ops on an asset with no rig-only mesh, so head-only runs are
+unchanged and stay comparable.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ arguments/__init__.py        | 44 +++++++++++++++++++++++++++++++++++-
+ scene/mesh_gaussian_model.py | 32 ++++++++++++++++++++++++++
+ train.py                     |  8 ++++++-
+ 3 files changed, 82 insertions(+), 2 deletions(-)
+
+diff --git a/arguments/__init__.py b/arguments/__init__.py
+index 0683c79..350db15 100644
+--- a/arguments/__init__.py
++++ b/arguments/__init__.py
+@@ -59,6 +59,15 @@ class  ModelParams(ParamGroup):
+         self.disable_flame_static_offset = False
+         self.not_finetune_flame_params = False
+         self.select_camera_id = -1
++        # MetaHuman: path to head_assets.npz. When set, the run binds Gaussians to a
++        # cooked MetaHuman head mesh instead of evaluating FLAME.
++        self.mesh_assets = ""
++        # "posed"     -> bind to camera-space verts; head pose is inside the mesh and
++        #                therefore inside the displacement map (what FLAME does)
++        # "canonical" -> bind to expression-only verts; head pose is applied to the
++        #                Gaussians afterwards as a rigid transform
++        self.pose_mode = "posed"
++        self.uv_size = 512
+         super().__init__(parser, "Loading Parameters", sentinel)
+ 
+     def extract(self, args):
+@@ -92,7 +101,37 @@ class OptimizationParams(ParamGroup):
+         self.flame_trans_lr = 1e-6
+         self.flame_pose_lr = 1e-5
+         self.percent_dense = 0.01
+-        self.threshold_xyz = 1.
++        # THE BLOB'S OWN FIXED POSITION, which was disabled.
++        #
++        # Bound to a mesh, _xyz is read in the binding triangle's frame. Upstream also
++        # multiplies it by the triangle's width, so a step of the same size in metres
++        # costs width-squared more on a big triangle than a small one -- on this head
++        # that is a range of about 11,000, and no single learning rate serves both ends.
++        # Worse, its rate is position_lr_init * (camera spread), and a capture with one
++        # static camera has zero spread, so the rate is exactly zero and the parameter
++        # never moves at all. Nothing warns.
++        #
++        # metric_xyz keeps the triangle's axes and drops its width, making _xyz a
++        # displacement in METRES that turns with the face, so one rate is meaningful
++        # everywhere and mesh_position_lr_* can be read as millimetres per step.
++        self.metric_xyz = True
++        self.mesh_position_lr_init = 1.6e-4
++        self.mesh_position_lr_final = 1.6e-6
++        # How far a blob may slide before it is charged for it. A blob never changes
++        # which triangle drives it, so a large slide means it is animated by the wrong
++        # part of the face. In metres when metric_xyz, else in triangle widths.
++        self.lambda_xyz = 1e-2
++        self.threshold_xyz = 0.01
++        # A blob on a rig-only mesh gets a much shorter leash. threshold_xyz is an
++        # ABSOLUTE distance calibrated for a head 350 mm tall; applied unchanged to a
++        # 26 mm eyeball it is longer than the object, so blobs leave the surface
++        # entirely and the ball ends up unpopulated. Measured on G1 at 33k: 61% of
++        # eyeball blobs sat on or inside the ball at opacity 0.03, while the 39% that
++        # had left sat at 0.90.
++        self.threshold_xyz_rig = 0.001
++        # Hold rig-only blobs exactly on their triangles: geometry is known, only
++        # appearance is learned. Supersedes threshold_xyz_rig when on.
++        self.pin_rig_only = True
+         self.threshold_scale = 0.6
+ 
+         self.lambda_dssim = 0.2
+@@ -102,6 +141,9 @@ class OptimizationParams(ParamGroup):
+         self.lambda_fpe = 0.2
+         self.num_clusters = None
+         self.final_refine_epoch = True
++        # Replace the per-frame network's colour and opacity output (channels 10:14) with
++        # one learned constant per recording. The network keeps the ten motion channels.
++        self.per_take_appearance = False
+ 
+         # DualBranchUnet
+         self.dual_branch_lr = 1e-4
+diff --git a/scene/mesh_gaussian_model.py b/scene/mesh_gaussian_model.py
+index 8fb6ce9..f7bef9a 100644
+--- a/scene/mesh_gaussian_model.py
++++ b/scene/mesh_gaussian_model.py
+@@ -294,6 +294,38 @@ class MeshGaussianModel(GaussianModel):
+     # therefore not all zeros -- scale is 1 and the quaternion is [1,0,0,0].
+     IDENTITY_OFFSET = (0., 0., 0., 1., 1., 1., 1., 0., 0., 0., 0., 0., 0., 0.)
+ 
++    def pin_rig_only(self):
++        """Hold rig-only blobs on the surface they belong to.
++
++        An eyeball is a rigid sphere and we already know its geometry exactly -- the
++        blobs start at their triangle centres, which IS the ball's surface. There is
++        nothing about where they sit for the optimiser to discover, only what they look
++        like. So the position gradient is dropped for them and colour, opacity and scale
++        are left to fit.
++
++        Without this they leave. Measured on G1 at 33k: 61% of eyeball blobs sat on or
++        inside the ball at opacity 0.03 while the 39% that had drifted 15-25 mm out sat
++        at 0.90 -- the optimiser evacuated the ball, because the position penalty only
++        begins at 10 mm and the ball is 26 mm across.
++        """
++        if self.rig_only_faces is None:
++            return 0
++        m = (self.binding >= self.rig_only_faces)
++        if self._xyz.grad is not None:
++            self._xyz.grad[m] = 0.0
++        return int(m.sum())
++
++    def xyz_threshold(self, default, rig_only):
++        """Per-blob leash for the position regulariser: `default` everywhere, `rig_only`
++        for blobs bound to a mesh the rig alone drives. Returns a scalar when there is
++        no such mesh, so the loss is unchanged for a head-only asset."""
++        if self.rig_only_faces is None or rig_only is None or rig_only == default:
++            return default
++        t = torch.full((self.binding.shape[0],), float(default),
++                       device=self.binding.device)
++        t[self.binding >= self.rig_only_faces] = float(rig_only)
++        return t
++
+     def freeze_rig_only(self, offset):
+         """Force blobs on rig-only meshes back to the identity offset."""
+         if self.rig_only_faces is None or offset is None:
+diff --git a/train.py b/train.py
+index b7a99e7..6a025b8 100644
+--- a/train.py
++++ b/train.py
+@@ -281,7 +281,11 @@ def training(
+             slide = gaussians._xyz[visibility_filter]
+             if not opt.metric_xyz:
+                 slide = slide * gaussians.face_scaling[gaussians.binding[visibility_filter]]
+-            losses["xyz"] = (F.relu(slide.norm(dim=1) - opt.threshold_xyz).mean()
++            thr = gaussians.xyz_threshold(opt.threshold_xyz,
++                                          getattr(opt, "threshold_xyz_rig", None))
++            if torch.is_tensor(thr):
++                thr = thr[visibility_filter]
++            losses["xyz"] = (F.relu(slide.norm(dim=1) - thr).mean()
+                              * opt.lambda_xyz)
+ 
+         if opt.lambda_scale != 0:
+@@ -290,6 +294,8 @@ def training(
+         
+         losses["total"] = sum([v for _, v in losses.items()])
+         losses["total"].backward()
++        if getattr(opt, "pin_rig_only", True):
++            gaussians.pin_rig_only()
+         iter_end.record()
+ 
+         with torch.no_grad():
+-- 
+2.53.0
+
+
+From 64833a9474533f1f2a88ab433f293a8f0fdcc27b Mon Sep 17 00:00:00 2001
+From: pavanteja295 <pavanteja295@users.noreply.github.com>
+Date: Fri, 18 Sep 2026 12:22:25 +0530
+Subject: [PATCH 4/8] The MetaHuman changes that predate this branch having
+ history
+
+Everything here was already running the audio-render pipeline and had never
+been committed. Recording it as one baseline so later work has a diff, not so
+the individual changes get attribution they no longer have.
+
+What is in it, from the findings that motivated each:
+
+  scene/mesh_gaussian_model.py   Gaussians bound to a MetaHuman head instead of
+                                 FLAME. Lazy per-frame mesh reads, because
+                                 48,004 cooked meshes held in memory is 27.7 GB.
+  gaussian_renderer/__init__.py  the 14 offset channels, and the canonical-mode
+                                 rigid step.
+  networks/dual_branch.py        condition width read off the model rather than
+                                 hard-wired to 257, which is what let the FLAME
+                                 path run at all.
+  scene/gaussian_model.py        per-blob per-recording appearance. The colour
+                                 and opacity channels the per-frame network was
+                                 using as a recording lookup, given as an
+                                 explicit parameter instead. +1.5 dB held out.
+  train.py                       --per_take_appearance, --seed, and two loader
+                                 workers rather than eight persistent ones,
+                                 which was OOM-killing the host.
+  utils/general_utils.py         safe_state takes the seed. It was hard-coded to
+                                 58, so the two noise-floor arms of every sweep
+                                 were byte-identical commands.
+  scene/cluster_loader.py,
+  scene/dataset_readers.py       identity arrays interned by content: static_offset
+                                 and shape are per-recording, and were stored
+                                 40,498 times. 2.33 GB.
+
+Also ignores .venv, the hand-rolled .pre*/.bak shadow copies, and the upstream
+FLAME assets, which are large and separately licensed.
+---
+ .gitignore                                    |  31 +-
+ README.md                                     |  98 +++++--
+ environment.yml                               |  34 +++
+ gaussian_renderer/__init__.py                 |  20 ++
+ networks/dual_branch.py                       |  55 ++--
+ render.py                                     |   2 +-
+ requirements-build.txt                        |  21 ++
+ requirements.txt                              |  36 ++-
+ scene/__init__.py                             |   9 +-
+ scene/cluster_loader.py                       |  12 +-
+ scene/dataset_readers.py                      |  39 ++-
+ scene/flame_gaussian_model.py                 |  25 +-
+ scene/gaussian_model.py                       |  67 ++++-
+ scripts/check_setup.py                        | 266 ++++++++++++++++++
+ scripts/export_world_ply.py                   |  86 ++++++
+ .../cuda_rasterizer/rasterizer_impl.h         |   1 +
+ tests/test_rigid_pose.py                      | 102 +++++++
+ utils/general_utils.py                        |   6 +-
+ utils/mesh_sampling.py                        |  23 ++
+ 19 files changed, 834 insertions(+), 99 deletions(-)
+ create mode 100644 environment.yml
+ create mode 100644 requirements-build.txt
+ create mode 100644 scripts/check_setup.py
+ create mode 100644 scripts/export_world_ply.py
+ create mode 100644 tests/test_rigid_pose.py
+
+diff --git a/.gitignore b/.gitignore
+index 3a4b61a..9ff9b5c 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,26 +1,9 @@
++.venv/
+ __pycache__/
+-*.py[cod]
+-*$py.class
+-*.egg-info/
+-build/
+-dist/
++*.pyc
++# hand-rolled shadow backups from before this tree had history
++*.pre*
++*.bak
+ 
+-.ninja_log
+-.ninja_deps
+-Makefile
+-CMakeCache.txt
+-CMakeFiles/
+-*.so
+-*.o
+-*.obj
+-*.a
+-*.lib
+-*.pyd
+-
+-.vscode/
+-.idea/
+-.env
+-*.pth
+-
+-flame_model/assets/flame/FLAME_masks.pkl
+-flame_model/assets/flame/flame2023.pkl
+\ No newline at end of file
++# upstream FLAME assets, large and separately licensed
++flame_model/assets/flame/
+diff --git a/README.md b/README.md
+index 81a9b41..d96f62f 100644
+--- a/README.md
++++ b/README.md
+@@ -18,42 +18,88 @@ In this paper, we present STAvatar, a novel method for high-fidelity and trainin
+ 
+ ## 🛠️ Setup
+ ### Installation
+-Follow the commands below to set up a Conda environment and install the necessary dependencies:
++
++> **This fork targets NVIDIA Blackwell (RTX 50-series, `sm_120`).**
++> The upstream pins — CUDA 11.7 and PyTorch 2.0.1 — **cannot run on a Blackwell GPU**.
++> No CUDA toolkit before 12.8 emits `sm_120` code, and `torch==2.0.1+cu117` has no
++> `sm_120` in its arch list. The environment files here have been re-pinned accordingly;
++> see [Blackwell notes](#blackwell--rtx-50-series-notes) below for the reasoning behind
++> each pin. On a pre-Blackwell GPU the upstream instructions still apply.
++
++Host prerequisites:
++- Linux, an NVIDIA GPU, and a driver new enough for CUDA 12.8 (>= 525 for forward
++  compatibility; RTX 50-series drivers all qualify). Everything else — nvcc, gcc,
++  ffmpeg — is installed into the conda environment, so the distro toolchain is
++  not used and does not need to match.
++- `conda` (or `mamba` / `micromamba`).
++
++If you cloned without `--recursive`, initialize the submodules first:
++```bash
++git submodule update --init --recursive
++```
++
++Then create the environment. This is the whole installation:
+ ```bash
+-# Clone the repo:
+-git clone https://github.com/JiankuoZhao/STAvatar.git --recursive
+-cd STAvatar
++# 1. conda packages (python, CUDA 12.8, gcc 14, ninja, ffmpeg) + all wheel dependencies
++conda env create -f environment.yml
++conda activate stavatar
+ 
+-conda create -n stavatar python=3.10
++# 2. point compilation at this environment's CUDA, then re-activate to pick it up
++conda env config vars set CUDA_HOME=$CONDA_PREFIX
+ conda activate stavatar
+ 
+-# Install CUDA and ninja for compilation
+-conda install -c "nvidia/label/cuda-11.7.1" cuda-toolkit ninja
++# 3. build the four CUDA extensions from source against the installed torch
++#    NOTE: we use a modified version of diff-gaussian-rasterization; the vendored
++#    copy in submodules/ is required for consistent results.
++TORCH_CUDA_ARCH_LIST="12.0" pip install --no-build-isolation -r requirements-build.txt
++
++# 4. sanity-check the checkout, toolchain, assets, and imports
++python scripts/check_setup.py
++```
++
++Step 3 takes roughly 20-30 minutes; `pytorch3d` is almost all of it. Two details in that
++command are load-bearing:
++- `--no-build-isolation` — each `setup.py` imports `torch`, which an isolated PEP 517
++  build environment would not have.
++- run it **with the environment activated**, not just with `conda run` or a modified
++  `PATH`. `pytorch3d`'s `setup.py` finds CUB via `$CONDA_PREFIX/include`; if `CONDA_PREFIX`
++  still points at a base conda that has an older CUDA installed, the build picks up that
++  CUDA's `crt/host_config.h` and fails with `unsupported GNU version`.
++
++#### Blackwell / RTX 50-series notes
+ 
+-# Setup paths (only for linux)
+-ln -s "$CONDA_PREFIX/lib" "$CONDA_PREFIX/lib64"  # to avoid error "/usr/bin/ld: cannot find -lcudart"
+-conda env config vars set CUDA_HOME=$CONDA_PREFIX  # for compilation
++What was changed relative to upstream, and why:
+ 
+-# conda install
+-conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.7 -c pytorch -c nvidia
+-# or: pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2
++| Component | Upstream | Here | Reason |
++|---|---|---|---|
++| CUDA toolkit | 11.7 | **12.8** | First toolkit that can target `sm_120`. Hard requirement. |
++| PyTorch | 2.0.1+cu117 | **2.8.0+cu128** | Needs `sm_120` in `torch.cuda.get_arch_list()`. 2.8.0 chosen over newer releases because it is the latest torch with a prebuilt `torch-scatter` wheel, which removes a source build. |
++| Python | 3.10 | 3.10 | Unchanged, and now load-bearing: stock `chumpy==0.70` calls `inspect.getargspec`, removed in Python 3.11. |
++| numpy | 1.22.3 | **1.23.5** | `>= 1.24` removes the `np.bool` / `np.float` aliases `chumpy` imports; `1.22.3` is below the floor of the scipy builds that support this stack. |
++| host compiler | distro gcc | **conda gcc 14** | nvcc 12.8 rejects gcc >= 15, which recent distros ship. Pulled in automatically by `cuda-nvcc`. |
++| `chumpy` | listed | kept | Not imported by any source file, but `pickle` needs it to load `flame2023.pkl`. |
+ 
+-pip install -r requirements.txt
++One patch was required in the vendored rasterizer:
++`submodules/diff-gaussian-rasterization/cuda_rasterizer/rasterizer_impl.h` uses `uint32_t`
++and `std::uintptr_t` without including `<cstdint>`. libstdc++ 14 no longer provides it
++transitively, so the include was added.
+ 
+-# Install submodules
+-# NOTE: We use a modified version of diff-gaussian-rasterization. 
+-# Please install the provided submodules to ensure consistent results.
+-pip install submodules/diff-gaussian-rasterization
+-pip install submodules/simple-knn
+-pip install submodules/fused-ssim
+-``` 
++A `sm_120` GPU is not required to *build* — `TORCH_CUDA_ARCH_LIST="12.0"` sets the target
++explicitly. Drop or change that variable to build for a different architecture.
+ 
+ ### Weights Preparation
+-Our framework and pre-processed data are built upon FLAME 2023. Please download [original assets](https://flame.is.tue.mpg.de/download.php) the official assets and place them in the following directory:
++Our framework and pre-processed data are built upon FLAME 2023. Please download the official assets from [FLAME](https://flame.is.tue.mpg.de/download.php) and place them in the following directory:
+ 
+ - FLAME 2023 (versions w/ jaw rotation) -> `flame_model/assets/flame/flame2023.pkl`
+ - FLAME Vertex Masks -> `flame_model/assets/flame/FLAME_masks.pkl`
+ 
++The code also expects the following FLAME-side assets under `flame_model/assets/flame/`:
++- `head_template_mesh.obj`
++- `landmark_embedding_with_eyes.npy`
++- `uv_region_masks.pkl`
++
++Run `python scripts/check_setup.py` to verify that the full asset set is present.
++
+ ### Models and Datasets
+ To facilitate a quick start, we provide trained models and processed data for the following three identities:
+ - **Marcel**: From the [IMAvatar dataset](https://github.com/zhengyuf/IMavatar).
+@@ -63,6 +109,12 @@ To facilitate a quick start, we provide trained models and processed data for th
+ All resources are available for download via [Google Drive](https://drive.google.com/drive/folders/1gypuUi1TsWm6Gm6vdyf6S-fwlYnEkg1r?usp=sharing).
+ > **Data Split Strategy**: For consistency across these identities, the **final 450 frames** of each sequence are reserved for testing/evaluation, while the remaining frames are utilized for training.
+ 
++What is not stored in this repository and still needs to be downloaded for an actual run:
++- The FLAME assets listed above, if they are not already present locally
++- The pretrained models / processed example datasets from the Google Drive folder, or your own processed dataset
++- The `simple-knn` and `fused-ssim` submodule contents if your checkout was not cloned recursively
++- PyTorch3D and `torch-scatter` binaries/source builds compatible with your local PyTorch/CUDA stack
++
+ 
+ ### Process your custom dataset
+ We utilize [VHAP](https://github.com/ShenhanQian/VHAP.git) for dataset pre-processing. After VHAP tracking, we further apply [face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyTorch) to remove shoulder and clothing regions from the foreground masks. If you wish to use your custom data, please ensure the directory structure adheres to the following format:
+@@ -99,7 +151,7 @@ python render.py  -m /path/to/source/subject/model   -t /path/to/target/subject/
+ 
+ * **Metrics Caculation**: Compute quantitative results (PSNR, SSIM, LPIPS) for the rendered results:
+ ```bash
+-python render.py  -m /path/to/save/models
++python metrics.py -m /path/to/save/models
+ ```  
+ 
+ ## 📖 Cite
+diff --git a/environment.yml b/environment.yml
+new file mode 100644
+index 0000000..b8b5306
+--- /dev/null
++++ b/environment.yml
+@@ -0,0 +1,34 @@
++# STAvatar environment, adapted for NVIDIA Blackwell (RTX 50-series, compute capability sm_120).
++#
++# The upstream pins (CUDA 11.7 / PyTorch 2.0.1) cannot run on Blackwell at all:
++# no CUDA toolkit before 12.8 emits sm_120 code, and torch 2.0.1+cu117 has no
++# sm_120 in its arch list. Every deviation below exists for that reason or falls
++# out of it. See README.md ("Blackwell / RTX 50-series") for the full rationale.
++#
++#   conda env create -f environment.yml
++#   conda activate stavatar
++#   conda env config vars set CUDA_HOME=$CONDA_PREFIX && conda activate stavatar
++#   TORCH_CUDA_ARCH_LIST="12.0" pip install --no-build-isolation -r requirements-build.txt
++#
++name: stavatar
++channels:
++  - conda-forge
++dependencies:
++  # Python 3.10, not 3.11+: stock chumpy==0.70 is needed to unpickle
++  # flame_model/assets/flame/flame2023.pkl, and it calls inspect.getargspec,
++  # which was removed in Python 3.11.
++  - python=3.10
++
++  - git
++  - ffmpeg
++  - ninja
++
++  # CUDA 12.8 is the first toolkit that can target sm_120.
++  # cuda-nvcc_linux-64 also pulls in gcc 14, which nvcc 12.8 accepts;
++  # a distro gcc 15 (Ubuntu 25.10) is rejected by nvcc's host_config.h.
++  - cuda-nvcc=12.8
++  - cuda-toolkit=12.8
++
++  - pip
++  - pip:
++      - -r requirements.txt
+diff --git a/gaussian_renderer/__init__.py b/gaussian_renderer/__init__.py
+index 7343e86..60fe5c2 100644
+--- a/gaussian_renderer/__init__.py
++++ b/gaussian_renderer/__init__.py
+@@ -106,6 +106,26 @@ def render(
+         shs[:, 0, :3] += offset[:, 10:13]
+         opacity = torch.clamp(opacity + offset[:, 13, None], 0, 1)
+ 
++    #========= Rigid head pose (canonical mode only) ==========
++    # In canonical mode the Gaussians bind to a pose-free mesh and the offset is applied
++    # in that same frame, so head pose is re-applied here -- after the offset, so the
++    # network never sees it, and before rasterisation, so placement is exact.
++    #
++    # Position uses the row-vector form v @ R (matching cook_meshes and camera_align);
++    # the Gaussian orientation is composed with R.T because build_rotation and the
++    # rasteriser use the column form R v. quat already encodes R.T, verified against
++    # build_rotation at 5.3e-16 in make_rigid_nerf.py.
++    #
++    # scales are untouched: the transform is a proper rotation (det 1.000000000000000),
++    # so it carries no scale. shs are untouched on purpose -- the light is fixed in the
++    # room while the head turns, so the appearance model must stay in camera frame.
++    # Rotating it would make the lighting rotate with the face.
++    rigid = getattr(pc, "rigid_transform", None)
++    if rigid is not None:
++        R, t, quat = rigid
++        means3D = means3D @ R + t
++        rotations = quatProduct_batch(quat.expand(rotations.shape[0], 4), rotations)
++
+     (
+         rendered_image,
+         radii,
+diff --git a/networks/dual_branch.py b/networks/dual_branch.py
+index 9747726..1cc5829 100644
+--- a/networks/dual_branch.py
++++ b/networks/dual_branch.py
+@@ -58,6 +58,7 @@ class DualBranchUNet(nn.Module):
+         position_map=None,
+         condition_dim=118,
+         bilinear=True,
++        uv_size=256,
+     ):
+         super().__init__()
+         self.device = device
+@@ -66,19 +67,23 @@ class DualBranchUNet(nn.Module):
+         self.lips_mask = uv_mask["lips"]
+         self.forehead_mask = uv_mask["forehead"]
+ 
+-        self.transform = T.Compose([T.Resize((256, 256), antialias=True), T.ToTensor()])
++        # The encoder runs at the UV resolution: d3 is concatenated with the position
++        # map, so the two must agree spatially. 256 leaves this mesh at 1.37 texels per
++        # triangle; 512 gives 5.46.
++        self.uv_size = uv_size
++        self.transform = T.Compose([T.Resize((uv_size, uv_size), antialias=True), T.ToTensor()])
+ 
+-        self.resize = T.Resize((256, 256), antialias=True)
++        self.resize = T.Resize((uv_size, uv_size), antialias=True)
+ 
+         if reference_image is not None:
+             self.register_buffer("reference_image", self.transform(reference_image).unsqueeze(0).detach().to(device))
+         else:
+-            self.register_buffer("reference_image", torch.empty(1, 3, 256, 256))
++            self.register_buffer("reference_image", torch.empty(1, 3, uv_size, uv_size))
+ 
+         if position_map is not None:
+             self.register_buffer("position_map", position_map.detach().float().to(device))
+         else:
+-            self.register_buffer("position_map", torch.empty(1, 3, 256, 256))
++            self.register_buffer("position_map", torch.empty(1, 3, uv_size, uv_size))
+ 
+         self.uv_sample_coords = uv_sample_coords.detach().float().to(device)
+         self.condition_dim = condition_dim
+@@ -98,9 +103,13 @@ class DualBranchUNet(nn.Module):
+         self.fourier = FourierEncoding3D(num_bands=6, max_freq=10.0)
+         self.uv_conv = nn.Sequential(nn.Conv2d(3 + 6 * 6, 64, kernel_size=3, padding=1), nn.ReLU(inplace=True))
+         self.disp_conv = nn.Sequential(nn.Conv2d(3 + 6 * 6, 64, kernel_size=3, padding=1), nn.ReLU(inplace=True))
+-        self.expr_embed = nn.Sequential(nn.Linear(100, 96), nn.ReLU(inplace=True))
+-        self.pose_embed = nn.Sequential(nn.Linear(15, 16), nn.ReLU(inplace=True))
+-        self.tran_embed = nn.Sequential(nn.Linear(3, 16), nn.ReLU(inplace=True))
++        # The condition is one flat vector whose width depends on what is driving the
++        # mesh: 257 for MetaHuman (251 driven raw controls + 6 head curves), 118 for
++        # FLAME (expr 100 + rotation, neck, jaw 3 each + eyes 6 + translation 3). It was
++        # hard-wired to 257 here, which made the FLAME path fail on its first matmul.
++        # Either way the embedding is 128 wide, so global_decoder still receives 256
++        # channels and needs no change.
++        self.ctrl_embed = nn.Sequential(nn.Linear(condition_dim, 128), nn.ReLU(inplace=True))
+ 
+         #=========== Global Decoder ============
+         self.global_decoder = nn.Sequential(
+@@ -111,7 +120,7 @@ class DualBranchUNet(nn.Module):
+         )
+ 
+         #=========== Local Decoder ============
+-        self.local_decoder = DetailBlock(in_ch=64, expr_dim=100, hidden_ch=64)
++        self.local_decoder = DetailBlock(in_ch=64, expr_dim=condition_dim, hidden_ch=64)
+ 
+         #=========== Fuse Layer ===========
+         self.final_fuse = nn.Sequential(
+@@ -125,16 +134,10 @@ class DualBranchUNet(nn.Module):
+         self._initialize_weights()
+ 
+     def forward(
+-        self, flame_param, timestep, displacement_map
++        self, ctrl, timestep, displacement_map
+     ):
+         # process condition
+-        expr = flame_param["expr"][timestep].unsqueeze(0)  # 1*100
+-        neck_pose = flame_param["neck_pose"][timestep].unsqueeze(0)  # 1*3
+-        jaw_pose = flame_param["jaw_pose"][timestep].unsqueeze(0)  # 1*3
+-        eyes_pose = flame_param["eyes_pose"][timestep].unsqueeze(0)  # 1*6
+-        rotation = flame_param["rotation"][timestep].unsqueeze(0)  # 1*3
+-        pose = torch.cat((neck_pose, jaw_pose, eyes_pose, rotation), dim=1)
+-        translation = flame_param["translation"][timestep].unsqueeze(0)  # 1*3
++        expr = ctrl[timestep].unsqueeze(0)  # 1*257
+ 
+         #========== Encoder ==========
+         x1 = self.inc(self.reference_image)
+@@ -148,13 +151,9 @@ class DualBranchUNet(nn.Module):
+         #========== Global Decoder ==========
+         pos_fourier = self.fourier(self.position_map.float())
+         uv_feat = self.uv_conv(pos_fourier)
+-        expr_emb = self.expr_embed(expr)
+-        expr_feat = (expr_emb.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, d3.size(2), d3.size(3)))
+-        pose_emb = self.pose_embed(pose)
+-        pose_feat = (pose_emb.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, d3.size(2), d3.size(3)))
+-        trans_emb = self.tran_embed(translation)
+-        trans_feat = (trans_emb.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, d3.size(2), d3.size(3)))
+-        global_feat = torch.cat([d3, uv_feat, expr_feat, pose_feat, trans_feat], dim=1)
++        ctrl_emb = self.ctrl_embed(expr)
++        ctrl_feat = (ctrl_emb.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, d3.size(2), d3.size(3)))
++        global_feat = torch.cat([d3, uv_feat, ctrl_feat], dim=1)
+         offset_global = self.global_decoder(global_feat)
+ 
+         #========== Local Decoder ==========
+@@ -188,14 +187,8 @@ class DualBranchUNet(nn.Module):
+         self.uv_feat = self.uv_conv(pos_fourier)
+ 
+ 
+-    def _decode(self, flame_param, timestep, displacement_map):
+-        expr = flame_param["expr"][timestep].unsqueeze(0)  # 1*100
+-        neck_pose = flame_param["neck_pose"][timestep].unsqueeze(0)  # 1*3
+-        jaw_pose = flame_param["jaw_pose"][timestep].unsqueeze(0)  # 1*3
+-        eyes_pose = flame_param["eyes_pose"][timestep].unsqueeze(0)  # 1*6
+-        rotation = flame_param["rotation"][timestep].unsqueeze(0)  # 1*3
+-        pose = torch.cat((neck_pose, jaw_pose, eyes_pose, rotation), dim=1)
+-        translation = flame_param["translation"][timestep].unsqueeze(0)  # 1*3
++    def _decode(self, ctrl, timestep, displacement_map):
++        expr = ctrl[timestep].unsqueeze(0)  # 1*257
+ 
+         #========= Global Decoder ===========
+         H, W = self.d3.shape[2], self.d3.shape[3]
+diff --git a/render.py b/render.py
+index 035cd22..eef6165 100644
+--- a/render.py
++++ b/render.py
+@@ -59,7 +59,7 @@ def render_set(dataset : ModelParams, name, iteration, views, gaussians, pipelin
+     gaussians.select_mesh_by_timestep(0)
+     gaussians.get_position_map()
+ 
+-    views_loader = DataLoader(views, batch_size=None, shuffle=False, num_workers=8)
++    views_loader = DataLoader(views, batch_size=None, shuffle=False, num_workers=2)
+     max_threads = multiprocessing.cpu_count()
+     print('Max threads: ', max_threads)
+     worker_args = []
+diff --git a/requirements-build.txt b/requirements-build.txt
+new file mode 100644
+index 0000000..80b887b
+--- /dev/null
++++ b/requirements-build.txt
+@@ -0,0 +1,21 @@
++# CUDA extensions compiled from source against the already-installed torch.
++#
++# Install with:
++#   conda activate stavatar
++#   TORCH_CUDA_ARCH_LIST="12.0" pip install --no-build-isolation -r requirements-build.txt
++#
++# --no-build-isolation is mandatory: every setup.py here imports torch, which a
++# PEP 517 isolated build environment would not have.
++#
++# The environment must be *activated*, not merely on PATH: pytorch3d's setup.py
++# locates CUB via $CONDA_PREFIX/include. If CONDA_PREFIX still points at a base
++# conda that has an older CUDA installed, the build silently picks up that
++# CUDA's crt/host_config.h and dies on "unsupported GNU version".
++#
++# TORCH_CUDA_ARCH_LIST="12.0" targets sm_120. torch would auto-detect the local
++# GPU if it is unset, but setting it makes the wheels reproducible off-machine.
++
++pytorch3d @ git+https://github.com/facebookresearch/pytorch3d.git
++submodules/diff-gaussian-rasterization
++submodules/simple-knn
++submodules/fused-ssim
+diff --git a/requirements.txt b/requirements.txt
+index e8dd81c..ae4585d 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,8 +1,33 @@
++# Wheel-installable dependencies (no compilation).
++# The CUDA extensions that must be built from source live in requirements-build.txt.
++
++--extra-index-url https://download.pytorch.org/whl/cu128
++--find-links https://data.pyg.org/whl/torch-2.8.0+cu128.html
++
++# PyTorch 2.8.0 / CUDA 12.8 - carries sm_120 (Blackwell) in its arch list.
++# Upstream's torch==2.0.1 + cu117 cannot execute on an RTX 50-series GPU.
++# 2.8.0 specifically, because it is the newest torch with a prebuilt
++# torch-scatter wheel (see below), which saves a source build.
++torch==2.8.0+cu128
++torchvision==0.23.0+cu128
++torchaudio==2.8.0+cu128
++
++# numpy is pinned between two hard walls:
++#   >= 1.24 removes np.bool / np.float / np.object, which chumpy 0.70 imports
++#   <  1.23.5 is below scipy's floor for the versions that support Python 3.10
++# Upstream's numpy==1.22.3 sits below that floor and cannot be used here.
++numpy==1.23.5
++
++# Required to unpickle flame_model/assets/flame/flame2023.pkl, which stores
++# chumpy arrays. Not imported anywhere in this codebase, but pickle needs it.
++chumpy==0.70
++
++# Prebuilt for exactly torch 2.8.0 + cu128 + cp310; no compilation needed.
++torch-scatter==2.1.2+pt28cu128
++
+ tqdm
+-numpy==1.22.3
+ matplotlib
+ scipy
+-chumpy
+ tensorboard
+ fvcore
+ iopath
+@@ -12,7 +37,6 @@ dearpygui
+ kiui
+ roma
+ PyYAML
+-pytorch3d @ git+https://github.com/facebookresearch/pytorch3d.git
+-submodules/diff-gaussian-rasterization
+-submodules/simple-knn
+-submodules/fused-ssim
+\ No newline at end of file
++Pillow
++scikit-image
++scikit-learn
+diff --git a/scene/__init__.py b/scene/__init__.py
+index f2e1aa4..4d01719 100644
+--- a/scene/__init__.py
++++ b/scene/__init__.py
+@@ -48,7 +48,12 @@ class CameraDataset(torch.utils.data.Dataset):
+             im_data = np.array(image.convert("RGBA"))
+             norm_data = im_data / 255.0
+             arr = norm_data[:,:,:3] * norm_data[:, :, 3:4] + camera.bg * (1 - norm_data[:, :, 3:4])
+-            image = Image.fromarray(np.array(arr*255.0, dtype=np.byte), "RGB")
++            # np.uint8, not np.byte: np.byte is *signed* int8 ("|i1"), which Pillow >= 10
++            # rejects for mode "RGB". Older Pillow reinterpreted the raw int8 buffer as
++            # unsigned bytes, so this is bit-exact with the original behaviour
++            # (e.g. 200.0 -> int8 -56 -> byte 0xC8 -> uint8 200). Truncation, not
++            # rounding, is likewise preserved.
++            image = Image.fromarray(np.array(arr*255.0, dtype=np.uint8), "RGB")
+ 
+             # ---- from loadCam() and Camera.__init__() ----
+             resized_image_rgb = PILtoTorch(image, (camera.image_width, camera.image_height))
+@@ -89,7 +94,7 @@ class Scene:
+         assert os.path.exists(args.source_path), "Source path does not exist: {}".format(args.source_path)
+         if os.path.exists(os.path.join(args.source_path, "sparse")):  #* constrcut from sparse points
+             scene_info = sceneLoadTypeCallbacks["Colmap"](args.source_path, args.images, args.eval)
+-        elif os.path.exists(os.path.join(args.source_path, "canonical_flame_param.npz")):  #* construct from flame mesh
++        elif os.path.exists(os.path.join(args.source_path, "canonical_flame_param.npz")) or os.path.exists(os.path.join(args.source_path, "canonical.npz")):  #* construct from flame mesh
+             print("Found FLAME parameter, assuming dynamic NeRF data set!")
+             scene_info = sceneLoadTypeCallbacks["DynamicNerf"](args.source_path, args.white_background, args.eval, target_path=args.target_path)
+         elif os.path.exists(os.path.join(args.source_path, "transforms_train.json")):  #* construct from blender
+diff --git a/scene/cluster_loader.py b/scene/cluster_loader.py
+index 31033db..dc3bad8 100644
+--- a/scene/cluster_loader.py
++++ b/scene/cluster_loader.py
+@@ -1,6 +1,14 @@
+ from torch.utils.data import Subset, DataLoader
+ 
+-def create_clustered_dataloaders(camera_dataset, clustered_timestamps, num_workers=8):
++def create_clustered_dataloaders(camera_dataset, clustered_timestamps, num_workers=2):
++    """One loader per cluster.
++
++    num_workers was 8 with persistent_workers, which is eight worker PROCESSES PER
++    CLUSTER held for the whole run. Twelve clusters is ninety-six of them, each carrying
++    its own copy of torch, and on a 29 GB machine that is the whole of memory for work
++    that is opening a PNG and resizing it. Two non-persistent workers keep well ahead of
++    a loop that runs at about 24 iterations a second.
++    """
+ 
+     clustered_dataloaders = []
+     for cluster_indices in clustered_timestamps:
+@@ -11,7 +19,7 @@ def create_clustered_dataloaders(camera_dataset, clustered_timestamps, num_worke
+             shuffle=True,
+             num_workers=num_workers,
+             pin_memory=True,
+-            persistent_workers=True,
++            persistent_workers=False,
+         )
+         clustered_dataloaders.append(loader)
+ 
+diff --git a/scene/dataset_readers.py b/scene/dataset_readers.py
+index 63ae31b..d063565 100644
+--- a/scene/dataset_readers.py
++++ b/scene/dataset_readers.py
+@@ -225,7 +225,9 @@ def readCamerasFromTransforms(path, transformsfile, white_background, extension=
+                 im_data = np.array(image.convert("RGBA"))
+                 norm_data = im_data / 255.0
+                 arr = norm_data[:,:,:3] * norm_data[:, :, 3:4] + bg * (1 - norm_data[:, :, 3:4])
+-                image = Image.fromarray(np.array(arr*255.0, dtype=np.byte), "RGB")
++                # See the note in scene/__init__.py: np.byte is signed int8, which
++                # Pillow >= 10 rejects for mode "RGB". np.uint8 is bit-exact here.
++                image = Image.fromarray(np.array(arr*255.0, dtype=np.uint8), "RGB")
+                 width, height = image.size
+ 
+             if 'camera_angle_x' in frame:
+@@ -280,6 +282,9 @@ def readNerfSyntheticInfo(path, white_background, eval, extension=".png"):
+                            ply_path=ply_path)
+     return scene_info
+ 
++_IDENTITY_POOL = {}
++
++
+ def readMeshesFromTransforms(path, transformsfile):
+     with open(os.path.join(path, transformsfile)) as json_file:
+         contents = json.load(json_file)
+@@ -290,7 +295,37 @@ def readMeshesFromTransforms(path, transformsfile):
+             if not 'timestep_index' in frame or frame["timestep_index"] in mesh_infos:
+                 continue
+ 
+-            flame_param = dict(np.load(os.path.join(path, frame['flame_param_path']), allow_pickle=True))
++            fp = os.path.join(path, frame['flame_param_path'])
++            z = np.load(fp, allow_pickle=True)
++            if 'verts' in z.files:
++                # A COOKED MESH, NOT A PARAMETER DICT. FLAME's per-frame data is about a
++                # hundred numbers; a cooked head is 24,049 vertices twice over, which is
++                # 577 KB a frame -- 27.7 GB for a 48,004-frame corpus, loaded eagerly,
++                # on a machine with 29 GB. The process is killed with no message that
++                # points at this. Keep the path and the small conditioning vector; the
++                # vertices are read one frame at a time during training.
++                flame_param = {'__path__': fp,
++                               'ctrl': np.asarray(z['ctrl'], np.float32)}
++            else:
++                # SHARE THE PER-IDENTITY ARRAYS INSTEAD OF COPYING THEM PER FRAME.
++                #
++                # static_offset is 60.3 KB and shape is 1.2 KB, and both are properties of
++                # an IDENTITY, not of a frame: the tracker fits one per recording, so a
++                # 40,498-frame corpus of three recordings holds three distinct values and
++                # 40,495 duplicates of them -- 2.33 GB. Interning by content keeps every
++                # frame pointing at its own correct array (so a consumer that reads
++                # per-frame identity still sees the three) while storing each once.
++                flame_param = dict(z)
++                for k in ("static_offset", "shape"):
++                    v = flame_param.get(k)
++                    if v is None:
++                        continue
++                    key = (k, v.shape, v.dtype.str, v.tobytes())
++                    hit = _IDENTITY_POOL.get(key)
++                    if hit is None:
++                        v.flags.writeable = False
++                        _IDENTITY_POOL[key] = hit = v
++                    flame_param[k] = hit
+             mesh_infos[frame["timestep_index"]] = flame_param
+     return mesh_infos
+ 
+diff --git a/scene/flame_gaussian_model.py b/scene/flame_gaussian_model.py
+index c5ce437..23ea28a 100644
+--- a/scene/flame_gaussian_model.py
++++ b/scene/flame_gaussian_model.py
+@@ -113,7 +113,13 @@ class FlameGaussianModel(GaussianModel):
+                 "eyes_pose": torch.zeros([T, 6]),
+                 "translation": torch.zeros([T, 3]),
+                 "static_offset": static_offset,
+-                "dynamic_offset": torch.zeros([T, num_verts, 3]),
++                # One row, not T of them. This is a per-frame per-vertex offset that
++                # the tracker's export does not produce, so every row is zero -- and at
++                # corpus scale T is about 40,000 frames, which is 2.5 GB of zeros
++                # resident on the card for the whole run. Kept as a single row and
++                # indexed at 0; if a dataset ever does supply per-frame offsets this
++                # has to grow back to T.
++                "dynamic_offset": torch.zeros([1, num_verts, 3]),
+             }
+ 
+             for i, mesh in pose_meshes.items():
+@@ -179,10 +185,25 @@ class FlameGaussianModel(GaussianModel):
+             return_landmarks=False,
+             return_verts_cano=True,
+             static_offset=flame_param["static_offset"],
+-            dynamic_offset=flame_param["dynamic_offset"][[timestep]],
++            dynamic_offset=flame_param["dynamic_offset"][
++                [timestep if flame_param["dynamic_offset"].shape[0] > 1 else 0]],
+         )
+         self.update_mesh_properties(verts, verts_cano)
+ 
++    @property
++    def condition(self):
++        """[T, 118] -- what DualBranchUNet consumes, indexed by timestep.
++
++        The MeshGaussianModel path defines this and the FLAME path never did, so
++        training against a VHAP export died on the first iteration. 118 is not a choice:
++        it is the network's own default condition_dim, and expression 100 + rotation 3 +
++        neck 3 + jaw 3 + eyes 6 + translation 3 is the only grouping of FLAME's
++        per-frame parameters that reaches it. Order follows the FLAME call signature.
++        """
++        p = self.flame_param
++        return torch.cat([p["expr"], p["rotation"], p["neck_pose"], p["jaw_pose"],
++                          p["eyes_pose"], p["translation"]], dim=1)
++
+     def cluster_flame_conditions(self, dataset_len, use_keyframes=False, interval=25):
+         """
+         Cluster FLAME conditions (expr, jaw_pose, neck_pose, eyes_pose) via KMeans.
+diff --git a/scene/gaussian_model.py b/scene/gaussian_model.py
+index fe38c06..04ac38a 100644
+--- a/scene/gaussian_model.py
++++ b/scene/gaussian_model.py
+@@ -52,6 +52,13 @@ class GaussianModel:
+         self._scaling = torch.empty(0)
+         self._rotation = torch.empty(0)
+         self._opacity = torch.empty(0)
++        # PER-GROUP APPEARANCE. [N, G*4] so that dim 0 is the blob and every existing
++        # prune / densify path treats it like any other per-blob property. Viewed as
++        # [N, G, 4] when used: 3 channels of DC colour then 1 of opacity, per group.
++        # Empty unless setup_appearance() was called, and then every consumer must go
++        # through appearance_of().
++        self._appearance = torch.empty(0)
++        self.n_appearance_groups = 0
+         self.max_radii2D = torch.empty(0)
+         self.xyz_gradient_accum = torch.empty(0)
+         self.denom = torch.empty(0)
+@@ -66,6 +73,7 @@ class GaussianModel:
+         self.optimizer = None
+         self.percent_dense = 0
+         self.spatial_lr_scale = 0
++        self.metric_xyz = True
+         self.setup_functions()
+ 
+         # Toyota Motor Europe NV/SA and its affiliated companies retain all intellectual property and proprietary rights in and to the following code lines and related documentation. Any commercial use, reproduction, disclosure or distribution of these code lines and related documentation without an express license agreement from Toyota Motor Europe NV/SA is strictly prohibited.
+@@ -159,7 +167,13 @@ class GaussianModel:
+                 self.select_mesh_by_timestep(0)
+ 
+             xyz = torch.bmm(self.face_orien_mat[self.binding], self._xyz[..., None]).squeeze(-1)
+-            return (xyz * self.face_scaling[self.binding] + self.face_center[self.binding])
++            # metric_xyz keeps the triangle's axes and drops its width, so _xyz is a
++            # displacement in metres rather than in triangle widths. See the note in
++            # arguments/__init__.py: the width form makes the gradient scale with the
++            # width squared, which is why one learning rate cannot serve the whole head.
++            if not self.metric_xyz:
++                xyz = xyz * self.face_scaling[self.binding]
++            return xyz + self.face_center[self.binding]
+ 
+     @property
+     def get_features(self):
+@@ -220,9 +234,28 @@ class GaussianModel:
+         self._opacity = nn.Parameter(opacities.requires_grad_(True))
+         self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")
+ 
++    def setup_appearance(self, n_groups):
++        """One constant colour-and-opacity offset per blob per group, learned.
++
++        This is what the per-frame network's channels 10:14 were being used for, badly:
++        a recording lookup inferred from the expression. Given as an explicit parameter
++        it cannot vary within a clip, and at inference one group is chosen rather than
++        predicted.
++        """
++        N = self.get_xyz.shape[0]
++        self.n_appearance_groups = int(n_groups)
++        self._appearance = nn.Parameter(
++            torch.zeros((N, self.n_appearance_groups * 4), device="cuda").requires_grad_(True))
++        print(f"[appearance] {self.n_appearance_groups} groups x {N} blobs x 4 channels")
++
++    def appearance_of(self, group):
++        """[N,4] for one group -- 3 DC colour channels then opacity."""
++        return self._appearance.view(-1, self.n_appearance_groups, 4)[:, group]
++
+     def training_setup(self, training_args):
+         N = self.get_xyz.shape[0]
+         self.percent_dense = training_args.percent_dense
++        self.metric_xyz = getattr(training_args, 'metric_xyz', True)
+         self.xyz_gradient_accum = torch.zeros((N, 1), device="cuda")
+         self.denom = torch.zeros((N, 1), device="cuda")
+         self.accum_gs_image_error = torch.zeros((N), device="cuda")
+@@ -231,7 +264,11 @@ class GaussianModel:
+         l = [
+             {
+                 "params": [self._xyz],
+-                "lr": training_args.position_lr_init * self.spatial_lr_scale,
++                # Bound to a mesh the position is a local displacement, so the camera
++                # spread is the wrong unit for it -- and on a static camera it is zero,
++                # which disables the parameter outright.
++                "lr": (training_args.mesh_position_lr_init if self.binding is not None
++                       else training_args.position_lr_init * self.spatial_lr_scale),
+                 "name": "xyz",
+             },
+             {
+@@ -260,11 +297,18 @@ class GaussianModel:
+                 "name": "rotation",
+             },
+         ]
++        if self.n_appearance_groups:
++            # Same rate as the blob colour it replaces. It is a colour, in the same units.
++            l.append({"params": [self._appearance],
++                      "lr": training_args.feature_lr,
++                      "name": "appearance"})
+ 
+         self.optimizer = torch.optim.Adam(l, lr=0.0, eps=1e-15)
+         self.xyz_scheduler_args = get_expon_lr_func(
+-            lr_init=training_args.position_lr_init * self.spatial_lr_scale,
+-            lr_final=training_args.position_lr_final * self.spatial_lr_scale,
++            lr_init=(training_args.mesh_position_lr_init if self.binding is not None
++                     else training_args.position_lr_init * self.spatial_lr_scale),
++            lr_final=(training_args.mesh_position_lr_final if self.binding is not None
++                      else training_args.position_lr_final * self.spatial_lr_scale),
+             lr_delay_mult=training_args.position_lr_delay_mult,
+             max_steps=training_args.position_lr_max_steps,
+         )
+@@ -527,6 +571,8 @@ class GaussianModel:
+         self._opacity = optimizable_tensors["opacity"]
+         self._scaling = optimizable_tensors["scaling"]
+         self._rotation = optimizable_tensors["rotation"]
++        if self.n_appearance_groups:
++            self._appearance = optimizable_tensors["appearance"]
+ 
+         self.xyz_gradient_accum = self.xyz_gradient_accum[valid_points_mask]
+         self.denom = self.denom[valid_points_mask]
+@@ -590,6 +636,7 @@ class GaussianModel:
+         new_opacities,
+         new_scaling,
+         new_rotation,
++        new_appearance=None,
+     ):
+         d = {
+             "xyz": new_xyz,
+@@ -599,6 +646,12 @@ class GaussianModel:
+             "scaling": new_scaling,
+             "rotation": new_rotation,
+         }
++        if self.n_appearance_groups:
++            # A new blob inherits the appearance of the blob it was cloned or split from.
++            # Zero would be a different colour, not a neutral one.
++            assert new_appearance is not None, \
++                "appearance is enabled but this densify path did not pass new rows"
++            d["appearance"] = new_appearance
+ 
+         optimizable_tensors = self.cat_tensors_to_optimizer(d)
+         self._xyz = optimizable_tensors["xyz"]
+@@ -607,6 +660,8 @@ class GaussianModel:
+         self._opacity = optimizable_tensors["opacity"]
+         self._scaling = optimizable_tensors["scaling"]
+         self._rotation = optimizable_tensors["rotation"]
++        if self.n_appearance_groups:
++            self._appearance = optimizable_tensors["appearance"]
+ 
+         N = self.get_xyz.shape[0]
+         self.xyz_gradient_accum = torch.zeros((N, 1), device="cuda")
+@@ -676,6 +731,8 @@ class GaussianModel:
+             new_opacity,
+             new_scaling,
+             new_rotation,
++            (self._appearance[selected_pts_mask].repeat(N, 1)
++             if self.n_appearance_groups else None),
+         )
+ 
+         prune_filter = torch.cat(
+@@ -734,6 +791,8 @@ class GaussianModel:
+             new_opacities,
+             scaling_sel,
+             rotation_sel,
++            (self._appearance[selected_pts_mask]
++             if self.n_appearance_groups else None),
+         )
+ 
+ 
+diff --git a/scripts/check_setup.py b/scripts/check_setup.py
+new file mode 100644
+index 0000000..661f2c4
+--- /dev/null
++++ b/scripts/check_setup.py
+@@ -0,0 +1,266 @@
++#!/usr/bin/env python3
++"""Validate the local STAvatar checkout before installing or running."""
++
++from __future__ import annotations
++
++import importlib
++import shutil
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parent.parent
++
++REQUIRED_FILES = [
++    "flame_model/assets/flame/flame2023.pkl",
++    "flame_model/assets/flame/FLAME_masks.pkl",
++    "flame_model/assets/flame/head_template_mesh.obj",
++    "flame_model/assets/flame/landmark_embedding_with_eyes.npy",
++    "flame_model/assets/flame/uv_region_masks.pkl",
++]
++
++SUBMODULE_MARKERS = {
++    "submodules/diff-gaussian-rasterization": [
++        "setup.py",
++        "diff_gaussian_rasterization/__init__.py",
++    ],
++    # simple-knn ships no simple_knn/__init__.py upstream; the package directory
++    # holds only a .gitkeep. Key off the sources that actually get compiled.
++    "submodules/simple-knn": [
++        "setup.py",
++        "simple_knn.cu",
++        "ext.cpp",
++    ],
++    "submodules/fused-ssim": [
++        "setup.py",
++        "fused_ssim/__init__.py",
++    ],
++}
++
++MODULES = [
++    "torch",
++    "torchvision",
++    "torchaudio",
++    "pytorch3d",
++    "torch_scatter",
++    "numpy",
++    "PIL",
++    "skimage",
++    "sklearn",
++    "plyfile",
++    "kiui",
++    "roma",
++    "tyro",
++    "yaml",
++    "diff_gaussian_rasterization",
++    "simple_knn",
++    "fused_ssim",
++]
++
++TOOLS = ["git", "ffmpeg", "nvcc", "nvidia-smi"]
++
++# Any one of these is sufficient; they are alternatives, not all required.
++PACKAGE_MANAGERS = ["conda", "mamba", "micromamba"]
++
++
++def status(ok: bool, message: str) -> bool:
++    prefix = "OK  " if ok else "MISS"
++    print(f"[{prefix}] {message}")
++    return ok
++
++
++def check_python() -> bool:
++    major, minor = sys.version_info[:2]
++    return status(
++        (major, minor) == (3, 10),
++        f"Python {major}.{minor} detected; STAvatar expects Python 3.10.",
++    )
++
++
++def check_tools() -> bool:
++    ok = True
++    for tool in TOOLS:
++        ok &= status(shutil.which(tool) is not None, f"Tool available: {tool}")
++
++    found = [m for m in PACKAGE_MANAGERS if shutil.which(m) is not None]
++    ok &= status(
++        bool(found),
++        f"Package manager available: {', '.join(found) if found else '/'.join(PACKAGE_MANAGERS)}",
++    )
++    return ok
++
++
++def check_files() -> bool:
++    ok = True
++    for rel_path in REQUIRED_FILES:
++        ok &= status((ROOT / rel_path).exists(), f"Required file: {rel_path}")
++    return ok
++
++
++def check_submodules() -> bool:
++    ok = True
++    for rel_dir, markers in SUBMODULE_MARKERS.items():
++        sub_ok = True
++        for marker in markers:
++            if not (ROOT / rel_dir / marker).exists():
++                sub_ok = False
++        ok &= status(sub_ok, f"Submodule initialized: {rel_dir}")
++    return ok
++
++
++def check_python_modules() -> bool:
++    ok = True
++    for module in MODULES:
++        try:
++            importlib.import_module(module)
++            ok &= status(True, f"Python module importable: {module}")
++        except Exception:
++            ok &= status(False, f"Python module importable: {module}")
++
++    try:
++        import torch
++
++        ok &= status(torch.cuda.is_available(), "PyTorch CUDA runtime available")
++        if torch.cuda.is_available():
++            device_name = torch.cuda.get_device_name(0)
++            ok &= status(True, f"Primary CUDA device: {device_name}")
++
++            # The failure this catches: a torch build with no kernels for this
++            # GPU. It imports fine and reports CUDA available, then every kernel
++            # launch dies with "no kernel image is available for execution".
++            # This is exactly what upstream's torch 2.0.1+cu117 does on Blackwell.
++            major, minor = torch.cuda.get_device_capability(0)
++            arch = f"sm_{major}{minor}"
++            arch_list = torch.cuda.get_arch_list()
++            ok &= status(
++                arch in arch_list,
++                f"torch compiled for this GPU ({arch}); arch list: {', '.join(arch_list)}",
++            )
++    except Exception:
++        pass
++
++    return ok
++
++
++def check_cuda_extensions() -> bool:
++    """Actually launch each compiled extension on the GPU.
++
++    Importing them only proves they link; it does not prove they contain code
++    for this architecture.
++    """
++    try:
++        import torch
++    except Exception:
++        return status(False, "CUDA extension smoke test (torch unavailable)")
++
++    if not torch.cuda.is_available():
++        return status(False, "CUDA extension smoke test (no CUDA device)")
++
++    ok = True
++
++    try:
++        from simple_knn._C import distCUDA2
++
++        pts = torch.rand(128, 3, device="cuda")
++        distCUDA2(pts)
++        ok &= status(True, "CUDA extension runs: simple_knn")
++    except Exception as exc:
++        ok &= status(False, f"CUDA extension runs: simple_knn ({exc})")
++
++    try:
++        from fused_ssim import fused_ssim
++
++        a = torch.rand(1, 3, 64, 64, device="cuda")
++        b = torch.rand(1, 3, 64, 64, device="cuda")
++        fused_ssim(a, b)
++        ok &= status(True, "CUDA extension runs: fused_ssim")
++    except Exception as exc:
++        ok &= status(False, f"CUDA extension runs: fused_ssim ({exc})")
++
++    try:
++        import diff_gaussian_rasterization  # noqa: F401
++        from diff_gaussian_rasterization import _C
++
++        _C.mark_visible(
++            torch.rand(8, 3, device="cuda"),
++            torch.eye(4, device="cuda"),
++            torch.eye(4, device="cuda"),
++        )
++        ok &= status(True, "CUDA extension runs: diff_gaussian_rasterization")
++    except Exception as exc:
++        ok &= status(False, f"CUDA extension runs: diff_gaussian_rasterization ({exc})")
++
++    try:
++        import torch_scatter
++
++        src = torch.rand(64, device="cuda")
++        idx = torch.randint(0, 8, (64,), device="cuda")
++        torch_scatter.scatter_max(src, idx)
++        ok &= status(True, "CUDA extension runs: torch_scatter")
++    except Exception as exc:
++        ok &= status(False, f"CUDA extension runs: torch_scatter ({exc})")
++
++    try:
++        from pytorch3d.structures import Meshes
++        from pytorch3d.renderer.mesh import rasterize_meshes
++
++        verts = torch.tensor(
++            [[-1.0, -1.0, 1.0], [1.0, -1.0, 1.0], [0.0, 1.0, 1.0]], device="cuda"
++        )
++        faces = torch.tensor([[0, 1, 2]], device="cuda")
++        rasterize_meshes(Meshes(verts=[verts], faces=[faces]), image_size=64, faces_per_pixel=1)
++        ok &= status(True, "CUDA extension runs: pytorch3d")
++    except Exception as exc:
++        ok &= status(False, f"CUDA extension runs: pytorch3d ({exc})")
++
++    return ok
++
++
++def check_flame() -> bool:
++    """Build the FLAME head model, which is what every run starts with."""
++    try:
++        import torch
++
++        sys.path.insert(0, str(ROOT))
++        from flame_model.flame import FlameHead
++
++        flame = FlameHead(shape_params=300, expr_params=100).cuda()
++        out = flame(
++            shape=torch.zeros(1, 300, device="cuda"),
++            expr=torch.zeros(1, 100, device="cuda"),
++            rotation=torch.zeros(1, 3, device="cuda"),
++            neck=torch.zeros(1, 3, device="cuda"),
++            jaw=torch.zeros(1, 3, device="cuda"),
++            eyes=torch.zeros(1, 6, device="cuda"),
++            translation=torch.zeros(1, 3, device="cuda"),
++        )
++        verts = out[0] if isinstance(out, (tuple, list)) else out
++        return status(True, f"FLAME head model builds on GPU; verts {tuple(verts.shape)}")
++    except Exception as exc:
++        return status(False, f"FLAME head model builds on GPU ({type(exc).__name__}: {exc})")
++
++
++def main() -> int:
++    print(f"Checking STAvatar checkout at {ROOT}")
++    print("")
++
++    checks = [
++        check_python(),
++        check_tools(),
++        check_files(),
++        check_submodules(),
++        check_python_modules(),
++        check_cuda_extensions(),
++        check_flame(),
++    ]
++
++    print("")
++    if all(checks):
++        print("Environment looks ready for STAvatar.")
++        return 0
++
++    print("Environment is incomplete. Read README.md before training or rendering.")
++    return 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/scripts/export_world_ply.py b/scripts/export_world_ply.py
+new file mode 100644
+index 0000000..d6a9de6
+--- /dev/null
++++ b/scripts/export_world_ply.py
+@@ -0,0 +1,86 @@
++#!/usr/bin/env python
++"""Bake a mesh-bound STAvatar checkpoint into a standard 3DGS .ply.
++
++STAvatar's saved point_cloud.ply stores each Gaussian in its *bound triangle's*
++local frame plus a `binding` index, so a generic splat viewer (SuperSplat,
++GaussianSplats3D) renders nonsense. This resolves the binding at one timestep
++and writes world-space values in the layout vanilla 3DGS viewers expect.
++
++    cd .../STAvatar && conda activate stavatar
++    python scripts/export_world_ply.py -m <model_dir> -s <source_dir> -r 2 --timestep 0
++
++Attribute layout written (vanilla 3DGS):
++    x y z  nx ny nz  f_dc_0..2  f_rest_0..N  opacity  scale_0..2  rot_0..3
++Values are stored pre-activation, matching the convention viewers assume:
++    scale -> log(world_scale),  opacity -> logit(alpha),  rot -> unit quat (wxyz)
++"""
++import os
++import sys
++from argparse import ArgumentParser
++
++import numpy as np
++import torch
++from plyfile import PlyData, PlyElement
++
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++
++from arguments import ModelParams, PipelineParams, get_combined_args  # noqa: E402
++from gaussian_renderer import FlameGaussianModel  # noqa: E402
++from scene import Scene  # noqa: E402
++
++
++def main():
++    parser = ArgumentParser("Bake bound Gaussians to a world-space ply")
++    model = ModelParams(parser, sentinel=True)
++    PipelineParams(parser)
++    parser.add_argument("--iteration", default=-1, type=int)
++    parser.add_argument("--timestep", default=0, type=int,
++                        help="which frame's pose to bake the Gaussians into")
++    parser.add_argument("--out", default=None)
++    parser.add_argument("--quiet", action="store_true")
++    args = get_combined_args(parser)
++    dataset = model.extract(args)
++
++    gaussians = FlameGaussianModel(dataset.sh_degree, dataset.disable_flame_static_offset)
++    scene = Scene(dataset, gaussians, load_iteration=args.iteration, shuffle=False)
++    gaussians.select_mesh_by_timestep(args.timestep)
++
++    with torch.no_grad():
++        xyz = gaussians.get_xyz.detach().cpu().numpy()
++        scale = gaussians.get_scaling.detach().cpu().numpy()      # activated (world)
++        rot = gaussians.get_rotation.detach().cpu().numpy()        # unit quat, wxyz
++        opa = gaussians.get_opacity.detach().cpu().numpy()         # sigmoid-activated
++        f_dc = gaussians._features_dc.detach().transpose(1, 2).flatten(start_dim=1).cpu().numpy()
++        f_rest = gaussians._features_rest.detach().transpose(1, 2).flatten(start_dim=1).cpu().numpy()
++
++    # invert the activations viewers will re-apply
++    scale_raw = np.log(np.clip(scale, 1e-12, None))
++    opa_raw = np.log(np.clip(opa, 1e-6, 1 - 1e-6) / (1 - np.clip(opa, 1e-6, 1 - 1e-6)))
++
++    names = ["x", "y", "z", "nx", "ny", "nz"]
++    names += [f"f_dc_{i}" for i in range(f_dc.shape[1])]
++    names += [f"f_rest_{i}" for i in range(f_rest.shape[1])]
++    names += ["opacity"] + [f"scale_{i}" for i in range(3)] + [f"rot_{i}" for i in range(4)]
++
++    attrs = np.concatenate(
++        [xyz, np.zeros_like(xyz), f_dc, f_rest, opa_raw, scale_raw, rot], axis=1
++    ).astype(np.float32)
++
++    el = np.empty(attrs.shape[0], dtype=[(n, "f4") for n in names])
++    el[:] = list(map(tuple, attrs))
++
++    # get_combined_args drops cmdline args left at None, so read defensively
++    out = getattr(args, "out", None) or os.path.join(
++        dataset.model_path, f"world_t{args.timestep:05d}_{scene.loaded_iter}.ply")
++    PlyData([PlyElement.describe(el, "vertex")]).write(out)
++
++    print(f"gaussians    : {len(xyz)}")
++    print(f"timestep     : {args.timestep}   iteration: {scene.loaded_iter}")
++    print(f"bbox (m)     : min {xyz.min(0).round(4)}  max {xyz.max(0).round(4)}")
++    print(f"scale (m)    : median {np.median(scale):.5f}  max {scale.max():.5f}")
++    print(f"opacity      : median {np.median(opa):.3f}")
++    print(f"wrote        : {out}  ({os.path.getsize(out)/1e6:.1f} MB)")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/submodules/diff-gaussian-rasterization/cuda_rasterizer/rasterizer_impl.h b/submodules/diff-gaussian-rasterization/cuda_rasterizer/rasterizer_impl.h
+index bc3f0ec..9cb6154 100644
+--- a/submodules/diff-gaussian-rasterization/cuda_rasterizer/rasterizer_impl.h
++++ b/submodules/diff-gaussian-rasterization/cuda_rasterizer/rasterizer_impl.h
+@@ -11,6 +11,7 @@
+ 
+ #pragma once
+ 
++#include <cstdint>
+ #include <iostream>
+ #include <vector>
+ #include "rasterizer.h"
+diff --git a/tests/test_rigid_pose.py b/tests/test_rigid_pose.py
+new file mode 100644
+index 0000000..701a6c9
+--- /dev/null
++++ b/tests/test_rigid_pose.py
+@@ -0,0 +1,102 @@
++"""pose_mode='canonical' + the rigid step must reproduce pose_mode='posed' exactly.
++
++    get_xyz = bmm(orien[binding], _xyz) * scaling[binding] + center[binding]
++
++so posed == cano @ R + t for every Gaussian iff, per triangle:
++
++    center_posed  == center_cano @ R + t
++    scaling_posed == scaling_cano           a rotation carries no scale
++    orien_posed   == R.T @ orien_cano       row-vector v @ R is column-form R.T v
++
++Checking those three covers all 48,004 Gaussians at once, and get_xyz is then checked
++end to end with a non-zero random _xyz shared by both models -- with _xyz at zero the
++orien term drops out and the test would pass while proving nothing about rotation.
++
++On the orien tolerance: ~0.08% of MetaHuman's faces are degenerate slivers (edges down
++to 15 um, area ~1e-9 m^2 against a 1.1e-06 median), and orthonormalising those in
++float32 is ill-conditioned, so rotate-then-orthonormalise differs from the reverse by up
++to 1.3e-02 on a handful of faces. That is a property of the mesh, present identically in
++posed mode, and it washes out of get_xyz because it is scaled by _xyz and the triangle's
++own size. Hence p99 is asserted rather than max, and get_xyz -- the quantity that
++actually reaches the rasteriser -- carries the tight bound.
++
++Run from the STAvatar root:  python tests/test_rigid_pose.py
++"""
++import sys
++
++import numpy as np
++import torch
++
++sys.path.insert(0, '.')
++from scene.mesh_gaussian_model import MeshGaussianModel          # noqa: E402
++from utils.general_utils import build_rotation, quatProduct_batch  # noqa: E402
++
++DATA = '../../data/face/dataset/test_take_head'
++ASSETS = '../../data/face/head/head_assets.npz'
++FRAMES = [0, 500, 1000, 1800, 2718, 3599]
++TOL = dict(center=1e-6, scaling=1e-5, orien_p99=1e-3, xyz=1e-5, quat=1e-5)
++
++ok = True
++
++
++def check(name, got, tol, unit='m'):
++    global ok
++    good = got <= tol
++    ok &= good
++    print('  %-46s %10.3e %-3s (tol %.0e)  %s' % (name, got, unit, tol, 'ok' if good else 'FAIL'))
++
++
++def build(mode, src):
++    g = MeshGaussianModel(3, ASSETS, uv_size=512, pose_mode=mode, source_path=DATA)
++    g.load_meshes(src, {}, {}, {})
++    g.select_mesh_by_timestep(0)
++    g.create_from_pcd(None, 1.0)
++    return g
++
++
++def main():
++    src = {i: dict(np.load(f'{DATA}/meshes/{t:05d}.npz')) for i, t in enumerate(FRAMES)}
++    gp, gc = build('posed', src), build('canonical', src)
++    r = np.load(f'{DATA}/rigid_nerf.npz')
++
++    w = dict(center=0.0, scaling=0.0, orien_p99=0.0, xyz=0.0)
++    print('\nper-frame, worst over %d frames' % len(FRAMES))
++    for i, t in enumerate(FRAMES):
++        gp.select_mesh_by_timestep(i)
++        gc.select_mesh_by_timestep(i)
++        R = torch.from_numpy(r['R'][t]).cuda()
++        tt = torch.from_numpy(r['t'][t]).cuda()
++
++        w['center'] = max(w['center'],
++                          (gp.face_center - (gc.face_center @ R + tt)).abs().max().item())
++        w['scaling'] = max(w['scaling'], (gp.face_scaling - gc.face_scaling).abs().max().item())
++        eo = (gp.face_orien_mat
++              - torch.einsum('ij,njk->nik', R.T, gc.face_orien_mat)).abs().amax(dim=(1, 2))
++        w['orien_p99'] = max(w['orien_p99'],
++                             torch.quantile(eo.float(), 0.99).item())
++
++        x = torch.randn_like(gp._xyz) * 0.01          # non-zero, else orien drops out
++        gp._xyz.data.copy_(x)
++        gc._xyz.data.copy_(x)
++        w['xyz'] = max(w['xyz'], (gp.get_xyz - (gc.get_xyz @ R + tt)).abs().max().item())
++
++    check('face_center   posed vs cano @ R + t', w['center'], TOL['center'])
++    check('face_scaling  posed vs cano', w['scaling'], TOL['scaling'], '')
++    check('face_orien    posed vs R.T @ cano  (p99)', w['orien_p99'], TOL['orien_p99'], '')
++    check('get_xyz       posed vs cano @ R + t', w['xyz'], TOL['xyz'])
++
++    print('\nquaternion composition, against build_rotation')
++    q = torch.from_numpy(r['quat'][1000]).cuda()
++    base = torch.nn.functional.normalize(torch.randn(256, 4).cuda(), dim=1)
++    lhs = build_rotation(quatProduct_batch(q.expand(256, 4), base))
++    rhs = torch.einsum('ij,njk->nik',
++                       torch.from_numpy(r['R'][1000]).cuda().T, build_rotation(base))
++    check('quatProduct(quat, q) vs R.T @ build_rot(q)', (lhs - rhs).abs().max().item(),
++          TOL['quat'], '')
++
++    print('\n%s' % ('PASS' if ok else 'FAIL'))
++    return 0 if ok else 1
++
++
++if __name__ == '__main__':
++    raise SystemExit(main())
+diff --git a/utils/general_utils.py b/utils/general_utils.py
+index c9cecd9..f1ea098 100644
+--- a/utils/general_utils.py
++++ b/utils/general_utils.py
+@@ -110,7 +110,10 @@ def build_scaling_rotation(s, r):
+     L = R @ L
+     return L
+ 
+-def safe_state(silent):
++def safe_state(silent, seed=58):
++    # The seed was hard-coded at 58, so two runs launched to measure run-to-run
++    # variance were the SAME run and the noise floor collapsed to CUDA atomics.
++    # A floor that cannot see noise makes every setting difference look real.
+     old_f = sys.stdout
+     class F:
+         def __init__(self, silent):
+@@ -127,7 +130,6 @@ def safe_state(silent):
+             old_f.flush()
+ 
+     sys.stdout = F(silent)
+-    seed = 58
+     random.seed(seed)
+     np.random.seed(seed)
+     torch.manual_seed(seed)
+diff --git a/utils/mesh_sampling.py b/utils/mesh_sampling.py
+index eb3e884..af64f8f 100644
+--- a/utils/mesh_sampling.py
++++ b/utils/mesh_sampling.py
+@@ -134,6 +134,29 @@ def hybrid_sampling_by_binding(
+     N = binding.shape[0]
+     bary_out = torch.empty((N, 3), device=device)
+ 
++    # ---- fast path: one Gaussian per face (binding == arange(F)) --------------
++    # The general loop below runs once per face and does two full-array scans plus a
++    # GPU sync inside each iteration. That is ~10k iterations on FLAME but 48k on a
++    # MetaHuman head, where it becomes minutes. When every face needs exactly one
++    # sample the loop collapses to "take each face's median-ranked pixel", which is a
++    # sort and a gather. Identical output to the loop for count_needed == 1.
++    if N == F and bool(torch.equal(binding, torch.arange(F, device=device))):
++        scores = pixel_coords[:, 0] * uv_size + pixel_coords[:, 1]
++        key = valid_face_index.to(torch.int64) * (uv_size * uv_size + 1) + scores
++        order = torch.argsort(key)
++        vfi_sorted = valid_face_index[order]
++        counts = torch.bincount(vfi_sorted, minlength=F)
++        starts = torch.cumsum(counts, 0) - counts
++        has = counts > 0
++        pick = starts[has] + counts[has] // 2
++        bary_out[has] = valid_bary[order[pick]]
++        m = int((~has).sum())
++        if m:
++            u = torch.rand(m, device=device); v = torch.rand(m, device=device)
++            su = torch.sqrt(u)
++            bary_out[~has] = torch.stack([1 - su, su * (1 - v), su * v], dim=1)
++        return binding, bary_out
++
+     # iterate over each unique face in binding
+     unique_faces = torch.unique(binding)
+     for f in unique_faces:
+-- 
+2.53.0
+
+
+From bec8c26e377a83af830b8252e65fb3d2a63ab883 Mon Sep 17 00:00:00 2001
+From: pavanteja295 <pavanteja295@users.noreply.github.com>
+Date: Fri, 18 Sep 2026 12:25:26 +0530
+Subject: [PATCH 5/8] Run each detail branch only where its mask is
+
+The four local branches convolve the whole 256x256 UV map and multiply by their
+mask afterwards, so a branch covering 2.8% of the atlas costs exactly as much as
+one covering 35.8%. Running each inside its mask's bounding box instead saves
+2.46 ms of a 14.95 ms frame.
+
+WHY IT IS EXACT
+
+The block writes nothing outside the mask, because of the final multiply. An
+output texel depends on inputs within the block's receptive field. So a box
+holding every nonzero mask texel plus that margin gives every surviving output
+its whole neighbourhood, and the arithmetic is identical. Outside the box both
+versions are zero, since the box contains the mask by construction.
+
+EXACT AT INFERENCE. A FEW ULPS APART IN TRAINING.
+
+Forward is bit-identical, verified end to end on E1_pertake's trained weights:
+32 frames x 69,776 blobs x 14 channels, 31,259,648 values, max absolute
+difference 0.000e+00. The gradient with respect to the input is also exactly
+identical.
+
+PARAMETER gradients are not. They differ by 1.5e-08 to 1.1e-06 relative, against
+a float32 epsilon of 1.19e-07: two to nine ULPs. A parameter gradient sums over
+spatial positions, and the cropped version sums fewer of them -- the omitted
+terms are all exactly zero, so the mathematics is the same and only the
+accumulation order changes.
+
+The consequence is small but real, and worth stating because this project scores
+one-variable comparisons: a run TRAINED with cropping will drift away from one
+trained without, the way a different cuDNN algorithm would. The model is not
+worse, it is a different draw. Treat a cropped training run as a new seed, which
+the measured noise floor already bounds at 0.16 dB and 0.0005 LPIPS. Inference
+on an existing checkpoint has no such caveat and can be switched on freely.
+
+TWO THINGS THAT WOULD MAKE IT WRONG, BOTH GUARDED
+
+The margin is DERIVED from the block, never typed. It is 2 today because the
+block is two 3x3 convolutions and a 1x1. Add a conv or a dilation and a
+hard-coded 2 goes silently wrong, because the output is still masked: you would
+get a plausible face with a thin band of the wrong values around every region.
+Measured, margin 1 is off by 3.9e-02 and margin 0 by 1.1e-01, and the test
+asserts that both still differ -- if they ever stop, the argument is wrong.
+
+The box comes from ANY NONZERO WEIGHT, never a threshold. Our own masks are
+binary so the two agree and this cannot be caught on them. MetaHuman's painted
+masks are feathered down to 0.004, and a > 0.5 box is 3.6x smaller on the lips
+while discarding 38% of that mask's real support -- with no symptom, because the
+render still looks like a face and only loses every region's soft edge. The test
+covers it with a synthetic feathered mask.
+
+The boxes are computed at construction from the mask tensors and stored nowhere
+else. A cached box goes stale the moment a mask is rebuilt, which is what
+happened to eye_region on 2026-09-17, in place, mid-experiment.
+
+box=None keeps every existing caller unchanged.
+
+Per branch, cropped against full: nose 4.81x, forehead 2.60x, eye 2.46x, lips
+1.08x. Lips barely moves because its box is 89.5% of the atlas, which is itself
+a signal that that mask is wrong rather than a limit of this change.
+
+NOT DONE HERE
+
+forward_once() already exists, is called by nothing, and is another 2.92 ms: the
+encoder runs every frame on a reference image set once at construction. It is
+inference-only -- during training the encoder's own weights move, so its output
+is not constant.
+---
+ networks/dual_branch.py         | 100 ++++++++++++++++++++++++------
+ tests/test_crop_detail_block.py | 105 ++++++++++++++++++++++++++++++++
+ 2 files changed, 188 insertions(+), 17 deletions(-)
+ create mode 100644 tests/test_crop_detail_block.py
+
+diff --git a/networks/dual_branch.py b/networks/dual_branch.py
+index 1cc5829..584739f 100644
+--- a/networks/dual_branch.py
++++ b/networks/dual_branch.py
+@@ -26,27 +26,83 @@ class DetailBlock(nn.Module):
+         self.relu = nn.ReLU(inplace=True)
+         self.conv_out = nn.Conv2d(hidden_ch, hidden_ch, 1)
+ 
+-    def forward(self, global_feat, disp_map, expr, mask):
++    @property
++    def receptive_margin(self):
++        """How far one output texel reaches back into the input, in texels.
++
++        DERIVED, NEVER TYPED. It is 2 today because the block is two 3x3
++        convolutions and a 1x1. Add a conv, widen a kernel or add a dilation and
++        a hard-coded 2 becomes silently wrong: the output is still multiplied by
++        the mask, so a cropped run would keep producing a plausible face with a
++        thin band of the wrong values around every region.
+         """
+-        global_feat: [B, C, H, W]
+-        disp_map:    [B, C, H, W]
+-        expr:        [B, expr_dim]
+-        mask:        [1, 1, H, W]  (binary mask)
+-        """
+-        B, C, H, W = global_feat.shape
++        return sum((m.kernel_size[0] - 1) // 2 * m.dilation[0]
++                   for m in self.modules() if isinstance(m, nn.Conv2d))
+ 
++    def _run(self, global_feat, disp_map, expr, mask):
++        B, C, H, W = global_feat.shape
+         e = self.expr_proj(expr).unsqueeze(-1).unsqueeze(-1).expand(-1, -1, H, W)
+-
+-        disp_map_masked = disp_map * mask
+-        global_feat_masked = global_feat * mask
+-
+-        x = torch.cat([disp_map_masked, global_feat_masked, e], dim=1)
++        x = torch.cat([disp_map * mask, global_feat * mask, e], dim=1)
+         x = self.relu(self.conv1(x))
+         x = self.relu(self.conv2(x))
+         x = self.conv_out(x)
+-
+         return x * mask
+ 
++    def forward(self, global_feat, disp_map, expr, mask, box=None):
++        """
++        global_feat: [B, C, H, W]
++        disp_map:    [B, C, H, W]
++        expr:        [B, expr_dim]
++        mask:        [1, H, W]
++        box:         (y0, y1, x0, x1) or None. See below.
++
++        WHY A BOX IS EXACT AND NOT AN APPROXIMATION
++
++        The block writes nothing outside the mask, because of the final
++        multiply. An output texel depends on inputs within `receptive_margin`.
++        So if the box contains every nonzero mask texel plus that margin in each
++        direction, every surviving output sees its whole neighbourhood and the
++        arithmetic is identical. Outside the box both versions are zero, since
++        the box contains the mask by construction. Measured: 0.000e+00 against
++        the full-map result on all four masks. tests/test_crop_detail_block.py
++        asserts it.
++
++        The margin cannot be smaller, and the reason is not obvious. Outside the
++        mask the input is NOT zero: `expr` is concatenated unmasked and is
++        constant everywhere, so conv1 there produces a nonzero constant.
++        Zero-padding at the box edge therefore injects something the full-map
++        version never had. Measured at margin 1 the error is up to 4.4e-02.
++        """
++        if box is None:
++            return self._run(global_feat, disp_map, expr, mask)
++        y0, y1, x0, x1 = box
++        out = global_feat.new_zeros(global_feat.shape[0], self.conv_out.out_channels,
++                                    *global_feat.shape[2:])
++        out[:, :, y0:y1, x0:x1] = self._run(
++            global_feat[:, :, y0:y1, x0:x1], disp_map[:, :, y0:y1, x0:x1],
++            expr, mask[..., y0:y1, x0:x1])
++        return out
++
++
++def mask_box(mask, margin):
++    """Smallest (y0, y1, x0, x1) holding every texel a mask can contribute to.
++
++    FROM ANY NONZERO WEIGHT, NEVER FROM A THRESHOLD. Our own masks are binary so
++    the two agree, but MetaHuman's painted masks are feathered down to 0.004,
++    and a `> 0.5` box would be three to four times smaller on the lips while
++    silently discarding 38% of that mask's real support. The failure has no
++    symptom: the render still looks like a face, every region just loses its
++    soft edge.
++    """
++    nz = (mask > 0).squeeze(0).nonzero()
++    if nz.numel() == 0:
++        raise ValueError("mask_box: the mask is empty, so it has no box")
++    S_h, S_w = mask.shape[-2], mask.shape[-1]
++    y0, x0 = nz.min(0).values.tolist()
++    y1, x1 = nz.max(0).values.tolist()
++    return (max(y0 - margin, 0), min(y1 + margin + 1, S_h),
++            max(x0 - margin, 0), min(x1 + margin + 1, S_w))
++
+ 
+ class DualBranchUNet(nn.Module):
+     def __init__(
+@@ -122,6 +178,15 @@ class DualBranchUNet(nn.Module):
+         #=========== Local Decoder ============
+         self.local_decoder = DetailBlock(in_ch=64, expr_dim=condition_dim, hidden_ch=64)
+ 
++        # Each branch runs only inside its own mask's bounding box. Bit-exact,
++        # see DetailBlock.forward. Derived here rather than stored anywhere,
++        # because a cached box goes stale the moment a mask is rebuilt -- which
++        # happened to eye_region on 2026-09-17, mid-experiment, in place.
++        _m = self.local_decoder.receptive_margin
++        self.crop_boxes = {n: mask_box(k, _m) for n, k in
++                           (("eye", self.eye_mask), ("nose", self.nose_mask),
++                            ("lips", self.lips_mask), ("forehead", self.forehead_mask))}
++
+         #=========== Fuse Layer ===========
+         self.final_fuse = nn.Sequential(
+             nn.Conv2d(128 + 4 * 64, 128, kernel_size=3, padding=1),
+@@ -160,10 +225,11 @@ class DualBranchUNet(nn.Module):
+         disp_f = self.fourier(displacement_map.float())
+         disp = self.disp_conv(disp_f)
+ 
+-        local_eye = self.local_decoder(d3, disp, expr, self.eye_mask)
+-        local_nose = self.local_decoder(d3, disp, expr, self.nose_mask)
+-        local_lips = self.local_decoder(d3, disp, expr, self.lips_mask)
+-        local_forehead = self.local_decoder(d3, disp, expr, self.forehead_mask)
++        local_eye = self.local_decoder(d3, disp, expr, self.eye_mask, self.crop_boxes["eye"])
++        local_nose = self.local_decoder(d3, disp, expr, self.nose_mask, self.crop_boxes["nose"])
++        local_lips = self.local_decoder(d3, disp, expr, self.lips_mask, self.crop_boxes["lips"])
++        local_forehead = self.local_decoder(d3, disp, expr, self.forehead_mask,
++                                            self.crop_boxes["forehead"])
+ 
+         #========= Fuse Layer =========
+         unified_feat = torch.concat(
+diff --git a/tests/test_crop_detail_block.py b/tests/test_crop_detail_block.py
+new file mode 100644
+index 0000000..4cde926
+--- /dev/null
++++ b/tests/test_crop_detail_block.py
+@@ -0,0 +1,105 @@
++"""Cropping a detail branch to its mask's box must be BIT-identical, not close.
++
++Unlike almost everything else in this pipeline, the right answer here is computable:
++the full-map result is the reference. So these are equality assertions, not tolerance
++ones, and a wrong box, a wrong mask and an off-by-one in the scatter all fail the same
++line.
++
++Five things are checked, and the two negative ones matter as much as the positive:
++
++  1. the margin is DERIVED from the block, and is 2 for two 3x3 convs and a 1x1
++  2. cropped == full, exactly, on all four real masks
++  3. margin 0 and margin 1 DIFFER. If they ever stop differing the reasoning is
++     wrong, because the claim rests on the receptive field being load-bearing
++  4. a feathered mask's box follows its whole support, not its > 0.5 part. Our own
++     masks are binary so this cannot be caught on them; MetaHuman's painted masks
++     go down to 0.004 and a > 0.5 box silently drops 38% of the lips mask
++  5. an empty mask raises rather than producing a silent zero branch
++
++    ~/miniconda3/envs/stavatar/bin/python tests/test_crop_detail_block.py
++"""
++import pickle
++import sys
++from pathlib import Path
++
++import numpy as np
++import torch
++
++sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
++from networks.dual_branch import DetailBlock, mask_box              # noqa: E402
++
++MASKS = Path("../../data/face/head/uv_region_masks_256.pkl")
++S = 256
++DEV = "cuda" if torch.cuda.is_available() else "cpu"
++
++
++def fixture():
++    torch.manual_seed(0)
++    blk = DetailBlock(in_ch=64, expr_dim=257, hidden_ch=64).to(DEV).eval()
++    return (blk,
++            torch.randn(1, 64, S, S, device=DEV),
++            torch.randn(1, 64, S, S, device=DEV),
++            torch.randn(1, 257, device=DEV))
++
++
++def main():
++    if not MASKS.exists():
++        print(f"SKIP: {MASKS} not present")
++        return 0
++    masks = {k: torch.from_numpy(np.asarray(v)).to(DEV).float()
++             for k, v in pickle.load(open(MASKS, "rb")).items()}
++    blk, gf, dm, ex = fixture()
++    m = blk.receptive_margin
++    fails = []
++
++    assert m == 2, f"two 3x3 convs and a 1x1 reach 2, got {m}"
++    print(f"margin, derived from the block: {m}")
++
++    print(f"\n{'mask':12s} {'box':>22s} {'area':>7s} {'max |cropped - full|':>22s}")
++    for name in ("eye_region", "nose", "lips", "forehead"):
++        with torch.no_grad():
++            box = mask_box(masks[name], m)
++            full = blk(gf, dm, ex, masks[name])
++            crop = blk(gf, dm, ex, masks[name], box)
++            d = (full - crop).abs().max().item()
++        area = (box[1] - box[0]) * (box[3] - box[2]) / (S * S)
++        ok = d == 0.0
++        fails += [] if ok else [f"{name} box {box} differs by {d:.3e}"]
++        print(f"  {name:10s} {str(box):>22s} {100*area:6.1f}% {d:22.3e}"
++              f"   {'exact' if ok else 'WRONG'}")
++
++    print("\nthe margin is load-bearing:")
++    for bad in (0, 1):
++        with torch.no_grad():
++            d = (blk(gf, dm, ex, masks['lips'])
++                 - blk(gf, dm, ex, masks['lips'], mask_box(masks['lips'], bad))).abs().max().item()
++        ok = d > 0.0
++        fails += [] if ok else [f"margin {bad} was exact; the receptive-field argument is wrong"]
++        print(f"  margin {bad}: differs by {d:.3e}   {'as expected' if ok else 'UNEXPECTEDLY EXACT'}")
++
++    soft = torch.zeros(1, S, S, device=DEV)
++    soft[0, 100:110, 100:110] = 1.0
++    soft[0, 40:160, 40:160] = torch.clamp(soft[0, 40:160, 40:160], min=0.01)
++    got = mask_box(soft, m)
++    ok = got == (38, 162, 38, 162)
++    fails += [] if ok else [f"soft-mask box {got}, expected (38, 162, 38, 162)"]
++    print(f"\na feathered mask's box follows its 0.01 tail: {got}   {'ok' if ok else 'WRONG'}")
++
++    try:
++        mask_box(torch.zeros(1, S, S, device=DEV), m)
++        fails.append("an empty mask did not raise")
++        print("an empty mask raises: NO")
++    except ValueError:
++        print("an empty mask raises: yes")
++
++    print()
++    if fails:
++        for f in fails:
++            print("FAIL:", f)
++        return 1
++    print("all exact")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+-- 
+2.53.0
+
+
+From 49c555904a935a5ec4c5603d0f68e3ba6cc0cbf4 Mon Sep 17 00:00:00 2001
+From: pavanteja295 <pavanteja295@users.noreply.github.com>
+Date: Sat, 19 Sep 2026 10:23:10 +0530
+Subject: [PATCH 6/8] Silencing the skin over the eye does not make the eyeball
+ necessary
+
+The head mesh is sealed across the eye: 1,663 triangles of skin span the aperture
+and are what currently draws his eyes. The hypothesis was that an eyeball added
+behind that surface has nothing to do -- measured on G2, 57% of eyeball blobs sit
+on the ball at opacity 0.042 -- and that silencing the skin from the start of
+training would force the ball to learn the iris instead.
+
+It does not. blind_aperture renders those blobs at zero opacity; nothing is
+deleted, so no index moves and the flag is reversible.
+
+  G2  ball surface 57.1%, opacity 0.042    PSNR 21.8752  LPIPS 0.1085
+  G3  ball surface 55.2%, opacity 0.043    PSNR 21.9105  LPIPS 0.1055
+
+The ball's opacity moved by 0.001 over a full six epochs. The metrics improved
+slightly, which is what removing 1,663 blobs and letting densification spend them
+elsewhere would do on its own, and is not evidence for the mechanism.
+
+WHY IT FAILED, which is the part worth keeping
+
+Blobs are silenced by BINDING, and a blob sits up to ~7 mm from the triangle it is
+bound to. So the aperture never emptied -- it refilled from the neighbours. In G3,
+339 visible blobs sit within 3 mm of the silenced skin and EVERY ONE of them is
+bound elsewhere and drifted in. In G2 the same region held 302, of which 207 had
+drifted in.
+
+Constraining a region by binding does not constrain it in space. Making the
+eyeball necessary would mean constraining drift as well, which is a deeper change
+than this experiment was worth.
+
+aperture_triangles.npz is a property of the topology, not of a person: identical
+between drk and the MetaHuman archetype, 1,663 = 1,663 with zero differences.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ arguments/__init__.py        |  2 ++
+ scene/mesh_gaussian_model.py | 40 ++++++++++++++++++++++++++++++++++++
+ train.py                     |  2 ++
+ 3 files changed, 44 insertions(+)
+
+diff --git a/arguments/__init__.py b/arguments/__init__.py
+index 350db15..89ad95f 100644
+--- a/arguments/__init__.py
++++ b/arguments/__init__.py
+@@ -132,6 +132,8 @@ class OptimizationParams(ParamGroup):
+         # Hold rig-only blobs exactly on their triangles: geometry is known, only
+         # appearance is learned. Supersedes threshold_xyz_rig when on.
+         self.pin_rig_only = True
++        # path to aperture_triangles.npz; "" leaves the head intact
++        self.blind_aperture = ""
+         self.threshold_scale = 0.6
+ 
+         self.lambda_dssim = 0.2
+diff --git a/scene/mesh_gaussian_model.py b/scene/mesh_gaussian_model.py
+index f7bef9a..2143ca2 100644
+--- a/scene/mesh_gaussian_model.py
++++ b/scene/mesh_gaussian_model.py
+@@ -89,6 +89,7 @@ class MeshGaussianModel(GaussianModel):
+         # and nothing to tune.
+         self.n_head_faces = len(self.flame_model.faces)
+         self.rig_only_faces = None
++        self.blind_tri = None
+         if "parts" in a.files:
+             parts = json.loads(str(a["parts"]))
+             head = next((q for q in parts if q["name"].startswith("head_")), None)
+@@ -294,6 +295,37 @@ class MeshGaussianModel(GaussianModel):
+     # therefore not all zeros -- scale is 1 and the quaternion is [1,0,0,0].
+     IDENTITY_OFFSET = (0., 0., 0., 1., 1., 1., 1., 0., 0., 0., 0., 0., 0., 0.)
+ 
++    def blind_aperture(self, path):
++        """Stop the head's own skin rendering where it spans the eye opening.
++
++        The head mesh is sealed across the eye: 1,663 triangles of skin cover the
++        aperture, and they are what currently draws his eyes -- the iris is painted on
++        them. An eyeball added behind that surface has nothing to do, which is exactly
++        what happened: measured on G2, 58% of eyeball blobs sit on the ball at opacity
++        0.042 and stayed there from a fifth to a half of training without moving.
++
++        Silencing that skin makes the ball the only surface at the eye, so reproducing an
++        iris requires painting one on it. This has to be on from the START of training --
++        doing it to a trained model only subtracts, because there is nothing behind to
++        reveal.
++
++        Nothing is deleted. The triangles stay, their blobs simply render at zero
++        opacity, so no index moves and the flag is reversible.
++
++        The list is a property of the TOPOLOGY, not of a person: it came out identical
++        between drk and the MetaHuman archetype, 1,663 = 1,663 with zero differences, so
++        it transfers to any creator without recomputation.
++        """
++        import numpy as _np
++        z = _np.load(path)
++        tri = torch.from_numpy(z["tri"].astype(_np.int64)).cuda()
++        n = int(self.flame_model.faces.shape[0])
++        m = torch.zeros(n, dtype=torch.bool, device="cuda")
++        m[tri[tri < n]] = True
++        self.blind_tri = m
++        print(f"[aperture] {int(m.sum())} head triangles silenced -- the skin over the "
++              f"eye opening does not render, so the eyeball is the only surface there")
++
+     def pin_rig_only(self):
+         """Hold rig-only blobs on the surface they belong to.
+ 
+@@ -338,6 +370,14 @@ class MeshGaussianModel(GaussianModel):
+         mask = m.view(*([1] * (offset.dim() - 2)), -1, 1)
+         return torch.where(mask, ident.view(*shape), offset)
+ 
++    @property
++    def get_opacity(self):
++        o = super().get_opacity
++        bt = getattr(self, "blind_tri", None)
++        if bt is None:
++            return o
++        return o * (~bt[self.binding]).to(o.dtype).unsqueeze(-1)
++
+     def get_uv_mask(self, path=None):
+         # Lives beside head_assets.npz, produced by pipeline/make_region_masks.py. The
+         # masks are cut at one resolution and the network runs at uv_size, so a
+diff --git a/train.py b/train.py
+index 6a025b8..a278d54 100644
+--- a/train.py
++++ b/train.py
+@@ -117,6 +117,8 @@ def training(
+ 
+     #========== prepare input for prediction ==========
+     position_map = gaussians.get_position_map()
++    if getattr(opt, "blind_aperture", ""):
++        gaussians.blind_aperture(opt.blind_aperture)
+     uv_mask = gaussians.get_uv_mask()
+     uv_coords = gaussians.uvcoords_sample()
+     # The static appearance reference for the UNet encoder. FLAME datasets name this
+-- 
+2.53.0
+
+
+From c07a9cc21426caa535ac493ae90e5cea198ad45c Mon Sep 17 00:00:00 2001
+From: pavanteja295 <pavanteja295@users.noreply.github.com>
+Date: Sun, 20 Sep 2026 18:34:50 +0530
+Subject: [PATCH 7/8] Rig-only meshes keep the per-recording appearance: the
+ other way is worse
+
+Tested, because the argument against it was good. The per-recording offset exists
+to absorb what CHANGES between takes, and measured on G2 its spread across
+recordings orders exactly that way:
+
+  collar 0.2446   hair 0.0974   face 0.0522   eyeball 0.0281
+
+Enamel and an iris cannot change between takes, so an offset there looked like
+free capacity whose only use was to overfit which recording a frame came from.
+Denying it to them cost more than any other change tried in four runs:
+
+  appearance ON  rig-only meshes   PSNR 21.8752  LPIPS 0.1085   (G2)
+  appearance OFF                   PSNR 21.8183  LPIPS 0.1065   (G5)
+
+Smallest is not the same as unnecessary. The three recordings differ in lighting,
+and an eye is lit by the room as much as skin is.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ train.py | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/train.py b/train.py
+index a278d54..d2eab2b 100644
+--- a/train.py
++++ b/train.py
+@@ -250,6 +250,21 @@ def training(
+         # Forward pass through dual branch network
+         gt_image = viewpoint_cam.original_image.cuda()
+         offset = dual_branch_net(gaussians.condition, viewpoint_cam.timestep, displacement_map)
++        # BEFORE the appearance substitution, so rig-only meshes lose the per-frame
++        # network output but KEEP the per-recording appearance constant.
++        #
++        # The other order was tried and is worse. The argument for it was sound: the
++        # per-recording offset exists to absorb what CHANGES between takes, and its
++        # spread orders exactly that way -- collar 0.2446, hair 0.0974, face 0.0522,
++        # eyeball 0.0281 -- so enamel and an iris, which cannot change, looked like they
++        # were being given free capacity to overfit with. Denying it to them cost more
++        # than any other change tried:
++        #
++        #   appearance on rig-only meshes   PSNR 21.8752   (G2)
++        #   appearance off                  PSNR 21.8183   (G5, worst of four runs)
++        #
++        # Smallest is not the same as unnecessary. The three recordings differ in
++        # lighting, and an eye is lit by the room as much as skin is.
+         offset = gaussians.freeze_rig_only(offset)
+         if gaussians.timestep_group is not None:
+             # Concatenated rather than assigned in place, so the network receives gradient
+-- 
+2.53.0
+
+
+From 5299964d0063e8b786a1b32a195adb1a64fdfc4d Mon Sep 17 00:00:00 2001
+From: pavanteja295 <pavanteja295@users.noreply.github.com>
+Date: Sun, 20 Sep 2026 21:54:04 +0530
+Subject: [PATCH 8/8] Train on the crops at their own size, and hold LPIPS
+ where it was
+
+Three changes, all of which are no-ops on a 512 corpus.
+
+A corpus stored at native resolution has a different image size per chunk, and the
+evaluation loop stacked sixteen frames into one tensor to score LPIPS. That raises on
+the first pair that disagrees. It now scores one frame at a time; the term is summed and
+divided by the frame count either way, so it is the same number, not an approximation.
+
+The LPIPS term is held at a fixed 512 side, in the loss and in the evaluation. VGG
+forward and backward peaks at 0.86 GiB at 512 and 7.86 GiB at 1600, measured on this
+card, and the term switches on at half the iterations -- so without this a native run
+trains for hours and then runs out of memory. The second reason is the one that decided
+it: VGG has a fixed receptive field, so on a 1600px face the same network measures
+similarity over a third of the area it covered at 512, and lambda_lpips 0.05 was tuned
+against the 512 behaviour. Holding it keeps that term as G4 had it and lets L1 and SSIM
+take the extra detail, which is a smaller departure from G4 than letting it drift.
+
+densify_grad_threshold is an absolute constant compared against a screen-space gradient
+that comes from a loss averaged over pixels, so the same number is not the same policy
+at a new size. Rather than argue which way it moves, the distribution is logged. Measured
+over two short runs: the fraction of blobs over 0.0002 is 3.99% at 512 and 2.89% at
+native. The error-based clone threshold, which the same reasoning predicted would
+collapse because its statistic is divided by pixels_per_gs, does not move at all --
+0.160 against 0.170. That is why it is logged and not reasoned about.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ arguments/__init__.py | 12 +++++++++
+ train.py              | 61 ++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 69 insertions(+), 4 deletions(-)
+
+diff --git a/arguments/__init__.py b/arguments/__init__.py
+index 89ad95f..f013604 100644
+--- a/arguments/__init__.py
++++ b/arguments/__init__.py
+@@ -138,6 +138,18 @@ class OptimizationParams(ParamGroup):
+ 
+         self.lambda_dssim = 0.2
+         self.lambda_lpips = 0.05
++        # The LPIPS term is computed on a pair downscaled to at most this side. It is a
++        # no-op on a 512 corpus and therefore changes nothing about any run before the
++        # native one. Two reasons, and the second is the real one:
++        #   memory. VGG-LPIPS forward and backward peaks at 0.86 GiB at 512 and 7.86 GiB
++        #   at 1600, measured on this card. The term switches on at half the iterations,
++        #   so without this a native run trains for hours and then runs out of memory.
++        #   meaning. VGG has a fixed receptive field, so the same network run on a 1600px
++        #   face measures similarity over a THIRD of the face area that it covered on a
++        #   512px one. lambda_lpips 0.05 was tuned against the 512 behaviour. Holding the
++        #   term at 512 keeps it as it was and lets L1 and SSIM take the extra detail,
++        #   which is a smaller change from G4 than letting it drift, not a larger one.
++        self.lpips_max_side = 512
+         self.lambda_scale = 1.
+ 
+         self.lambda_fpe = 0.2
+diff --git a/train.py b/train.py
+index d2eab2b..ee7461e 100644
+--- a/train.py
++++ b/train.py
+@@ -286,7 +286,17 @@ def training(
+         losses["l1"] = l1_loss(image, gt_image) * (1.0 - opt.lambda_dssim)
+         losses["ssim"] = (1.0 - fast_ssim(image.unsqueeze(0), gt_image.unsqueeze(0))) * opt.lambda_dssim
+         if iteration > opt.iterations / 2:
+-            losses["lpips"] = lpips_loss(image, gt_image) * opt.lambda_lpips
++            # See arguments/__init__.py: held at a fixed side so the term means the same
++            # thing it meant at 512, and so a native run does not run out of memory
++            # halfway through. No-op when the image is already that size or smaller.
++            _li, _lg = image, gt_image
++            _cap = getattr(opt, "lpips_max_side", 0)
++            if _cap and image.shape[-1] > _cap:
++                _li = F.interpolate(image[None], size=(_cap, _cap), mode="bilinear",
++                                    align_corners=False, antialias=True)[0]
++                _lg = F.interpolate(gt_image[None], size=(_cap, _cap), mode="bilinear",
++                                    align_corners=False, antialias=True)[0]
++            losses["lpips"] = lpips_loss(_li, _lg) * opt.lambda_lpips
+         losses["offset_scale_reg"] = (torch.abs(offset[0, :, 3:6] - 1).mean() * opt.lambda_offset_scale_reg)
+         losses["offset_color_reg"] = (torch.abs(offset[0, :, 10:13]).mean() * opt.lambda_offset_color_reg)
+ 
+@@ -344,6 +354,34 @@ def training(
+                 )
+                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter, gs_image_error)
+ 
++                # densify_grad_threshold is a fixed 0.0002 compared against a screen-space
++                # gradient, and the loss it comes from is a MEAN over pixels, so the same
++                # scene at a different image size does not produce the same number. Log
++                # the distribution rather than argue about which way it moves: the ratio
++                # between two runs is what a new threshold should be set from.
++                if tb_writer and iteration % 500 == 0:
++                    _d = gaussians.denom.clamp(min=1)
++                    _g = (gaussians.xyz_gradient_accum / _d)[gaussians.denom.squeeze(-1) > 0]
++                    if _g.numel():
++                        tb_writer.add_scalar("densify/grad_median", _g.median().item(), iteration)
++                        tb_writer.add_scalar("densify/grad_p90", _g.quantile(0.9).item(), iteration)
++                        tb_writer.add_scalar("densify/frac_over_thr",
++                                             (_g > opt.densify_grad_threshold).float().mean().item(),
++                                             iteration)
++                        tb_writer.add_scalar("densify/n_gaussians", gaussians.get_xyz.shape[0], iteration)
++                        # The OTHER resolution-sensitive threshold. densify_and_clone_error
++                        # compares against a fixed 1e-3, and gaussian_model.py:186 divides
++                        # the statistic by pixels_per_gs, which grows as the square of the
++                        # image scale. If this fraction goes to zero at native, cloning has
++                        # silently collapsed to the 500 burst indices that are merged in
++                        # unconditionally, whatever the threshold says.
++                        _e = gaussians.accum_gs_image_error / max(gaussians.iterations, 1)
++                        tb_writer.add_scalar("densify/err_median", _e.median().item(), iteration)
++                        tb_writer.add_scalar("densify/err_frac_over_1e-3",
++                                             (_e > 1e-3).float().mean().item(), iteration)
++                        tb_writer.add_scalar("densify/err_n_over_1e-3",
++                                             (_e > 1e-3).sum().item(), iteration)
++
+                 if class_densify:
+                     gaussians.densify_and_prune(opt.densify_grad_threshold, 0.01, scene.cameras_extent, None)
+                     # resample uv coords after densify
+@@ -497,9 +535,24 @@ def training_report(tb_writer, iteration, losses, elapsed, testing_iterations, s
+                     gt_image_cache.append(gt_image)
+ 
+                     if idx == len(config["cameras"]) - 1 or len(image_cache) == 16:
+-                        batch_img = torch.stack(image_cache, dim=0)
+-                        batch_gt_img = torch.stack(gt_image_cache, dim=0)
+-                        lpips_test += lpips_loss(batch_img, batch_gt_img).sum().double()
++                        # One frame at a time, not a stack of sixteen. A corpus stored at
++                        # native resolution has a different size per chunk, and stacking
++                        # raises on the first pair that disagrees. LPIPS is summed here
++                        # and divided by the frame count below either way, so this is the
++                        # same number, not an approximation of it.
++                        for _im, _gt in zip(image_cache, gt_image_cache):
++                            # Held at the same side as the training term, for the same
++                            # two reasons, and with a third: evaluation.json is read
++                            # against earlier runs, and an LPIPS measured over a third
++                            # of the face area is not the same quantity as theirs.
++                            if _im.shape[-1] > 512:
++                                _im = F.interpolate(_im[None], size=(512, 512),
++                                                    mode="bilinear", align_corners=False,
++                                                    antialias=True)[0]
++                                _gt = F.interpolate(_gt[None], size=(512, 512),
++                                                    mode="bilinear", align_corners=False,
++                                                    antialias=True)[0]
++                            lpips_test += lpips_loss(_im[None], _gt[None]).sum().double()
+                         image_cache = []
+                         gt_image_cache = []
+ 
+-- 
+2.53.0
+

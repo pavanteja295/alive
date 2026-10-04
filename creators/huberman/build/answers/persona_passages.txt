@@ -1,0 +1,20 @@
+# The passages huberman's persona note quotes: take, time range. The text itself is his
+# and stays out of git; it lives in data/answers/huberman/creator.md.
+controlling_your_dopamine_for_motivation_focus_QmOF0crdyRU 00:00:00-00:11:49
+controlling_your_dopamine_for_motivation_focus_QmOF0crdyRU 00:39:44-00:41:31
+controlling_your_dopamine_for_motivation_focus_QmOF0crdyRU 01:54:10-01:56:00
+controlling_your_dopamine_for_motivation_focus_QmOF0crdyRU 00:49:32-01:00:54
+controlling_your_dopamine_for_motivation_focus_QmOF0crdyRU 00:48:49-00:50:27
+controlling_your_dopamine_for_motivation_focus_QmOF0crdyRU 01:31:18-01:33:03
+controlling_your_dopamine_for_motivation_focus_XeN6eGO6FVQ 00:24:23-00:26:08
+controlling_your_dopamine_for_motivation_focus_XeN6eGO6FVQ 00:07:53-00:09:40
+how_your_brain_works_changes_huberman_lab_HiyzzcuaAac 00:19:36-00:21:27
+how_your_brain_works_changes_huberman_lab_HiyzzcuaAac 00:12:22-00:13:57
+how_your_brain_works_changes_huberman_lab_HiyzzcuaAac 00:06:57-00:08:35
+how_your_brain_works_changes_huberman_lab_HiyzzcuaAac 00:21:44-00:34:34
+the_science_of_gratitude_how_to_build_a_gratitude_9gJLWk3W5GQ 00:18:33-00:20:15
+the_science_of_gratitude_how_to_build_a_gratitude_9gJLWk3W5GQ 00:13:21-00:30:57
+the_science_of_gratitude_how_to_build_a_gratitude_9gJLWk3W5GQ 00:04:10-00:05:50
+time_perception_memory_focus_huberman_lab_vXTK0Ac9i1Q 00:11:24-00:12:59
+time_perception_memory_focus_huberman_lab_vXTK0Ac9i1Q 00:22:08-00:23:52
+time_perception_memory_focus_huberman_lab_vXTK0Ac9i1Q 00:13:59-00:15:43

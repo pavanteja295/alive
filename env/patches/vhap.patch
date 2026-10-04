@@ -1,0 +1,69 @@
+diff --git a/vhap/model/tracker.py b/vhap/model/tracker.py
+index d344620..212c6ed 100644
+--- a/vhap/model/tracker.py
++++ b/vhap/model/tracker.py
+@@ -1080,6 +1080,14 @@ class FlameTracker:
+         # always save parameters before evaluation
+         self.save_result(epoch=epoch)
+ 
++        if not make_visualization:
++            # With media logging off this loop renders every frame to compute a photo loss
++            # that is written to one tensorboard scalar and nothing else. Measured cost:
++            # 0.026 s/frame landmark-only, ~0.05 s/frame photometric, x4 calls -- 9-22% of
++            # a run. The checkpoint above is the part that matters and has already landed.
++            self.logger.info(f"Checkpoint saved (epoch {epoch}); skipping eval pass.")
++            return
++
+         self.logger.info("Started Evaluation")
+         # vid_frames = []
+         photo_loss = []
+@@ -1346,7 +1354,20 @@ class GlobalTracker(FlameTracker):
+         :return:
+         """
+         self.global_step = 0
+-        
++
++        # RESUME: begin_stage naming a global stage means the per-frame parameters were
++        # already solved and reloaded from a checkpoint, so the sequential loop below must
++        # not run at all. Zeroing its num_steps (which is all begin_stage does) is NOT
++        # enough -- the loop still calls initialize_next_timtestep() on every sample, and
++        # that copies each frame's pose forward into every later frame. With loaded params
++        # that silently overwrites the entire tracked sequence with a propagated copy of
++        # frame 0: no error, just the tracking gone.
++        resuming = self.cfg.begin_stage in ('lmk_global_tracking', 'rgb_global_tracking')
++        if resuming:
++            self.logger.info(
++                f"RESUME: begin_stage={self.cfg.begin_stage}, skipping sequential tracking "
++                f"({self.n_timesteps} frames already solved and loaded from checkpoint)")
++
+         # sequential optimization of timesteps
+         self.logger.info(f"Start sequential tracking FLAME in {self.n_timesteps} frames")
+         dataloader = DataLoader(
+@@ -1355,7 +1376,7 @@ class GlobalTracker(FlameTracker):
+             shuffle=False, 
+             num_workers=4
+         )
+-        for sample in dataloader:
++        for sample in ([] if resuming else dataloader):
+             if sample["timestep_index"][0].item() == 0:
+                 self.optimize_stage('lmk_init_rigid', sample)
+                 self.optimize_stage('lmk_init_all', sample)
+@@ -1371,7 +1392,8 @@ class GlobalTracker(FlameTracker):
+                 self.optimize_stage('lmk_sequential_tracking', sample)
+             self.initialize_next_timtestep(sample["timestep_index"])
+         
+-        self.evaluate(make_visualization=True, epoch=0)
++        if not resuming:
++            self.evaluate(make_visualization=self.cfg.log.interval_media < 100000, epoch=0)
+ 
+         self.logger.info(f"Start global optimization of all frames")
+         # global optimization with random sampling
+@@ -1413,7 +1435,7 @@ class GlobalTracker(FlameTracker):
+                 scheduler.step()
+ 
+                 if (epoch_i + 1) % 10 == 0:
+-                    self.evaluate(make_visualization=True, epoch=epoch_i+1)
++                    self.evaluate(make_visualization=self.cfg.log.interval_media < 100000, epoch=epoch_i+1)
+     
+     def optimize_iter(self, sample, optimizer, stage):
+         # compute loss and update parameters

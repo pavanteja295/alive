@@ -1,0 +1,496 @@
+<title>Alive Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+:root{
+  --paper:#f2f5f7; --surface:#ffffff; --sunk:#e7edf0;
+  --ink:#101820; --body:#2d3b45; --muted:#5f6f7a; --faint:#8a9aa4;
+  --line:#d3dce1; --rule:#aebcc4;
+  --accent:#a5601a; --accent-soft:#f6ece0;
+  --chip:#f2f5f7;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0c1216; --surface:#141c22; --sunk:#101820;
+  --ink:#e9eff3; --body:#bdcbd4; --muted:#8797a2; --faint:#63737e;
+  --line:#243038; --rule:#39474f;
+  --accent:#dc9a4f; --accent-soft:#251c11;
+  --chip:#0c1216;
+}}
+:root[data-theme="dark"]{
+  --paper:#0c1216; --surface:#141c22; --sunk:#101820;
+  --ink:#e9eff3; --body:#bdcbd4; --muted:#8797a2; --faint:#63737e;
+  --line:#243038; --rule:#39474f;
+  --accent:#dc9a4f; --accent-soft:#251c11;
+  --chip:#0c1216;
+}
+*{box-sizing:border-box}
+body{background:var(--paper); color:var(--body);
+  font-family:Newsreader,Georgia,serif; font-size:17.5px; line-height:1.65;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px; margin:0 auto; padding:0 30px 110px}
+.prose{max-width:66ch}
+h1,h2,h3,h4,.eyebrow,.chip,.tag,th,.lbl{font-family:Archivo,system-ui,sans-serif}
+code,pre,.mono,.k{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+.mast{padding:74px 0 30px; border-bottom:2px solid var(--ink); margin-bottom:12px}
+.eyebrow{font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 20px}
+h1{font-family:Archivo,sans-serif; font-size:clamp(38px,6vw,60px); line-height:1.02;
+  font-weight:700; letter-spacing:-.028em; color:var(--ink); margin:0 0 22px; text-wrap:balance}
+.lede{font-size:21px; line-height:1.5; margin:0; max-width:58ch; color:var(--body)}
+.lede b{color:var(--ink); font-weight:600}
+.meta{margin-top:26px; font-size:13px; color:var(--faint); font-family:Archivo,sans-serif}
+
+nav.toc{margin:0 0 66px; padding:20px 0 0; font-family:Archivo,sans-serif; font-size:13.5px}
+nav.toc ol{margin:0; padding:0; list-style:none; columns:2; column-gap:44px}
+nav.toc li{margin-bottom:7px; break-inside:avoid}
+nav.toc a{color:var(--muted); text-decoration:none; display:flex; gap:10px}
+nav.toc a:hover{color:var(--accent)}
+nav.toc .n{color:var(--faint); font-variant-numeric:tabular-nums; min-width:18px}
+
+section{margin:0 0 62px; scroll-margin-top:20px}
+h2{font-size:12px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--ink); margin:0 0 26px; padding-bottom:11px; border-bottom:1px solid var(--rule);
+  display:flex; gap:14px; align-items:baseline}
+h2 .n{color:var(--accent); font-variant-numeric:tabular-nums}
+h3{font-family:Archivo,sans-serif; font-size:19px; font-weight:600; color:var(--ink);
+  margin:36px 0 12px; letter-spacing:-.012em}
+h4{font-family:Archivo,sans-serif; font-size:14px; font-weight:600; color:var(--ink);
+  margin:26px 0 9px; letter-spacing:-.005em}
+p{margin:0 0 16px}
+a{color:var(--accent)}
+strong{color:var(--ink); font-weight:600}
+ul,ol{margin:0 0 16px; padding-left:22px; max-width:66ch}
+li{margin-bottom:9px}
+li::marker{color:var(--faint)}
+
+code{font-size:.83em; background:var(--sunk); padding:1.5px 5px; border-radius:2px; color:var(--ink)}
+.dia{border:1px solid var(--line); background:var(--surface); overflow-x:auto; margin:0 0 20px}
+.dia pre{margin:0; padding:24px 26px; font-size:13px; line-height:1.85; white-space:pre;
+  color:var(--body); font-variant-ligatures:none}
+.dia pre b{color:var(--ink); font-weight:700}
+.dia pre i{color:var(--accent); font-style:normal}
+.dia pre u{text-decoration:none; color:var(--faint)}
+
+.tw{overflow-x:auto; border:1px solid var(--line); margin:0 0 20px}
+table{width:100%; border-collapse:collapse; font-size:15.5px; background:var(--surface)}
+th{text-align:left; font-size:10.5px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); padding:12px 16px; border-bottom:1px solid var(--rule); white-space:nowrap}
+td{padding:12px 16px; border-bottom:1px solid var(--line); vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.k{font-size:13px; color:var(--ink); white-space:nowrap}
+td.lbl{font-weight:600; color:var(--ink); white-space:nowrap; font-family:Archivo,sans-serif; font-size:14.5px}
+.num{font-variant-numeric:tabular-nums}
+
+.rule{border-left:3px solid var(--accent); background:var(--accent-soft);
+  padding:15px 20px; margin:0 0 20px; font-size:16.5px}
+.rule b{color:var(--ink)}
+.note{border-left:3px solid var(--rule); padding:13px 20px; margin:0 0 20px;
+  font-size:15.5px; color:var(--muted)}
+.note b{color:var(--ink)}
+
+ol.dec{counter-reset:d; list-style:none; padding:0; max-width:none}
+ol.dec li{counter-increment:d; position:relative; padding:0 0 15px 46px; margin:0 0 15px;
+  border-bottom:1px solid var(--line); font-size:16px}
+ol.dec li:last-child{border-bottom:0}
+ol.dec li::before{content:counter(d); position:absolute; left:0; top:1px;
+  font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:700;
+  color:var(--chip); background:var(--ink); width:26px; height:22px;
+  display:flex; align-items:center; justify-content:center; font-variant-numeric:tabular-nums}
+ol.dec b{color:var(--ink)}
+
+.tag{display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:3px 8px; line-height:1.4; white-space:nowrap}
+.tag.deep{background:var(--ink); color:var(--chip)}
+.tag.ok{border:1px solid var(--rule); color:var(--muted)}
+.tag.no{border:1px dashed var(--rule); color:var(--faint)}
+
+.foot{border-top:1px solid var(--rule); padding-top:24px; font-size:14px; color:var(--muted);
+  font-family:Archivo,sans-serif}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:640px){nav.toc ol{columns:1}}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Technical architecture</p>
+  <h1>Alive</h1>
+  <p class="lede">A system that models a specific person well enough to <b>think, speak and appear as them</b>. Two projects, one machine, differing only in where the data comes from.</p>
+  <p class="meta">Companion to MANIFESTO.md · CLAUDE.md · problems.md</p>
+</header>
+
+<nav class="toc"><ol>
+  <li><a href="#s1"><span class="n">1</span> What we are building</a></li>
+  <li><a href="#s2"><span class="n">2</span> The shape</a></li>
+  <li><a href="#s3"><span class="n">3</span> Everything is a residual</a></li>
+  <li><a href="#s4"><span class="n">4</span> Engines and blocks</a></li>
+  <li><a href="#s5"><span class="n">5</span> The data tiers</a></li>
+  <li><a href="#s6"><span class="n">6</span> Contracts</a></li>
+  <li><a href="#s7"><span class="n">7</span> How it trains</a></li>
+  <li><a href="#s8"><span class="n">8</span> How it is tested</a></li>
+  <li><a href="#s9"><span class="n">9</span> Configuration</a></li>
+  <li><a href="#s10"><span class="n">10</span> How we work</a></li>
+  <li><a href="#s11"><span class="n">11</span> Priorities</a></li>
+  <li><a href="#s12"><span class="n">12</span> Standing decisions</a></li>
+  <li><a href="#s13"><span class="n">13</span> Project 1 to Project 2</a></li>
+  <li><a href="#s14"><span class="n">14</span> Open questions</a></li>
+</ol></nav>
+
+<section id="s1">
+  <h2><span class="n">01</span> What we are building</h2>
+  <p class="prose"><strong>Project 1.</strong> The person is a creator. Everything known about them comes from their public archive. You ask, it answers, and the model does not change. It began as a rehearsal for Project 2 and it ships to real creators.</p>
+  <p class="prose"><strong>Project 2.</strong> The person is the user. The system perceives them continuously and keeps learning. It stops reproducing them and starts complementing them. A companion app.</p>
+  <p class="prose">Project 1 is built completely first. Project 2 starts roughly two months after it finishes, so nothing is built for Project 2 now. What Project 2 needs is that the structure ports, not that any of it exists early.</p>
+
+  <h3>Three checkpoints, defined by what the person gives</h3>
+  <div class="tw"><table>
+    <thead><tr><th></th><th>They give</th><th>We deliver</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">1 · Audio</td><td>nothing, just their public archive</td><td>basic models, here is where we are</td></tr>
+      <tr><td class="lbl">2 · Face</td><td>their video</td><td>the best face we can make of you</td></tr>
+      <tr><td class="lbl">3 · Project 2</td><td>continuous presence, including depth</td><td>I get better at thinking with you <em>and</em> at being you</td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose">Increasing data intimacy, increasing capability. Checkpoint 1 exercises everything Project 2 needs except perception. Every unverified premise sits in checkpoint 2, and none of them block checkpoint 1.</p>
+</section>
+
+<section id="s2">
+  <h2><span class="n">02</span> The shape</h2>
+  <div class="dia"><pre>
+   <u>PERCEPTION</u>                                     <u>INTERFACE</u>
+
+   video ──┐                                          ┌──► video
+   audio ──┼──► adapters ──► <b>text</b> ──► thinks ──► <b>text</b> ──┼──► audio
+   text  ──┘                                          └──► text
+</pre></div>
+  <p class="prose">Perception collapses modalities into text. Interface expands text back out. Intelligence is text-native.</p>
+  <div class="note"><b>Text-native is a dated simplification, not a principle.</b> Text is the waist today because it is the cheapest interface that works. In future the intelligence may read audio and video embeddings directly, which widens the waist without rearranging the layers. Input-side multimodal is cheap; output-side would not be, since <code>manner</code> is a text-to-text adapter with nothing to attach to otherwise. So the perception-to-intelligence contract carries named channels, of which text is one.</div>
+
+  <h4>Three consequences, forced rather than chosen</h4>
+  <ul class="prose">
+    <li><strong>Interface modes nest.</strong> Video is rendered from audio, audio from text. So text ⊂ audio ⊂ video, and selecting a mode is only a question of where to stop.</li>
+    <li><strong>Perception does not nest.</strong> Each modality is encoded independently, so perception is a set of flags rather than a ladder. Voice-in without face-in is normal.</li>
+    <li><strong>Perception is a tee.</strong> Store everything, route a subset to reasoning. The routing is config and can change later; collection cannot be done retroactively.</li>
+  </ul>
+
+  <div class="note"><b>Prosody is lost at the text waist, twice.</b> The person's delivery is discarded by the adapters on the way in and re-synthesized on the way out. Deliberate for now — and the multimodal path above is exactly where it re-enters, which makes this and the widening of the waist the same question rather than two.</div>
+</section>
+
+<section id="s3">
+  <h2><span class="n">03</span> Everything is a residual</h2>
+  <p class="prose">Every part of the system is either a <strong>generic engine</strong>, shared across everyone and replaceable at will, or a <strong>person-specific block</strong>. The blocks are the entire product.</p>
+  <div class="rule"><b>General intelligence provides broad capability. A learned adapter provides local intelligence.</b></div>
+  <div class="tw"><table>
+    <thead><tr><th>Block</th><th>Baseline</th><th>The residual is</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">knowledge</td><td>what a general LLM already knows about them</td><td>what it does not</td></tr>
+      <tr><td class="lbl">manner</td><td>generic prose</td><td>the rewrite toward their voice</td></tr>
+      <tr><td class="lbl">reasoning <span class="tag no">P2</span></td><td>the base LLM</td><td>the adapter</td></tr>
+      <tr><td class="lbl">geometry</td><td>the archetype face</td><td>the deviation</td></tr>
+      <tr><td class="lbl">motion</td><td>the generic audio-to-face model</td><td>the correction toward how they move</td></tr>
+      <tr><td class="lbl">appearance</td><td>the mesh</td><td>everything geometry does not explain</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Three things that follow</h4>
+  <ul class="prose">
+    <li><strong>Measure the baseline before building the residual.</strong> The first experiment for every block is how good the baseline is alone.</li>
+    <li><strong>Residual size says whether a block earns its place.</strong> A near-empty residual means either the baseline is already the person, or the representation cannot capture them.</li>
+    <li><strong>The dependency rule is definitional.</strong> Swapping a baseline does not inconvenience its residual; it makes it undefined.</li>
+  </ul>
+  <div class="note"><b>The open risk.</b> Personalization is spread across six small deltas. Whether they compound into someone recognizable or wash out into a slightly-off generic person has never been measured. Every metric so far is per-block, and the composition is the product.</div>
+</section>
+
+<section id="s4">
+  <h2><span class="n">04</span> Engines and blocks</h2>
+  <p class="prose">The pipeline is a series of <strong>engines</strong>. Each has a stable external contract and swappable <strong>blocks</strong> inside it.</p>
+  <div class="dia"><pre>
+  [<u>perception</u>]  ──►  <b>knowledge+style</b>  ──►  <b>text2audio</b>  ──►  <b>audio2face</b>
+     P2 only          question →           styled text →      audio →
+                      styled text          audio              video
+
+  <i>text</i> stops here ────────────────┘        <i>audio</i> ────┘        <i>video</i> ────┘
+</pre></div>
+  <p class="prose">Mode selection is not a mechanism layered on top. It is the count of engines you run, which is why a mode that is off never constructs its models.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Engine</th><th>Blocks</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">knowledge + style</td><td><code>llm</code> · <code>knowledge</code> · <code>manner</code> · <code>reasoning</code> <span class="tag no">P2</span></td></tr>
+      <tr><td class="lbl">text2audio</td><td><code>provider</code> · <code>voice</code></td></tr>
+      <tr><td class="lbl">audio2face</td><td><code>audio_encoder</code> · <code>_solve</code> · <code>geometry</code> · <code>motion</code> · <code>rig</code> · <code>appearance</code> · <code>renderer</code></td></tr>
+      <tr><td class="lbl">perception <span class="tag no">P2</span></td><td><code>asr</code> · <code>face_encoder</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>How a block attaches</h4>
+  <ul class="prose">
+    <li><strong>Correct</strong> — takes the generic block's output and adjusts it. Fitted to that block's output distribution, so swapping the generic block means <em>refit, not port</em>.</li>
+    <li><strong>Feed</strong> — supplies input to it. <code>knowledge</code> sits beside the LLM as a resource rather than in the chain, so the model can decide how much of it it needs.</li>
+  </ul>
+
+  <div class="rule"><b>Engines are pure wiring.</b> Every block trains and infers alone, on explicit inputs, with output you can read. A seam that needs behaviour means a block is missing — the moment a seam normalises or reconciles something, measuring a block in isolation stops telling you how it behaves composed.</div>
+
+  <h4>Two swap granularities</h4>
+  <p class="prose">Swap a <strong>block</strong>: a GRU for a transformer inside audio2face, same engine, retrained. Swap the whole <strong>engine</strong>: a provider for our own model, external contract held, everything inside changed.</p>
+
+  <div class="note"><b>Declare the seam, defer the abstraction.</b> Write down in the contract where a swap will happen. Do not build the registry until there are two things to register — an interface designed for one implementation is a guess. A dimension where you can name the second candidate is a real seam; one where you cannot is speculation.</div>
+</section>
+
+<section id="s5">
+  <h2><span class="n">05</span> The data tiers</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Tier</th><th>Holds</th><th>Lifetime</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">corpus</td><td>what we observed, per take</td><td>permanent, append-only</td></tr>
+      <tr><td class="lbl">creators</td><td>what we chose — promoted bundles</td><td>versioned, survives experiments</td></tr>
+      <tr><td class="lbl">runs</td><td>what we tried</td><td>disposable, keyed by config</td></tr>
+      <tr><td class="lbl">datasets</td><td>consumer-specific views over the corpus</td><td>spec permanent, cache rebuildable</td></tr>
+    </tbody>
+  </table></div>
+  <div class="rule"><b>corpus is what happened. runs is what we tried. creators is what we kept.</b></div>
+
+  <h4>Bundles</h4>
+  <p class="prose">A subject is a bundle — the person-specific blocks addressed and versioned as one thing. Runs produce candidates; <strong>promotion</strong> is a deliberate act, and that act is what makes this tier meaningful. Promotion is a pointer for anything large, so a checkpoint stays where it was trained. Rollback is re-promoting an older version, and every consumer follows because none of them read a run path directly.</p>
+  <p class="prose"><strong>Bundles may be partial, and a partial bundle is a release tier rather than a failure.</strong> knowledge and manner ship text; add voice and it talks; add the face three and it appears.</p>
+  <p class="prose">The face blocks version together: <code>geometry</code> constrains <code>motion</code> and <code>appearance</code>, and mixing versions must be refused rather than allowed, because nothing will error — the result is just quietly wrong.</p>
+
+  <h4>Datasets are specs, not copies</h4>
+  <p class="prose">A spec names which takes, which spans, what shape and the split. Kilobytes. The cache holds materialized features too expensive to recompute per epoch, and is deleteable because the spec plus the corpus regenerates it. In Project 2 the corpus grows, so a spec over it yields more examples over time without being rebuilt.</p>
+  <div class="rule"><b>The held-out split lives in the spec, not in the trainer.</b> A loop that picks its own split will eventually select against the test set.</div>
+</section>
+
+<section id="s6">
+  <h2><span class="n">06</span> Contracts</h2>
+  <p class="prose">Contracts are the rigid spine that lets everything else move. Freeness in the dimensions we want is bought by strictness in the ones we do not.</p>
+  <div class="tw"><table>
+    <thead><tr><th>To be free in</th><th>Be strict about</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">subject</td><td>nothing names a subject, ever</td></tr>
+      <tr><td class="lbl">representation</td><td>contracts carry no representation in them</td></tr>
+      <tr><td class="lbl">loss</td><td>loss never lives inside the model</td></tr>
+      <tr><td class="lbl">interface mode</td><td>nothing constructs at import time</td></tr>
+      <tr><td class="lbl">baseline</td><td>residuals declare what they sit on</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>The corpus contract</h4>
+  <p class="prose">A <strong>take</strong> is one addressable span of observation about one subject over continuous time. A video is a take; a Project 2 session is a take. Same object, different channels filled.</p>
+  <ul class="prose">
+    <li><strong>Every channel is a list of streams</strong>, each naming its participant. A video has one; a conversation has two — the person's mic and the agent's synthesized speech. Project 1 is the one-element case and nothing special-cases it.</li>
+    <li><strong>The take owns one timeline</strong> and every stream carries an offset into it. Trivially zero in Project 1; four independent sources in Project 2, where sync is the entire value of the corpus.</li>
+    <li><strong>Channels are modalities; layers are annotations.</strong> Video, audio, text and depth are what was observed. Speaker turns, topics and shot boundaries are what we worked out. Adding a detector is a new file.</li>
+    <li><strong>Store what was played, not what was generated.</strong> An interrupted turn was cut off, and the person responded to what they heard.</li>
+  </ul>
+  <div class="note"><b>Observations only, never solutions.</b> Curves, meshes, controls, embeddings and indexes are derived and belong in <code>runs</code>. A property of the take lives with the take; a property of an experiment lives with the experiment.</div>
+</section>
+
+<section id="s7">
+  <h2><span class="n">07</span> How it trains</h2>
+  <p class="prose">Training is <strong>stagewise, not end to end</strong>. Direct supervision exists for every stage, image loss is strictly worse information, and when the output is wrong you want to know which half broke.</p>
+  <div class="dia"><pre>
+                          <b>CORPUS</b>
+                             │
+       ┌────────┬────────────┼────────────┬────────────┐
+       │        │            │            │            │
+  knowledge  manner        voice      geometry ──► motion
+  transcript (shadow,      audio       <i>solve</i>        (baseline out,
+             original)                              solved ctrl)
+                                              └──► appearance
+                                                    (solved mesh,
+                                                     real frame)
+</pre></div>
+  <p class="prose">Four things train in parallel. Only the face chain is sequential: the solve gates all three face blocks, and geometry gates motion and appearance.</p>
+
+  <h4>The three costs of stagewise training</h4>
+  <ol class="prose">
+    <li><strong>Every block's training input differs from its inference input.</strong> Appearance trains on <em>solved</em> meshes and runs on <em>predicted</em> ones. Manner trains on manufactured shadows and runs on real model output. Never training appearance on predicted meshes is correct <em>and</em> is what creates the shift, so it gets measured rather than eliminated.</li>
+    <li><strong>Nothing optimises the composition.</strong> Each block is locally optimal against its own loss and no loss exists for the assembly. The remedies are end-to-end fine-tuning, ruled out for good reasons, or measuring the composition against ground truth — which the synced corpus uniquely permits for the interface half.</li>
+    <li><strong>Retraining upstream invalidates downstream.</strong> Rare in Project 1 where blocks are frozen after training. Routine in Project 2, where everything retrains from perception continuously.</li>
+  </ol>
+
+  <h4>Differentiability</h4>
+  <p class="prose">Every link in audio2face is torch except the audio encoder, which is ONNX. Closing that one gap makes the engine differentiable end to end, which is the only route to optimising the composition rather than each block locally. <strong>Differentiable does not oblige end-to-end training; it makes it possible.</strong></p>
+</section>
+
+<section id="s8">
+  <h2><span class="n">08</span> How it is tested</h2>
+  <p class="prose">Every block supports three modes, and they produce different things.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Mode</th><th>Produces</th><th>Read by</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">train</td><td>a checkpoint</td><td>the next stage</td></tr>
+      <tr><td class="lbl">test</td><td>a number, against a held-out set</td><td>a loop, or a promotion gate</td></tr>
+      <tr><td class="lbl">debug</td><td>artifacts you look at</td><td>a person</td></tr>
+    </tbody>
+  </table></div>
+  <div class="rule"><b>To test one thing, pin everything else to ground truth.</b> The corpus is synced audio, video and text, so every stage has a real target. What is pinned and what varies is declared in the run — otherwise you cannot tell whether a number moved because of the change or because a pin drifted.</div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Block</th><th>Debug artifact</th><th>Score</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">knowledge</td><td>the answer plus the passages it drew on, and which parts trace to which</td><td><span class="tag no">none yet</span></td></tr>
+      <tr><td class="lbl">manner</td><td>(unstyled input, output, real target) side by side</td><td><span class="tag ok">composite, exists</span></td></tr>
+      <tr><td class="lbl">voice</td><td>the audio, to listen to</td><td><span class="tag no">deferred</span></td></tr>
+      <tr><td class="lbl">audio2face</td><td>predicted controls · learned meshes · final renders</td><td><span class="tag ok">three levels</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>One half is verifiable, the other cannot be</h4>
+  <p class="prose">Run the person's real audio through audio2face and compare the output against the real frames. <strong>The interface half is verifiable end to end.</strong> The intelligence half is not and structurally cannot be — a model answering a novel question has no ground truth, and complementation means saying what the person never said.</p>
+  <p class="prose">This is why facial dynamics has measurable everything while complementation has no metric. One deep aim has ground truth built into the data; the other does not. The face work can be driven by measurement. The intelligence work needs a judgment mechanism invented before it can be steered at all.</p>
+  <div class="note"><b>Head pose must be pinned to the solve, not predicted.</b> Otherwise a still head is compared against a video of a moving one and the number measures head motion rather than articulation.</div>
+</section>
+
+<section id="s9">
+  <h2><span class="n">09</span> Configuration</h2>
+  <div class="rule"><b>Global names which. The component defines what.</b></div>
+  <div class="dia"><pre>
+<u># configs/&lt;name&gt;.yaml — true of the whole run, never architecture-specific</u>
+subject: healthygamer
+mode:    audio                <i># text | audio | video</i>
+engines:
+  audio2face:
+    motion: gru_v2            <i># a NAME, resolving to a file in the block</i>
+
+<u># engines/audio2face/blocks/motion/configs/gru_v2.yaml</u>
+architecture: gru
+hidden: 512
+loss: weighted_l1
+</pre></div>
+  <p class="prose">Swapping architecture is one line in global, because <code>transformer_v1.yaml</code> sits beside it with entirely different keys and nothing outside the block ever sees them.</p>
+  <ol class="prose">
+    <li><strong>The resolved config is written into the run.</strong> Whatever the precedence rules, the run records the final merged result. Without it you cannot tell which value took effect. This matters more than any other rule here.</li>
+    <li><strong>Global never holds a value only one architecture understands.</strong></li>
+    <li><strong>Each architecture's config shape lives with the architecture.</strong> A block's contract is its inputs and outputs, not its hyperparameters.</li>
+  </ol>
+  <p class="prose">The search space is a separate file. A config says what this run uses; a space says what a loop may vary and within what bounds. Keeping them apart is what stops a loop wandering past a commitment.</p>
+</section>
+
+<section id="s10">
+  <h2><span class="n">10</span> How we work</h2>
+  <div class="dia"><pre>
+  build baseline  ──►  measure together  ──►  identify a real issue  ──►  <b>engineer a loop</b>
+</pre></div>
+  <p class="prose">A loop is a <strong>response to a measured issue</strong>, never a general exploration. No issue behind it, no loop.</p>
+
+  <h4>Commitments bound the search</h4>
+  <div class="tw"><table>
+    <thead><tr><th></th><th>Worked example: adding a depth term</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">committed</td><td>depth enters as an additional supervision term; start at L1</td></tr>
+      <tr><td class="lbl">searchable</td><td>loss form, its weight, its schedule</td></tr>
+      <tr><td class="lbl">new commitment</td><td>where depth enters, the architecture, the representation</td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose">The third row is the one that matters. Without it a loop asking "is L2 better" wanders into changing what the loss is computed <em>on</em>. <strong>Commit narrowly, search widely</strong> — every extra commitment is a dimension the loop cannot help with.</p>
+
+  <h4>The register</h4>
+  <p class="prose">Everything unresolved is one of four kinds, and the kind decides what happens next: <strong>defect</strong> (fix it, quick), <strong>decision</strong> (a person settles it), <strong>measurement</strong> (one look at data answers it), <strong>exploration</strong> (a measured issue needing a loop). Only explorations get looped, and most things that feel like explorations are one of the other three.</p>
+  <div class="rule"><b>A loop is the last resort, not the first move.</b> "Is capacity enough" is not an exploration until the training logs have been read for visible underfitting.</div>
+
+  <h4>Three failure modes to design against</h4>
+  <ul class="prose">
+    <li><strong>The loop overfits the selection set.</strong> Picking by scoring on the data it selects against makes the winner partly noise.</li>
+    <li><strong>Loops are cheap to start and expensive to run.</strong> Budget belongs in the loop's definition, not discovered afterwards.</li>
+    <li><strong>A loop must not collapse a frontier.</strong> Both deep aims are two-objective by definition.</li>
+  </ul>
+  <p class="prose"><strong>Loops report, people decide.</strong> An exploring agent adds entries to the register; it does not change code, docs or configs.</p>
+</section>
+
+<section id="s11">
+  <h2><span class="n">11</span> Priorities</h2>
+  <p class="prose">Products are the vehicle. Two things are the actual work.</p>
+  <ol class="prose">
+    <li><strong>Facial dynamics.</strong> A facial module that is fast <em>and</em> close to the person. Both at once; either alone is already solved.</li>
+    <li><strong>Complementary intelligence.</strong> Learning a person well enough to contribute what general intelligence has and they do not, in a form that is useful <em>to them</em>.</li>
+  </ol>
+  <div class="tw"><table>
+    <thead><tr><th>Deep — this is the research</th><th>Good enough — use what works</th></tr></thead>
+    <tbody>
+      <tr><td>motion · appearance · geometry · knowledge · reasoning</td><td>manner · voice · ingest · pipelines · agent · app · ops</td></tr>
+    </tbody>
+  </table></div>
+  <div class="rule">When something underperforms: <b>deep</b> means investigate, that is the work. <b>Good enough</b> means accept, route around or delay, and only investigate when results are <em>visibly</em> bad.</div>
+
+  <h4>Inside facial dynamics, the order is measured</h4>
+  <ol class="prose">
+    <li><strong>Lip closure.</strong> Bilabials that fail to close are the most instantly-fake artifact a talking head has.</li>
+    <li><strong>Data volume.</strong> Training so far has used a tiny fraction of what is available.</li>
+    <li><strong>Temporal artifacts</strong> within a block. Boundaries are already cleared.</li>
+    <li><strong>Mesh identity.</strong> Distant fourth, and only via overfitting — the Gaussians absorb mesh error, but that compensation is fitted to training frames.</li>
+  </ol>
+
+  <h4>Deep gets a frontier, good enough gets a gate</h4>
+  <p class="prose">A gate is a threshold: acceptable or not, move on. A frontier is a curve being pushed out. A single score collapses exactly the tradeoff the deep work is exploring, so the one-number convention holds for the good-enough bucket and is wrong for the deep one.</p>
+</section>
+
+<section id="s12">
+  <h2><span class="n">12</span> Standing decisions</h2>
+  <p class="prose">Do not relitigate these without new evidence. Full text with reasons in <code>MANIFESTO.md</code>.</p>
+  <ol class="dec">
+    <li><b>Nothing names a subject internally.</b> Subject is always an argument.</li>
+    <li><b>Three data tiers.</b> corpus append-only, runs disposable, creators promoted.</li>
+    <li><b>A subject is a bundle</b>, versioned as one thing. Partial bundles are release tiers.</li>
+    <li><b>Serve is streaming by default.</b> Batch is one large chunk. Do not write serve twice.</li>
+    <li><b>Status is computed from disk, never written.</b> Written status goes stale.</li>
+    <li><b>Stages are idempotent and resume from disk.</b> They do not auto-chain unless asked.</li>
+    <li><b>Build what transfers.</b> Project 1 is a rehearsal that ships.</li>
+    <li><b>Ship at the lowest rung that is honest.</b> Audio before face.</li>
+    <li><b>A decision that cannot be a config cannot be auto-explored.</b></li>
+    <li><b>Single scores rank, they do not decide.</b></li>
+    <li><b>Never train appearance on predicted meshes.</b> Only solved ones.</li>
+    <li><b>Learn offsets in the rig's control space, never in vertex space.</b></li>
+    <li><b>The three layers are invariant.</b> Improvements happen inside a layer, never by rearranging them.</li>
+    <li><b>Every block records what it was built against</b>, and a dependency change invalidates it. The bundle manifest is a lockfile for a person.</li>
+    <li><b>The projects share machinery, not data.</b> No Project 1 decision is justified by what Project 2 might inherit.</li>
+    <li><b>Every stage runs with its upstream replaced by ground truth.</b> An API requirement, not a testing nicety.</li>
+    <li><b>Every block trains and infers independently, and engines are pure wiring.</b> A seam that needs behaviour means a block is missing.</li>
+    <li><b>Disabled means not loaded.</b> A mode that is off never constructs its model.</li>
+    <li><b>Interface modes nest, perception modes do not.</b></li>
+    <li><b>Every residual refit is a single command.</b> We change baselines on purpose.</li>
+  </ol>
+</section>
+
+<section id="s13">
+  <h2><span class="n">13</span> Project 1 to Project 2</h2>
+  <p class="prose">The two projects are the same machine, fed differently. Three differences and nothing else: the subject is the user rather than a creator, data arrives as a continuous stream rather than a batch archive, and the entity model updates rather than staying static.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Engine</th><th>Scales?</th><th>What changes</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">knowledge + style</td><td><span class="tag ok">yes</span></td><td><code>reasoning</code> activates; knowledge gains incremental build and must represent gaps</td></tr>
+      <tr><td class="lbl">text2audio</td><td><span class="tag ok">yes</span></td><td>no new blocks; streaming and cancellation must be honoured from the start</td></tr>
+      <tr><td class="lbl">audio2face</td><td><span class="tag ok">yes</span></td><td>depth improves all three person-specific blocks by retraining, not restructuring</td></tr>
+      <tr><td class="lbl">perception</td><td><span class="tag no">empty</span></td><td><strong>the only real gap</strong></td></tr>
+    </tbody>
+  </table></div>
+  <h4>Three changes outside the engines</h4>
+  <ul class="prose">
+    <li><strong>The agent stops being a request handler.</strong> Two flows run concurrently with barge-in and cancellation. This is the largest single piece of new code.</li>
+    <li><strong>The pipeline becomes a loop.</strong> Perception writes to the corpus, accumulation triggers a rebuild, the rebuild promotes a new bundle — which puts real weight on the eval gate, since something must decide a version is better without being asked.</li>
+    <li><strong>A session may involve two subjects</strong>, if the companion wears a creator's face over the user's mind. Bundles are per-subject, so this is the one place the current model would break.</li>
+  </ul>
+  <p class="prose">In Project 2 one perception stream improves <strong>both halves</strong>: intelligence and every interface rung. Checkpoint 2's face is a floor, not a ceiling.</p>
+</section>
+
+<section id="s14">
+  <h2><span class="n">14</span> Open questions</h2>
+  <p class="prose">Recorded so they are not forgotten. None of them change the structure, and none block checkpoint 1. Live tracking in <code>problems.md</code>.</p>
+  <ol class="prose">
+    <li><strong>Can creator video be solved at all?</strong> Podcast footage cuts between cameras. A consenting creator recording a capture dissolves it.</li>
+    <li><strong>How geometry gets built.</strong> Unsettled, and deprioritised by the ordering in §11.</li>
+    <li><strong>Does the solve need a human?</strong> If yes, full autorun is false for the face blocks.</li>
+    <li><strong>The real-time frame budget.</strong> Decides whether Project 2 has a face or ships voice-only.</li>
+    <li><strong>Whose face does Project 2 wear?</strong> A creator's over the user's mind means a session binds two bundles.</li>
+    <li><strong>How is complementation measured?</strong> No metric exists, and it is Project 2's central claim.</li>
+    <li><strong>Where prosody re-enters</strong>, having been discarded twice at the text waist.</li>
+    <li><strong>Creators as subjects or customers</strong>, which decides whether they can record for us.</li>
+  </ol>
+</section>
+
+<p class="foot">Normative sources: <code>MANIFESTO.md</code> for direction and standing decisions, <code>CLAUDE.md</code> for working rules, <code>problems.md</code> for the live register, and each component's README and CONTRACT. This document is the narrative over them.</p>
+
+</div>

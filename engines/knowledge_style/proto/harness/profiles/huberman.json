@@ -1,0 +1,168 @@
+{
+  "creator": "huberman",
+  "min_k": 15,
+  "expand": 2,
+  "word_cap": 420,
+  "promoted": {
+    "arm": "deploy100_commit",
+    "command": "harness/loop.py --bench -n 100 --creator huberman --controller controller_deploy.md --require-cites --commit --min-k 15 --expand 2 --full-text --max-retries 0 --no-judge",
+    "note": "min_k is 15 here, NOT the 6 tune.py derived below -- 6 was tested directly (chain_deploy100_k6_recheck.json, 46/100 failing) and measured worse than 15 (41/100), because tune.py optimises for recall-at-cheapest-pool and this archive's concentration in one dominant video makes a wider net net-beneficial despite more noise. min_k=15/expand=2 were themselves first borrowed from healthygamer's BASELINES.md, not derived, then kept because the derived k=6 measured worse, not because 15 was independently re-validated as optimal. k=10 was the untried middle ground; see still_open for the result once chain-scored.",
+    "flags": {
+      "controller": "controller_deploy.md", "require_cites": true, "min_k": 15,
+      "expand": 2, "full_text": true, "word_cap": null, "max_retries": 0,
+      "no_judge": true, "hard_turns": 8, "commit": true
+    },
+    "held_fail": null,
+    "held_n": null,
+    "measured": {
+      "n": 100,
+      "failing_any_measure": 38,
+      "faithfulness": 0.898,
+      "context_recall": 0.938,
+      "context_utilization": 0.818,
+      "relevancy": 0.843,
+      "ungrounded_pct": 26,
+      "not_captured_pct": 3,
+      "dropped_pct": 4,
+      "padding_pct": 12,
+      "seconds_per_question_mean": 22.9
+    },
+    "what_this_fixed": "--commit was never turned on in any earlier run. Forcing the controller to name specific passages before writing, then rebuilding context to show only those, cut failures from 41/100 (k=15, no commit) to 38/100 -- the only lever tried that improved both ungrounded AND padding together rather than trading one for the other. Also ~23% faster (22.9s vs 29.7s mean), not slower, because the final answer-writing turn sees a much smaller context.",
+    "what_did_not_help": [
+      "retrieving via properly re-derived k=6 instead of borrowed k=15: worse (46/100)",
+      "re-enabling the in-loop judge + 1 retry: flat (40/99), traded ungrounded for padding",
+      "instructing the controller that a short answer is fine when material is thin: flat (42/99), traded ungrounded for padding",
+      "stacking the thin-material instruction on top of --commit: worse than commit alone (41/100)",
+      "a comprehensive instruction naming four specific editorializing/generalizing patterns (built from real judge reasoning), stacked on --commit: worse than commit alone (45/100) -- confirms proto/RECIPE.md's own dead end ('asking the model not to invent joins... tried twice, lost twice') a third time",
+      "min_k=10 (the untried middle ground) combined with --commit: decisively worse, not a close call -- 70/100 failing against 34/100 for min_k=15 under the same scoring (work/huberman/reports/chain_deploy100_commit_k10.json). Mean committed pool dropped from 85.5 to 67.7 passages/question, and context_utilization collapsed from 0.818 to 0.247, context_recall from 0.938 to 0.699 -- a narrower floor gives the controller less to commit to, and --commit has nothing to recover once the right passage was never retrieved. min_k=15 stays promoted."
+    ],
+    "still_open": [
+      "the dominant residual failure (ungrounded, 26%) is the controller adding its own evaluation/generalization/inference/extension on top of real facts -- consistent across every config tried, not fixed by any instruction attempt",
+      "the failing_any_measure count quoted above (38) and the count recomputed later with compare.py's own fails() thresholds (34) disagree by 4 questions -- the script that produced the original 38 was an ad hoc one-liner, not saved. compare.py's fails() (faithfulness<0.85, context_recall<0.50, context_utilization<0.25, relevancy<0.70) is the only threshold definition that actually exists in the repo; treat 34 as the figure backed by checked-in code, 38 as the number this file was first measured and promoted against. Both agree min_k=15+commit is the best arm found.",
+      "style-pairs' oracle-answer generation (the input side of training pairs) uses agent.py's simpler single-call path, NOT harness/loop.py -- this commit fix does not apply there and the 132 pairs already trained on were generated without it",
+      "the same --commit fix, tried on healthygamer's own 'narrow' arm (BASELINES.md), showed real gains (faithfulness 0.929->0.978, relevancy 0.845->0.933) but was bundled with a word-cap that caused separate regressions and was never re-isolated -- untested whether commit alone would improve Dr K's own promoted config too"
+    ]
+  },
+  "derived": {
+    "target_recall": 0.95,
+    "reached": 0.9655,
+    "mean_pool": 55.4,
+    "essential_passages": 29,
+    "questions": 10,
+    "n_chunks": 213,
+    "n_takes": 5,
+    "answer_words_p90": 424,
+    "grid": [
+      {
+        "k": 6,
+        "expand": 1,
+        "recall": 0.9310344827586207,
+        "pool": 39.1
+      },
+      {
+        "k": 6,
+        "expand": 2,
+        "recall": 0.9655172413793104,
+        "pool": 55.4
+      },
+      {
+        "k": 6,
+        "expand": 3,
+        "recall": 0.9655172413793104,
+        "pool": 67.8
+      },
+      {
+        "k": 10,
+        "expand": 1,
+        "recall": 0.9310344827586207,
+        "pool": 59.8
+      },
+      {
+        "k": 10,
+        "expand": 2,
+        "recall": 1.0,
+        "pool": 80.7
+      },
+      {
+        "k": 10,
+        "expand": 3,
+        "recall": 1.0,
+        "pool": 95.7
+      },
+      {
+        "k": 15,
+        "expand": 1,
+        "recall": 0.9655172413793104,
+        "pool": 80.2
+      },
+      {
+        "k": 15,
+        "expand": 2,
+        "recall": 1.0,
+        "pool": 102.8
+      },
+      {
+        "k": 15,
+        "expand": 3,
+        "recall": 1.0,
+        "pool": 117.6
+      },
+      {
+        "k": 20,
+        "expand": 1,
+        "recall": 1.0,
+        "pool": 96.1
+      },
+      {
+        "k": 20,
+        "expand": 2,
+        "recall": 1.0,
+        "pool": 118.9
+      },
+      {
+        "k": 20,
+        "expand": 3,
+        "recall": 1.0,
+        "pool": 133.4
+      },
+      {
+        "k": 25,
+        "expand": 1,
+        "recall": 1.0,
+        "pool": 108.2
+      },
+      {
+        "k": 25,
+        "expand": 2,
+        "recall": 1.0,
+        "pool": 130.6
+      },
+      {
+        "k": 25,
+        "expand": 3,
+        "recall": 1.0,
+        "pool": 143.2
+      },
+      {
+        "k": 40,
+        "expand": 1,
+        "recall": 1.0,
+        "pool": 143.8
+      },
+      {
+        "k": 40,
+        "expand": 2,
+        "recall": 1.0,
+        "pool": 165
+      },
+      {
+        "k": 40,
+        "expand": 3,
+        "recall": 1.0,
+        "pool": 176.2
+      }
+    ],
+    "queries_from": "work/huberman/reports/baseline_trace"
+  },
+  "note": "Derived, not authored. Re-run harness/tune.py when the corpus changes. The prompts carry nothing creator-specific; these three numbers are the whole per-creator surface."
+}

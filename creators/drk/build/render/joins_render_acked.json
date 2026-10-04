@@ -1,0 +1,32 @@
+{
+ "stamp": "5d9903943638020a",
+ "looked_at": [
+  "data/face/gauss/cache/joins_overlay_drk.png"
+ ],
+ "concerns": [
+  "the audio-to-video join was not tested: no --run was given, so the lag is only known to be right in the training data"
+ ],
+ "camera_join": [
+  {
+   "chunk": "is_it_too_late_to_start_your_life_over_TATiapf0tF4__c000",
+   "renderer_conv": 0.9912502430488042,
+   "flip_removed": 0.0
+  },
+  {
+   "chunk": "is_it_too_late_to_start_your_life_over_TATiapf0tF4__c050",
+   "renderer_conv": 0.9861948279214466,
+   "flip_removed": 0.0
+  },
+  {
+   "chunk": "the_biology_of_why_men_isolate_lJKmwM2cNro__c003",
+   "renderer_conv": 0.9758895586233716,
+   "flip_removed": 0.0
+  },
+  {
+   "chunk": "the_biology_of_why_men_isolate_lJKmwM2cNro__c059",
+   "renderer_conv": 0.9966945362628816,
+   "flip_removed": 0.0
+  }
+ ],
+ "note": "This says a person looked at these files while the inputs hashed in 'stamp' were current. It goes stale on its own when they change."
+}

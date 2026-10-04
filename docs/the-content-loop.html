@@ -1,0 +1,1444 @@
+<title>The Content Loop</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#18222c; --ink-soft:#4a5a67; --ink-faint:#7b8b95;
+    --paper:#f6f7f4; --surface:#ffffff; --surface-2:#eef1ed;
+    --rule:#d8ded9; --rule-hard:#b9c3bc;
+    --ctrl:#2f6f5e;     /* the controller, everywhere on this page */
+    --judge:#a8562c;    /* the judge, everywhere on this page */
+    --fixed:#98a3a8;    /* fixed / deterministic */
+    --warn:#8a6d1f;
+    --ctrl-wash:#e6efeb; --judge-wash:#f6e9e1; --warn-wash:#f5efdc;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ink:#e4e9e5; --ink-soft:#a8b5ad; --ink-faint:#7d8a83;
+      --paper:#151a18; --surface:#1d2422; --surface-2:#242c29;
+      --rule:#2f3a36; --rule-hard:#41504a;
+      --ctrl:#6fc0a6; --judge:#e09163; --fixed:#6b7672; --warn:#ccae5c;
+      --ctrl-wash:#1c2b26; --judge-wash:#2e211a; --warn-wash:#2a2517;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e4e9e5; --ink-soft:#a8b5ad; --ink-faint:#7d8a83;
+    --paper:#151a18; --surface:#1d2422; --surface-2:#242c29;
+    --rule:#2f3a36; --rule-hard:#41504a;
+    --ctrl:#6fc0a6; --judge:#e09163; --fixed:#6b7672; --warn:#ccae5c;
+    --ctrl-wash:#1c2b26; --judge-wash:#2e211a; --warn-wash:#2a2517;
+  }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Source Sans 3","Helvetica Neue",Arial,sans-serif;
+    font-size:16.5px; line-height:1.62; padding-inline:20px; padding-block:0;
+  }
+  .wrap{max-width:900px; margin:0 auto; padding-block:44px 80px;}
+  h1,h2,h3{font-family:"Newsreader",Georgia,serif; font-weight:600;
+           text-wrap:balance; line-height:1.18;}
+  h1{font-size:2.6rem; margin:0 0 .3rem;}
+  h2{font-size:1.6rem; margin:3.2rem 0 .3rem; padding-top:1.4rem;
+     border-top:1px solid var(--rule);}
+  h3{font-size:1.14rem; margin:2rem 0 .3rem;}
+  .dek{font-family:"Newsreader",Georgia,serif; font-size:1.22rem; font-style:italic;
+       color:var(--ink-soft); margin:0 0 .5rem; max-width:58ch;}
+  .meta{font-family:"IBM Plex Mono",monospace; font-size:.73rem; letter-spacing:.06em;
+        text-transform:uppercase; color:var(--ink-faint); margin-bottom:2.4rem;}
+  p{max-width:68ch; margin:.85rem 0;}
+  .lede{font-size:1.06rem;}
+  code{font-family:"IBM Plex Mono",monospace; font-size:.85em;
+       background:var(--surface-2); padding:.1em .34em; border-radius:3px;}
+  strong{font-weight:600;}
+  .c{color:var(--ctrl); font-weight:600;}
+  .j{color:var(--judge); font-weight:600;}
+  .f{color:var(--fixed); font-weight:600;}
+
+  figure{margin:2rem 0;}
+  figure svg{display:block; width:100%; height:auto; max-width:100%;}
+  figcaption{font-size:.86rem; color:var(--ink-soft); margin-top:.6rem; max-width:66ch;}
+
+  .scroll{overflow-x:auto; margin:1.5rem 0; -webkit-overflow-scrolling:touch;}
+  table{border-collapse:collapse; width:100%; font-size:.9rem; min-width:520px;}
+  th,td{text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--rule);
+        vertical-align:top;}
+  th{font-family:"IBM Plex Mono",monospace; font-size:.69rem; text-transform:uppercase;
+     letter-spacing:.07em; color:var(--ink-faint); font-weight:400;
+     border-bottom:1px solid var(--rule-hard);}
+  td.num,th.num{text-align:right; font-family:"IBM Plex Mono",monospace;
+                font-variant-numeric:tabular-nums;}
+  tbody tr:hover td{background:var(--surface-2);}
+  .good{color:var(--ctrl); font-weight:600;}
+  .bad{color:var(--judge); font-weight:600;}
+
+  pre{background:var(--surface); border:1px solid var(--rule); border-radius:5px;
+      padding:1rem 1.15rem; overflow-x:auto; font-family:"IBM Plex Mono",monospace;
+      font-size:.8rem; line-height:1.6; margin:1.3rem 0;}
+  pre .cm{color:var(--ink-faint);}
+  pre b{color:var(--ctrl); font-weight:500;}
+
+  .def{border:1px solid var(--rule); border-radius:5px; background:var(--surface);
+       margin:1.4rem 0; overflow:hidden;}
+  .def table{min-width:460px;} .def th{background:var(--surface-2);}
+
+  .flag{background:var(--warn-wash); border-left:3px solid var(--warn);
+        padding:.95rem 1.15rem; margin:1.5rem 0; font-size:.94rem;
+        border-radius:0 4px 4px 0;}
+  .flag p{margin:.3rem 0;}
+  .flag .k{font-family:"IBM Plex Mono",monospace; font-size:.7rem;
+           text-transform:uppercase; letter-spacing:.09em; color:var(--warn);
+           display:block; margin-bottom:.35rem; font-weight:600;}
+  .note{background:var(--surface); border:1px solid var(--rule); border-radius:5px;
+        padding:.95rem 1.15rem; margin:1.4rem 0; font-size:.94rem;}
+  .note .k{font-family:"IBM Plex Mono",monospace; font-size:.7rem;
+           text-transform:uppercase; letter-spacing:.09em; color:var(--ink-faint);
+           display:block; margin-bottom:.35rem;}
+  ul,ol{max-width:68ch; padding-left:1.2rem;} li{margin:.4rem 0;}
+  .cite{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--ink-faint);}
+</style>
+
+<div class="wrap">
+
+<h1>The Content Loop</h1>
+<p class="dek">One model that understands its own machinery, one judge that only reports facts, twelve controls, and a way to learn from a thousand questions which controls are worth reaching for.</p>
+<p class="meta">alive / engines / knowledge_style &middot; 17 September 2026 &middot; design document</p>
+
+<p class="lede">This describes the content half of the system: the part that takes a question and produces the <em>substance</em> of an answer. It stops before voice and before style. Everything here is either measured on 100 questions against a labelled archive, or explicitly marked as not yet measured.</p>
+
+<h2>The whole shape, before any part of it</h2>
+
+<figure>
+<svg viewBox="0 0 900 220" role="img" aria-label="A question enters the content loop, which produces substance; substance crosses a seam into the style model, then into voice. This document covers only the content loop.">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">
+
+    <rect x="0" y="66" width="96" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <text x="48" y="93" text-anchor="middle">question</text>
+    <line x1="96" y1="88" x2="146" y2="88" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <rect x="148" y="34" width="290" height="108" rx="6" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.8"/>
+    <text x="164" y="56" fill="#2f6f5e" font-weight="500" font-size="11">THE CONTENT LOOP</text>
+    <text x="164" y="77" fill="#2f6f5e" font-size="10.5">one controller, one judge</text>
+    <text x="164" y="94" fill="#2f6f5e" font-size="10.5">twelve controls, a turn budget</text>
+    <text x="164" y="111" fill="#2f6f5e" font-size="10.5">searches, filters, assembles, re-tries</text>
+    <text x="164" y="131" fill="#2f6f5e" font-size="10.5" font-style="italic">this document</text>
+
+    <line x1="438" y1="88" x2="492" y2="88" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"/>
+    <text x="465" y="78" text-anchor="middle" font-size="9.5" fill="#7b8b95">substance</text>
+
+    <line x1="504" y1="20" x2="504" y2="160" stroke="#8a6d1f" stroke-width="1.4" stroke-dasharray="6 4"/>
+    <text x="512" y="32" font-size="10" fill="#8a6d1f">the seam</text>
+    <text x="512" y="46" font-size="9.5" fill="#8a6d1f">measured by content survival</text>
+
+    <rect x="548" y="52" width="152" height="72" rx="6" fill="none" stroke="#8b969b" stroke-width="1.5"/>
+    <text x="624" y="80" text-anchor="middle" font-size="10.5" fill="#8b969b">STYLE MODEL</text>
+    <text x="624" y="97" text-anchor="middle" font-size="10" fill="#8b969b">renders it as him</text>
+    <text x="624" y="113" text-anchor="middle" font-size="9.5" fill="#8b969b">out of scope here</text>
+
+    <line x1="700" y1="88" x2="750" y2="88" stroke="#8b969b" stroke-width="1.4" marker-end="url(#ar)" color="#8b969b"/>
+    <rect x="752" y="66" width="96" height="44" rx="4" fill="none" stroke="#8b969b" stroke-width="1.5"/>
+    <text x="800" y="93" text-anchor="middle" fill="#8b969b">voice</text>
+
+    <text x="0" y="186" font-size="10.5" fill="#8a6d1f">The seam exists because content failures and style failures have different owners and</text>
+    <text x="0" y="202" font-size="10.5" fill="#8a6d1f">different fixes. Today one model call does both, so neither can be diagnosed.</text>
+  </g>
+</svg>
+<figcaption>The content loop ends at <em>substance</em>: the claims that answer the question, each attached to the passage behind it. Style is a separate model past the seam. Today a single call does content and style together, which is why a bad answer cannot be attributed to either.</figcaption>
+</figure>
+
+<h2>The invariant: two intelligences, two ways in</h2>
+
+<p class="lede">Everything below is constrained by this. It is the strongest claim in the design and the easiest to check.</p>
+
+<figure>
+<svg viewBox="0 0 900 290" role="img" aria-label="Two model roles and two creator-data entry points. Seven model roles exist today and collapse into two; the two creator-data routes already hold.">
+  <defs>
+    <marker id="ar0" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor">
+
+    <text x="0" y="12" font-size="10" letter-spacing="1" fill="#7b8b95">TODAY — SEVEN MODEL ROLES IN THE ANSWER PATH</text>
+
+    <rect x="0" y="24" width="150" height="22" rx="3" fill="none" stroke="#8b969b"/><text x="10" y="39" fill="#8b969b">query writer</text>
+    <rect x="0" y="50" width="150" height="22" rx="3" fill="none" stroke="#8b969b"/><text x="10" y="65" fill="#8b969b">assembler</text>
+    <rect x="0" y="76" width="150" height="22" rx="3" fill="none" stroke="#8b969b"/><text x="10" y="91" fill="#8b969b">gap check</text>
+    <rect x="0" y="102" width="150" height="22" rx="3" fill="none" stroke="#8b969b"/><text x="10" y="117" fill="#8b969b">question splitter</text>
+    <rect x="0" y="140" width="150" height="22" rx="3" fill="none" stroke="#8b969b"/><text x="10" y="155" fill="#8b969b">sufficiency judge</text>
+    <rect x="0" y="166" width="150" height="22" rx="3" fill="none" stroke="#8b969b"/><text x="10" y="181" fill="#8b969b">part coverage</text>
+    <rect x="0" y="192" width="150" height="22" rx="3" fill="none" stroke="#8b969b"/><text x="10" y="207" fill="#8b969b">relevance filter</text>
+
+    <path d="M156,35 L268,64" stroke="#2f6f5e" stroke-width="1.2" marker-end="url(#ar0)" color="#2f6f5e"/>
+    <path d="M156,61 L268,68" stroke="#2f6f5e" stroke-width="1.2" marker-end="url(#ar0)" color="#2f6f5e"/>
+    <path d="M156,87 L268,74" stroke="#2f6f5e" stroke-width="1.2" marker-end="url(#ar0)" color="#2f6f5e"/>
+    <path d="M156,113 L268,80" stroke="#2f6f5e" stroke-width="1.2" marker-end="url(#ar0)" color="#2f6f5e"/>
+    <path d="M156,151 L268,176" stroke="#a8562c" stroke-width="1.2" marker-end="url(#ar0)" color="#a8562c"/>
+    <path d="M156,177 L268,180" stroke="#a8562c" stroke-width="1.2" marker-end="url(#ar0)" color="#a8562c"/>
+    <path d="M156,203 L268,186" stroke="#a8562c" stroke-width="1.2" marker-end="url(#ar0)" color="#a8562c"/>
+
+    <rect x="270" y="46" width="180" height="44" rx="5" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.8"/>
+    <text x="360" y="64" text-anchor="middle" fill="#2f6f5e" font-weight="500">THE CONTROLLER</text>
+    <text x="360" y="80" text-anchor="middle" fill="#2f6f5e" font-size="9.5">writes, searches, decides, assembles</text>
+
+    <rect x="270" y="158" width="180" height="44" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.8"/>
+    <text x="360" y="176" text-anchor="middle" fill="#a8562c" font-weight="500">THE JUDGE</text>
+    <text x="360" y="192" text-anchor="middle" fill="#a8562c" font-size="9.5">reports facts, decides nothing</text>
+
+    <text x="500" y="12" font-size="10" letter-spacing="1" fill="#7b8b95">CREATOR DATA — TWO WAYS IN, NOT THREE</text>
+
+    <rect x="500" y="40" width="210" height="46" rx="5" fill="none" stroke="#2f6f5e" stroke-width="1.6"/>
+    <text x="512" y="58" fill="#2f6f5e" font-weight="500">1 &nbsp;the verbatim corpus</text>
+    <text x="512" y="76" fill="#2f6f5e" font-size="9.5">292 passages of what he said</text>
+    <path d="M710,63 L790,63" stroke="#2f6f5e" stroke-width="1.2" marker-end="url(#ar0)" color="#2f6f5e"/>
+    <text x="798" y="60" fill="#2f6f5e" font-size="9.5">search</text>
+
+    <rect x="500" y="96" width="210" height="60" rx="5" fill="none" stroke="#2f6f5e" stroke-width="1.6"/>
+    <text x="512" y="114" fill="#2f6f5e" font-weight="500">2 &nbsp;his style</text>
+    <text x="512" y="131" fill="#2f6f5e" font-size="9.5">to write queries in his words,</text>
+    <text x="512" y="146" fill="#2f6f5e" font-size="9.5">and to render the answer as him</text>
+    <path d="M710,126 L790,126" stroke="#2f6f5e" stroke-width="1.2" marker-end="url(#ar0)" color="#2f6f5e"/>
+    <text x="798" y="123" fill="#2f6f5e" font-size="9.5">queries,</text>
+    <text x="798" y="137" fill="#2f6f5e" font-size="9.5">style stage</text>
+
+    <rect x="500" y="170" width="210" height="46" rx="5" fill="none" stroke="#2f6f5e" stroke-width="1.4"/>
+    <text x="512" y="188" fill="#2f6f5e" font-weight="500">CHECKED: creator.md IS route 2</text>
+    <text x="512" y="205" fill="#2f6f5e" font-size="9.5">96% his actual speech, not a description</text>
+    <text x="500" y="236" font-size="10" fill="#2f6f5e">All 18 passages match real archive chunks, and they are the</text>
+    <text x="500" y="250" font-size="10" fill="#2f6f5e">SAME 18, in the same order, as the deployed prompt uses.</text>
+
+    <text x="0" y="236" font-size="10" fill="#8a6d1f">Four roles fold into the controller, three into the judge.</text>
+    <text x="0" y="250" font-size="10" fill="#8a6d1f">The offline measures sit outside both — they are the ruler,</text>
+    <text x="0" y="264" font-size="10" fill="#8a6d1f">never a component.</text>
+  </g>
+</svg>
+<figcaption>Counted from the code: seven distinct model roles run in the answer path today, and three separate routes carry creator data into the system. The invariant collapses those to two and two. The offline measures are deliberately outside &mdash; a ruler inside the thing it measures makes every number meaningless.</figcaption>
+</figure>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>role today</th><th>becomes</th><th>why it can fold in</th></tr></thead>
+  <tbody>
+    <tr><td>query writer</td><td class="c">controller</td><td>writing and rephrasing queries is something the controller <em>does</em></td></tr>
+    <tr><td>assembler</td><td class="c">controller</td><td>it already knows what it searched and read; nothing needs re-explaining</td></tr>
+    <tr><td>gap check</td><td class="c">controller</td><td>noticing what is missing is a decision, not a service</td></tr>
+    <tr><td>question splitter</td><td class="c">controller, or deleted</td><td>it already decomposes implicitly &mdash; and better than a mechanical split</td></tr>
+    <tr><td>sufficiency judge</td><td class="j">judge</td><td>must stay independent: asked to rule on itself, the controller says yes 100/100</td></tr>
+    <tr><td>part coverage</td><td class="j">judge</td><td>same reason</td></tr>
+    <tr><td>relevance filter</td><td class="j">judge</td><td>same reason &mdash; and it is the one judge with a measured win</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>Why two and not one:</strong> the controller cannot judge itself. Asked whether it had enough, it said yes on <strong>100 out of 100</strong> questions. <strong>Why two and not seven:</strong> every extra role is a separate call with less context than the controller has, and each one measured worse than the controller doing the same job &mdash; the hand-written gap check found <strong>79%</strong> of needed passages against the controller's own <strong>85%</strong>.</p>
+
+<h2>The words used here</h2>
+
+<p>Every term below means exactly one thing in this document.</p>
+
+<div class="def scroll">
+<table>
+  <thead><tr><th>term</th><th>means</th></tr></thead>
+  <tbody>
+    <tr><td><strong>archive</strong></td><td>The creator's transcripts, cut into <strong>292 passages</strong> of about 294 words each, from 17 videos. 86,000 words total.</td></tr>
+    <tr><td><strong>passage</strong></td><td>One of those 292 pieces. Has a video id and a timestamp. Also called a <em>verbatim</em>, because it is his actual words.</td></tr>
+    <tr><td><strong>pool</strong></td><td>The passages retrieved so far for one question, numbered so the model can refer to them stably across turns.</td></tr>
+    <tr><td><strong>word overlap search</strong></td><td>The matching method. Scores a passage by how many of the query's words it contains, weighting rare words more. No neural network, no embeddings. Deterministic: the same query always returns the same passages.</td></tr>
+    <tr><td><strong>k</strong></td><td>How many top-scoring passages one search returns. Currently 6. Each one also drags in its immediate neighbours from the same video, so k=6 yields roughly 12&ndash;18 passages per query.</td></tr>
+    <tr><td><strong>the controller</strong></td><td>The model that runs the loop. Writes queries, sets the controls, reads the judge, decides when to stop, and writes the substance. One conversation from start to finish.</td></tr>
+    <tr><td><strong>the judge</strong></td><td>A <em>separate</em> model call with no memory of the controller's reasoning. Reports facts about the answer. Decides nothing.</td></tr>
+    <tr><td><strong>a control</strong></td><td>A parameter of the machinery that changes what happens: k, how many search rounds, which passages reach the assembler, and so on. There are twelve.</td></tr>
+    <tr><td><strong>the oracle</strong></td><td>A hand-built answer key: for each question, which passages in the entire archive a real answer actually needs. Built by judging all 292 passages against every question, then re-judging the survivors strictly. Averages 3.2 passages per question. <strong>Used only for measurement, never at answer time.</strong></td></tr>
+    <tr><td><strong>tuning</strong></td><td>Running the loop over many questions, seeing which controls actually helped, and writing that finding into the controller's instructions. Offline. Changes prompts, not weights.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>The chain, and what is adjustable in it</h2>
+
+<figure>
+<svg viewBox="0 0 900 430" role="img" aria-label="The five steps of the content chain, each with its adjustable controls listed, showing which are set by the controller and which are deterministic.">
+  <defs>
+    <marker id="ar2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">
+
+    <text x="0" y="12" font-size="10" letter-spacing="1" fill="#7b8b95">STEP</text>
+    <text x="300" y="12" font-size="10" letter-spacing="1" fill="#7b8b95">WHAT IT DOES</text>
+    <text x="600" y="12" font-size="10" letter-spacing="1" fill="#2f6f5e">ITS CONTROLS</text>
+
+    <!-- 1 query writer -->
+    <rect x="0" y="26" width="270" height="60" rx="5" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.6"/>
+    <text x="14" y="48" fill="#2f6f5e" font-weight="500">1 &nbsp;QUERY WRITER</text>
+    <text x="14" y="66" fill="#2f6f5e" font-size="10">turns the question into searches</text>
+    <text x="14" y="80" fill="#2f6f5e" font-size="10">in HIS words, not the asker's</text>
+    <text x="300" y="48" font-size="10">writes 9 queries on average,</text>
+    <text x="300" y="63" font-size="10">using his concepts: "puer aeternus",</text>
+    <text x="300" y="78" font-size="10">"provisional life", "take the plunge"</text>
+    <text x="600" y="48" font-size="10" fill="#2f6f5e">rounds &nbsp;&middot;&nbsp; queries per round</text>
+    <text x="600" y="63" font-size="10" fill="#2f6f5e">style material it draws on</text>
+    <line x1="135" y1="86" x2="135" y2="104" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar2)"/>
+
+    <!-- 2 search -->
+    <rect x="0" y="106" width="270" height="52" rx="5" fill="none" stroke="#8b969b" stroke-width="1.5"/>
+    <text x="14" y="128" fill="#8b969b" font-weight="500">2 &nbsp;SEARCH</text>
+    <text x="14" y="146" fill="#8b969b" font-size="10">word overlap, deterministic</text>
+    <text x="300" y="128" font-size="10">same query always returns the</text>
+    <text x="300" y="143" font-size="10">same passages &mdash; no model here</text>
+    <text x="600" y="128" font-size="10" fill="#2f6f5e">k &nbsp;&middot;&nbsp; neighbours &nbsp;&middot;&nbsp; ordering</text>
+    <line x1="135" y1="158" x2="135" y2="176" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar2)"/>
+
+    <!-- 3 pool -->
+    <rect x="0" y="178" width="270" height="52" rx="5" fill="none" stroke="#8b969b" stroke-width="1.5"/>
+    <text x="14" y="200" fill="#8b969b" font-weight="500">3 &nbsp;POOL</text>
+    <text x="14" y="218" fill="#8b969b" font-size="10">collects and numbers them</text>
+    <text x="300" y="200" font-size="10">41 passages at k=6, of which</text>
+    <text x="300" y="215" font-size="10">2 to 3 actually matter</text>
+    <text x="600" y="200" font-size="10" fill="#2f6f5e">cap &nbsp;&middot;&nbsp; index or full text</text>
+    <line x1="135" y1="230" x2="135" y2="248" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar2)"/>
+
+    <!-- 4 filter -->
+    <rect x="0" y="250" width="270" height="60" rx="5" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.6"/>
+    <text x="14" y="272" fill="#2f6f5e" font-weight="500">4 &nbsp;FILTER</text>
+    <text x="14" y="290" fill="#2f6f5e" font-size="10">marks each passage: answers this,</text>
+    <text x="14" y="304" fill="#2f6f5e" font-size="10">part of it, or not about this</text>
+    <text x="300" y="272" font-size="10">keeping "answers this" + "part of it"</text>
+    <text x="300" y="287" font-size="10">cuts 80 passages to 30 and keeps</text>
+    <text x="300" y="302" font-size="10">100% of the ones that matter</text>
+    <text x="600" y="272" font-size="10" fill="#2f6f5e">threshold</text>
+    <text x="600" y="287" font-size="10" fill="#2f6f5e">label them, or remove them</text>
+    <line x1="135" y1="310" x2="135" y2="328" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar2)"/>
+
+    <!-- 5 assembly -->
+    <rect x="0" y="330" width="270" height="60" rx="5" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.6"/>
+    <text x="14" y="352" fill="#2f6f5e" font-weight="500">5 &nbsp;CONTEXT ASSEMBLY</text>
+    <text x="14" y="370" fill="#2f6f5e" font-size="10">the answering machine &mdash;</text>
+    <text x="14" y="384" fill="#2f6f5e" font-size="10">substance only, no persona</text>
+    <text x="300" y="352" font-size="10">emits claims, each naming the</text>
+    <text x="300" y="367" font-size="10">passage behind it; flags its own</text>
+    <text x="300" y="382" font-size="10">extensions; names what is missing</text>
+    <text x="600" y="352" font-size="10" fill="#2f6f5e">which passages &middot; how many</text>
+    <text x="600" y="367" font-size="10" fill="#2f6f5e">how structured the output is</text>
+
+    <text x="0" y="418" font-size="10.5" fill="#2f6f5e">green = the controller sets it</text>
+    <text x="240" y="418" font-size="10.5" fill="#8b969b">grey = deterministic machinery</text>
+  </g>
+</svg>
+<figcaption>Step 2 is the only part with no model in it. Everything else is either written by the controller or parameterised by it. Today eleven of the twelve controls are hardcoded constants and the controller sets only the query text.</figcaption>
+</figure>
+
+<h2>Two models, and the wall between them</h2>
+
+<p>The controller cannot judge itself. This is not a principle, it is a measurement: asked <em>"do you have enough to answer?"</em> with 43 passages in hand, it said yes on <strong>100 out of 100 questions</strong>. Given search tools and explicit permission to use them, it searched <strong>zero times in 100</strong>. A separate run of the same system reported its answers were 93% supported while contradicting the creator 11% of the time.</p>
+
+<figure>
+<svg viewBox="0 0 900 300" role="img" aria-label="The controller holds the whole conversation and makes every decision; the judge is a separate call that sees only the question, the answer and the passages, and emits findings without deciding anything.">
+  <defs>
+    <marker id="ar3" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">
+
+    <rect x="0" y="24" width="352" height="200" rx="6" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.8"/>
+    <text x="16" y="48" fill="#2f6f5e" font-weight="500" font-size="11.5">THE CONTROLLER</text>
+    <text x="16" y="70" fill="#2f6f5e" font-size="10">holds one conversation, start to finish</text>
+    <text x="16" y="94" fill="#2f6f5e" font-size="10">knows: the question, every query it wrote,</text>
+    <text x="16" y="109" fill="#2f6f5e" font-size="10">every passage it read, what it has written,</text>
+    <text x="16" y="124" fill="#2f6f5e" font-size="10">and every finding so far</text>
+    <text x="16" y="150" fill="#2f6f5e" font-size="10">decides: queries, k, rounds, filter setting,</text>
+    <text x="16" y="165" fill="#2f6f5e" font-size="10">which passages to use, when to stop</text>
+    <text x="16" y="190" fill="#2f6f5e" font-size="10">may REJECT a finding, with a reason</text>
+    <text x="16" y="211" fill="#2f6f5e" font-size="10" font-style="italic">this is the universal content model</text>
+
+    <path d="M352,90 L470,90" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar3)"/>
+    <text x="360" y="80" font-size="9.5" fill="#7b8b95">question, answer,</text>
+    <text x="360" y="104" font-size="9.5" fill="#7b8b95">pool, filtered set</text>
+
+    <line x1="411" y1="12" x2="411" y2="240" stroke="#8a6d1f" stroke-width="1.4" stroke-dasharray="6 4"/>
+    <text x="419" y="24" font-size="9.5" fill="#8a6d1f">no history crosses here</text>
+
+    <rect x="472" y="24" width="352" height="200" rx="6" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.8"/>
+    <text x="488" y="48" fill="#a8562c" font-weight="500" font-size="11.5">THE JUDGE</text>
+    <text x="488" y="70" fill="#a8562c" font-size="10">a fresh call. No memory. No narration.</text>
+    <text x="488" y="94" fill="#a8562c" font-size="10">sees ONLY: the question, the answer,</text>
+    <text x="488" y="109" fill="#a8562c" font-size="10">the pool, and the filtered set</text>
+    <text x="488" y="135" fill="#a8562c" font-size="10">emits NAMES, not scores:</text>
+    <text x="488" y="152" fill="#a8562c" font-size="10">&nbsp;&nbsp;"this claim has no passage behind it"</text>
+    <text x="488" y="167" fill="#a8562c" font-size="10">&nbsp;&nbsp;"this paragraph was not asked about"</text>
+    <text x="488" y="182" fill="#a8562c" font-size="10">&nbsp;&nbsp;"nothing here addresses X"</text>
+    <text x="488" y="207" fill="#a8562c" font-size="10" font-weight="500">decides nothing. Never gates.</text>
+
+    <path d="M648,224 C648,258 176,258 176,228" fill="none" stroke="#a8562c" stroke-width="1.4" marker-end="url(#ar3)" color="#a8562c"/>
+    <text x="412" y="275" text-anchor="middle" font-size="10" fill="#a8562c">findings go back as observations the controller reads and acts on</text>
+  </g>
+</svg>
+<figcaption>The judge never sees the controller's reasoning. If it read <em>"I'm extending here because the archive is silent"</em> it would be persuaded, and that is self-assessment with extra steps. It sees artifacts only, and it never learns that this is retry number three &mdash; told that, judges soften.</figcaption>
+</figure>
+
+<h2>What each part of the system can possibly know</h2>
+
+<p>This determines what any judge is allowed to claim. A judge placed after the pool sees the pool &mdash; it has no view of the other 250 passages, so it cannot say the archive lacks something.</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>observer</th><th>sees</th><th>may legitimately say</th><th>may NOT say</th></tr></thead>
+  <tbody>
+    <tr><td class="j">relevance judge</td><td>the pool</td><td>which of these bear on the question</td><td>anything about passages it wasn't shown</td></tr>
+    <tr><td class="j">answer judge</td><td>question, answer, pool, filtered set</td><td>this claim is unsupported; this was not asked about; nothing <em>here</em> addresses X</td><td><strong>"the archive cannot answer this"</strong></td></tr>
+    <tr><td class="f">search tool</td><td>the whole word index</td><td>these words appear nowhere in the archive</td><td>anything about meaning</td></tr>
+    <tr><td><strong>the oracle</strong></td><td>the whole archive, judged</td><td>a passage answering this exists and was missed</td><td>&mdash; but it is <strong>offline only</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="flag">
+  <span class="k">the consequence</span>
+  <p>"I haven't covered that" is a claim about <strong>292 passages</strong>. No judge can license it. The system may only say it after searching and failing &mdash; and honestly, only after recording <em>which</em> queries were tried and that their words appear nowhere in the archive.</p>
+  <p>Today the system will say it on a judge's verdict about 41 passages. That is a claim about the pool passed off as a claim about the archive.</p>
+</div>
+
+<h2>Three findings, and which step each one implicates</h2>
+
+<figure>
+<svg viewBox="0 0 900 340" role="img" aria-label="Each of the three judge findings routes to one or more steps: unsupported claim implicates assembly or the filter, question not addressed implicates the query writer or the filter or the archive, over-answering implicates the filter or assembly.">
+  <defs>
+    <marker id="ar4" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor">
+
+    <text x="0" y="12" font-size="10" letter-spacing="1" fill="#a8562c">THE JUDGE SAYS</text>
+    <text x="540" y="12" font-size="10" letter-spacing="1" fill="#2f6f5e">SO THE CONTROLLER TWEAKS</text>
+
+    <!-- finding 1 -->
+    <rect x="0" y="26" width="300" height="56" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.5"/>
+    <text x="12" y="46" fill="#a8562c" font-weight="500">1 &nbsp;this claim has no passage</text>
+    <text x="12" y="62" fill="#a8562c">&nbsp;&nbsp;&nbsp;behind it</text>
+    <text x="12" y="76" fill="#a8562c" font-size="9.5">measured: 29% of questions, deployed</text>
+    <path d="M300,44 L536,38" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar4)"/>
+    <path d="M300,62 L536,74" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar4)"/>
+    <text x="544" y="40" fill="#2f6f5e">ASSEMBLY &mdash; it went past what it had</text>
+    <text x="544" y="78" fill="#2f6f5e">FILTER &mdash; if the support was in the pool</text>
+    <text x="544" y="92" fill="#2f6f5e" font-size="9.5">and the filter removed it</text>
+
+    <!-- finding 2 -->
+    <rect x="0" y="118" width="300" height="70" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.5"/>
+    <text x="12" y="138" fill="#a8562c" font-weight="500">2 &nbsp;the question is not</text>
+    <text x="12" y="154" fill="#a8562c">&nbsp;&nbsp;&nbsp;properly addressed</text>
+    <text x="12" y="170" fill="#a8562c" font-size="9.5">measured: retrieval owns 63% of all</text>
+    <text x="12" y="182" fill="#a8562c" font-size="9.5">failures &mdash; the most common finding</text>
+    <path d="M300,130 L536,122" stroke="#2f6f5e" stroke-width="1.8" marker-end="url(#ar4)" color="#2f6f5e"/>
+    <path d="M300,152 L536,158" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar4)"/>
+    <path d="M300,172 L536,192" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar4)"/>
+    <text x="544" y="124" fill="#2f6f5e" font-weight="500">QUERY WRITER &mdash; try first, 63% prior</text>
+    <text x="544" y="160" fill="#2f6f5e">FILTER &mdash; it may have removed the answer</text>
+    <text x="544" y="196" fill="#2f6f5e">nothing &mdash; the archive may not have it,</text>
+    <text x="544" y="210" fill="#2f6f5e" font-size="9.5">but only provable by exhausting queries</text>
+
+    <!-- finding 3 -->
+    <rect x="0" y="228" width="300" height="60" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.5"/>
+    <text x="12" y="248" fill="#a8562c" font-weight="500">3 &nbsp;it answers more than</text>
+    <text x="12" y="264" fill="#a8562c">&nbsp;&nbsp;&nbsp;was asked</text>
+    <text x="12" y="280" fill="#a8562c" font-size="9.5">measured: 2% deployed, 8% with a loop</text>
+    <path d="M300,246 L536,242" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar4)"/>
+    <path d="M300,266 L536,278" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar4)"/>
+    <text x="544" y="244" fill="#2f6f5e">FILTER &mdash; if it traces to a kept passage</text>
+    <text x="544" y="280" fill="#2f6f5e">ASSEMBLY &mdash; if it traces to no passage</text>
+
+    <text x="0" y="318" font-size="10" fill="#8a6d1f">Every route needs the trace: WHICH passage the claim came from. A finding without a</text>
+    <text x="0" y="332" font-size="10" fill="#8a6d1f">trace can be detected but not attributed, so it cannot tell the controller what to change.</text>
+  </g>
+</svg>
+<figcaption>The thick arrow is the measured prior: "not addressed" is overwhelmingly a querying problem, and the step where the assembler ignored material it already had accounts for only 2% of failures. So the controller should reach for the query writer first and the assembler last.</figcaption>
+</figure>
+
+<h2>The twelve controls</h2>
+
+<p>These all exist in the code today. Eleven are constants. The rightmost column is what has actually been measured &mdash; and note that two of these have <em>known bad directions</em>, which the controller must be told about or it will rediscover them one question at a time.</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>step</th><th>control</th><th>today</th><th class="num">proposed default</th><th>what is measured</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="3">query writer</td><td><strong>search rounds</strong></td><td>1</td><td class="num good">4</td><td>1&rarr;4: found passages 68%&rarr;<span class="good">85%</span>, sensitivity to how the question is phrased 0.29&rarr;<span class="good">0.19</span></td></tr>
+    <tr><td>queries per round</td><td>4</td><td class="num">4</td><td>untested. In practice it writes 9 across a run</td></tr>
+    <tr><td>style material to draw on</td><td>18 fixed samples</td><td class="num">18, may use the pool</td><td>untested. Only 18 exist; the pool holds his words on <em>this</em> topic</td></tr>
+    <tr><td rowspan="3">search</td><td><strong>k</strong></td><td>6</td><td class="num">6, may vary per call</td><td>6&rarr;25: found 67%&rarr;<span class="good">89%</span>, but noise 94%&rarr;<span class="bad">98%</span></td></tr>
+    <tr><td>neighbours pulled in</td><td>&plusmn;1</td><td class="num">&plusmn;1</td><td>untested</td></tr>
+    <tr><td>result ordering</td><td>transcript order</td><td class="num">transcript order</td><td>a correctness matter, not taste &mdash; the wrong setting silently broke three experiments</td></tr>
+    <tr><td rowspan="2">pool</td><td><strong>cut the pool to top N</strong></td><td>off</td><td class="num bad">off &mdash; known bad</td><td><span class="bad">0.338 against 0.682</span> for sending everything. Tried; it lost half the recall</td></tr>
+    <tr><td>show index or full text</td><td>both offered</td><td class="num">both</td><td>the index is 16&times; cheaper to survey than full text</td></tr>
+    <tr><td rowspan="2">filter</td><td><strong>threshold</strong></td><td>keep 2 of 3 labels</td><td class="num">keep 2 of 3</td><td>strictest setting: 9&times; less noise but <span class="bad">loses 18.5%</span> of needed passages</td></tr>
+    <tr><td><strong>label or remove</strong></td><td>remove</td><td class="num good">label</td><td>labelling measured once: contradictions 11&rarr;<span class="good">7</span>. Removing makes "not addressed" un-attributable</td></tr>
+    <tr><td rowspan="2">assembly</td><td>which passages, how many</td><td>all of them</td><td class="num">controller's choice</td><td>telling it to narrow <span class="bad">backfired</span>: failures 21&rarr;26, unsupported claims 13%&rarr;20%</td></tr>
+    <tr><td>how structured the output is</td><td>prose, in his voice</td><td class="num good">claims with sources</td><td>untested. Would make two of the four measures near-trivial to compute</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Where every configuration sits today</h2>
+
+<p>Two things trade against each other. <strong>Found</strong> is how many of the passages an answer needs were actually retrieved. <strong>Useful fraction</strong> is how much of what was retrieved matters at all. Every configuration we have buys the first by giving up the second.</p>
+
+<figure>
+<svg viewBox="0 0 900 400" role="img" aria-label="Scatter plot of retrieved-passage quality against coverage for six configurations. All measured arms sit at a useful fraction below 6 percent. The filter moves right to 17 percent without losing coverage.">
+  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">
+    <!-- axes -->
+    <line x1="92" y1="330" x2="836" y2="330" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/>
+    <line x1="92" y1="48" x2="92" y2="330" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/>
+    <!-- grid -->
+    <line x1="92" y1="266" x2="836" y2="266" stroke="currentColor" stroke-opacity="0.22" stroke-width="1" stroke-dasharray="3 4"/>
+    <line x1="92" y1="196" x2="836" y2="196" stroke="currentColor" stroke-opacity="0.22" stroke-width="1" stroke-dasharray="3 4"/>
+    <line x1="92" y1="126" x2="836" y2="126" stroke="currentColor" stroke-opacity="0.22" stroke-width="1" stroke-dasharray="3 4"/>
+    <line x1="92" y1="56" x2="836" y2="56" stroke="currentColor" stroke-opacity="0.22" stroke-width="1" stroke-dasharray="3 4"/>
+    <!-- y labels: 65..90 -->
+    <text x="82" y="334" text-anchor="end" font-size="10" fill="#7b8b95">65%</text>
+    <text x="82" y="270" text-anchor="end" font-size="10" fill="#7b8b95">70%</text>
+    <text x="82" y="200" text-anchor="end" font-size="10" fill="#7b8b95">76%</text>
+    <text x="82" y="130" text-anchor="end" font-size="10" fill="#7b8b95">82%</text>
+    <text x="82" y="60" text-anchor="end" font-size="10" fill="#7b8b95">88%</text>
+    <text x="20" y="180" font-size="10.5" fill="#7b8b95" transform="rotate(-90 30 200)">passages found, of those needed</text>
+    <!-- x labels: 0..18% -->
+    <text x="92" y="352" text-anchor="middle" font-size="10" fill="#7b8b95">2%</text>
+    <text x="256" y="352" text-anchor="middle" font-size="10" fill="#7b8b95">6%</text>
+    <text x="420" y="352" text-anchor="middle" font-size="10" fill="#7b8b95">10%</text>
+    <text x="584" y="352" text-anchor="middle" font-size="10" fill="#7b8b95">14%</text>
+    <text x="748" y="352" text-anchor="middle" font-size="10" fill="#7b8b95">18%</text>
+    <text x="464" y="374" text-anchor="middle" font-size="10.5" fill="#7b8b95">useful fraction of what was retrieved &nbsp;&rarr;&nbsp; better</text>
+
+    <!-- points: x = 92 + (prec*100 - 2)*41 ; y = 330 - (recall-65)*11.6 -->
+    <!-- k=25: prec 2.3, recall 89 -->
+    <circle cx="104" cy="52" r="6" fill="#8b969b"/>
+    <text x="116" y="49" font-size="10.5" fill="#8b969b">wider net, k=25 &mdash; 128 passages shown</text>
+    <!-- v4 loop: prec 3.7, recall 86 -->
+    <circle cx="162" cy="87" r="6" fill="#2f6f5e"/>
+    <text x="174" y="84" font-size="10.5" fill="#2f6f5e">the loop &mdash; 80 passages, 35s</text>
+    <!-- L4 iter: prec 3.2, recall 79 -->
+    <circle cx="141" cy="168" r="6" fill="#8b969b"/>
+    <text x="153" y="165" font-size="10.5" fill="#8b969b">fixed gap-search, iterated &mdash; 62s</text>
+    <!-- L4: prec 3.2, recall 74 -->
+    <circle cx="141" cy="226" r="6" fill="#8b969b"/>
+    <text x="153" y="223" font-size="10.5" fill="#8b969b">fixed gap-search, one round</text>
+    <!-- deployed k=6: prec 5.7, recall 67 -->
+    <circle cx="244" cy="307" r="6" fill="#8b969b"/>
+    <text x="256" y="304" font-size="10.5" fill="#8b969b">deployed today &mdash; 41 passages</text>
+
+    <!-- the filter: prec 16.7, recall 86 -->
+    <circle cx="694" cy="87" r="7" fill="#a8562c"/>
+    <circle cx="694" cy="87" r="12" fill="none" stroke="#a8562c" stroke-width="1.2" stroke-dasharray="3 3"/>
+    <text x="694" y="64" text-anchor="middle" font-size="10.5" fill="#a8562c" font-weight="500">the loop + filter</text>
+    <text x="694" y="118" text-anchor="middle" font-size="10" fill="#a8562c">30 passages, same coverage</text>
+    <!-- the move -->
+    <path d="M176,87 L676,87" stroke="#a8562c" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="420" y="80" text-anchor="middle" font-size="10" fill="#a8562c">4.6&times; less noise, nothing needed is lost</text>
+  </g>
+</svg>
+<figcaption>Every measured configuration sits crushed against the left edge: even the best hands the answering machine 80 passages of which under 4% matter. The filter is the only move that goes <em>right</em> instead of up &mdash; measured on the real pools, before any answer was generated. Its end-to-end effect is still unscored, which is the next thing to run.</figcaption>
+</figure>
+
+<h2>Requirement one: the controller must understand its own machinery</h2>
+
+<p>A controller told only <em>"you may search again"</em> is guessing. It needs to know how each stage actually works, what it can change about it, and what changing it has been measured to do. That is a real file handed to it &mdash; <code>harness/modules.md</code> &mdash; and every stage gets the same five parts.</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>part</th><th>answers</th><th>why the controller needs it</th></tr></thead>
+  <tbody>
+    <tr><td><strong>How it works</strong></td><td>what the stage does, mechanically</td><td>so it can reason about the stage instead of poking it</td></tr>
+    <tr><td><strong>The mechanism that matters most</strong></td><td>the one fact that changes how to use it</td><td>e.g. search matches <em>words</em>, not meaning &mdash; so wording beats correctness</td></tr>
+    <tr><td><strong>Your controls</strong></td><td>what it may set, and the default</td><td>so overriding is a decision, not a discovery</td></tr>
+    <tr><td><strong>Measured</strong></td><td>what changing it did, with numbers</td><td>so it can predict the cost before paying it</td></tr>
+    <tr><td class="bad"><strong>Already tried, and it lost</strong></td><td>directions that were measured and failed</td><td>otherwise it rediscovers our mistakes one question at a time</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>One stage, as the controller actually receives it</h3>
+
+<pre><span class="cm">## Stage 2 -- SEARCH  (no model, fully deterministic)</span>
+
+<b>HOW IT WORKS</b>
+   Each passage is scored by how many of your query's words it contains,
+   rare words counting far more than common ones. The top k are kept.
+   Then each kept passage pulls in its neighbours from the same video.
+   So k=6 yields 12 to 18 passages, not 6.
+
+   The neighbours exist because the archive is cut into 300-word pieces
+   at arbitrary points. A thought he develops over two minutes lands
+   across three passages; without neighbours you get the middle of an
+   argument with its setup and conclusion missing.
+
+<b>THE MECHANISM THAT MATTERS MOST</b>
+   It is deterministic. The same query returns exactly the same passages,
+   every time. So:
+     - repeating a query is ALWAYS wasted
+     - a query that found nothing has two different problems with two
+       different fixes: wrong words (rephrase) or too tight a net (raise k)
+
+<b>YOUR CONTROLS</b>
+   k            default 6, settable per search
+   neighbours   default plus or minus 1
+   ordering     transcript order
+
+<b>MEASURED</b>
+   k=6 -> k=25: passages found 67% -> 89%,
+                useful fraction 5.7% -> 2.3%
+   At k=25 you receive 128 passages of which about 3 matter.
+   The trade is question-dependent: broad questions want a wide net,
+   narrow follow-ups want a tight one. Opening wide then following up
+   tight has never been tested, because k has always been a constant.
+
+<b>UNTESTED</b>
+   neighbour width. It has been plus or minus 1 forever.
+</pre>
+
+<p>The <strong>already tried</strong> sections are the part that would otherwise be lost. Two examples, each of which cost a full measured run:</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>stage</th><th>what was tried</th><th class="num">result</th></tr></thead>
+  <tbody>
+    <tr><td>pool</td><td>cut the pool to the top 8 by how many queries found each passage</td><td class="num bad">0.338 vs 0.682 for sending everything</td></tr>
+    <tr><td>assembly</td><td>"pick the two or three passages that most directly answer it"</td><td class="num bad">failures 21&rarr;26, unsupported 13%&rarr;20%</td></tr>
+    <tr><td>queries</td><td>write them from the question's own words</td><td class="num bad">79% found vs 85%</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <span class="k">and one clarification that changes the picture</span>
+  <p><strong>The query writer is not a separate module &mdash; it is the controller.</strong> Writing and rephrasing queries is something the controller <em>does</em>, not something it calls. Today they are separate model calls, which is precisely why the loop cannot reach the good query writer and improvises its own instead. That gap is worth 6 points of coverage: <strong>79% against 85%</strong>.</p>
+</div>
+
+<h2>Requirement two: the controller must turn findings into an ordered plan</h2>
+
+<p>A judge may return five findings at once. Acting on them one at a time, in the order received, wastes turns &mdash; three unsupported claims often share one missing passage, and one search fixes all three.</p>
+
+<pre><span class="cm"># turning a judge report into an action list</span>
+
+findings = judge(question, answer, pool, filtered)
+
+<span class="cm"># 1. drop the ones you disagree with, and say why. A flagged extension
+#    is honest, and the faithfulness check marks it unsupported by design.</span>
+kept = [f for f in findings if not controller.rejects(f)]
+
+<span class="cm"># 2. group by what would fix them, not by what they are.
+#    Three unsupported claims about the same thing are ONE search.</span>
+actions = group_by_fix(kept)
+
+<span class="cm"># 3. order by measured likelihood, not by the judge's order</span>
+actions.sort(key=prior)      <b># requery 63%  >  filter  >  reassemble 2%</b>
+
+<span class="cm"># 4. act, cheapest first, and stop when the budget is spent</span>
+for a in actions:
+    if out_of_budget(): break
+    apply(a)                 <b># requery / adjust k / adjust filter / rewrite</b>
+
+<span class="cm"># 5. if requerying has been exhausted and the words come back absent from
+#    the archive, THEN the honest answer is "I haven't covered that" --
+#    and the queries tried are recorded as the evidence for saying so.</span>
+</pre>
+
+<div class="note">
+  <span class="k">why step 1 matters more than it looks</span>
+  <p>The faithfulness check counts an honest, flagged extension as unsupported, deliberately. A controller that simply complies will delete good material to satisfy it. One configuration scored the <em>worst</em> unsupported-claim rate of any arm &mdash; 42% &mdash; precisely because its instructions invited honest extension and the check penalised it.</p>
+  <p>So rejections are recorded. If the controller keeps rejecting the same class of finding, <strong>the judge is wrong, not the answer</strong> &mdash; which is how three broken judges would have been caught in hours rather than days.</p>
+</div>
+
+<h2>How the controls get tuned on a thousand questions</h2>
+
+<p>There are two loops at completely different timescales, and conflating them is the mistake this section exists to prevent.</p>
+
+<figure>
+<svg viewBox="0 0 900 330" role="img" aria-label="The tuning loop runs offline over the whole question set and outputs prompt text and defaults; the inference loop runs per question and uses those defaults while remaining free to override them.">
+  <defs>
+    <marker id="ar5" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">
+
+    <rect x="0" y="24" width="400" height="168" rx="6" fill="none" stroke="#8a6d1f" stroke-width="1.8"/>
+    <text x="16" y="48" fill="#8a6d1f" font-weight="500" font-size="11.5">THE TUNING LOOP &mdash; offline, slow</text>
+    <text x="16" y="72" font-size="10">1,000 questions, one control setting at a time</text>
+    <text x="16" y="90" font-size="10">score on the four measures against the oracle</text>
+    <text x="16" y="108" font-size="10">keep what beats the noise floor</text>
+    <text x="16" y="126" font-size="10">run each setting TWICE, or it is not a result</text>
+    <path d="M300,140 C300,168 90,168 90,144" fill="none" stroke="#8a6d1f" stroke-width="1.3" marker-end="url(#ar5)" color="#8a6d1f"/>
+    <text x="196" y="182" text-anchor="middle" font-size="10" fill="#8a6d1f">next setting</text>
+
+    <path d="M200,192 L200,232" stroke="#8a6d1f" stroke-width="1.6" marker-end="url(#ar5)" color="#8a6d1f"/>
+    <rect x="52" y="234" width="296" height="56" rx="5" fill="#f5efdc" stroke="#8a6d1f" stroke-width="1.5"/>
+    <text x="200" y="256" text-anchor="middle" font-size="10.5" fill="#8a6d1f" font-weight="500">OUTPUT: defaults + prompt text</text>
+    <text x="200" y="274" text-anchor="middle" font-size="10" fill="#8a6d1f">"rounds=4", "never cut the pool", "requery first"</text>
+
+    <path d="M348,262 L470,180" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar5)"/>
+    <text x="418" y="232" font-size="10" fill="#7b8b95">loaded into</text>
+
+    <rect x="480" y="24" width="400" height="150" rx="6" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.8"/>
+    <text x="496" y="48" fill="#2f6f5e" font-weight="500" font-size="11.5">THE INFERENCE LOOP &mdash; per question, fast</text>
+    <text x="496" y="72" fill="#2f6f5e" font-size="10">starts from the tuned defaults, for free</text>
+    <text x="496" y="90" fill="#2f6f5e" font-size="10">reads the judge, plans, tweaks any control</text>
+    <text x="496" y="108" fill="#2f6f5e" font-size="10">FREE to override every default</text>
+    <text x="496" y="126" fill="#2f6f5e" font-size="10">budget: 60 seconds</text>
+    <path d="M790,122 C790,152 560,152 560,126" fill="none" stroke="#2f6f5e" stroke-width="1.3" marker-end="url(#ar5)" color="#2f6f5e"/>
+    <text x="676" y="166" text-anchor="middle" font-size="10" fill="#2f6f5e">retry</text>
+
+    <text x="480" y="216" font-size="10.5" fill="#2f6f5e">The defaults are a STARTING POINT that costs no</text>
+    <text x="480" y="232" font-size="10.5" fill="#2f6f5e">calls to decide, not a rule. Tuning tells the</text>
+    <text x="480" y="248" font-size="10.5" fill="#2f6f5e">controller what usually works; the controller</text>
+    <text x="480" y="264" font-size="10.5" fill="#2f6f5e">decides what this question needs.</text>
+    <text x="480" y="292" font-size="10.5" fill="#8a6d1f">Once prompts are fitted on these questions, they are</text>
+    <text x="480" y="308" font-size="10.5" fill="#8a6d1f">training data. A separate 250 questions stay untouched.</text>
+  </g>
+</svg>
+<figcaption>Tuning changes prompts and defaults, never weights. Its whole output is a block of text telling the controller what has already been tried and what it cost &mdash; which is exactly requirement one.</figcaption>
+</figure>
+
+<h3>What tuning actually does, in order</h3>
+
+<pre><span class="cm"># the tuning loop. Runs offline. Output is prompt text, not a model.</span>
+
+<span class="cm"># STEP 0 -- without this, nothing below is interpretable</span>
+noise = run_twice(baseline)          <b># same setting, two runs</b>
+<span class="cm"># the only noise figure we have is on a RETIRED measure: the same
+# configuration twice gave 24 and 27 on one count, 14 and 12 on another.
+# So a 3-point difference is weather, not weather-change.</span>
+
+<span class="cm"># STEP 1 -- one control at a time, so an effect has one cause</span>
+for control in TWELVE_CONTROLS:
+    for value in candidates(control):
+        answers = run(questions, {**defaults, control: value})
+        score   = four_measures(answers, oracle)
+        if beats(score, defaults_score, by=noise):
+            record(control, value, score)
+
+<span class="cm"># STEP 2 -- which findings should route to which control.
+#            This is the real object of the search.</span>
+for q in questions:
+    f = judge(q, answers[q])
+    for finding in f:
+        <b>try_each_fix(finding)</b>        <span class="cm"># requery / k / filter / reassemble</span>
+        record(finding.kind, which_fix_worked)
+
+priors = frequency_table(finding.kind -> fix_that_worked)
+<span class="cm"># this is where "requery first, 63% of the time" comes from</span>
+
+<span class="cm"># STEP 3 -- write it down as prose the controller can read</span>
+prompt_block = render(recorded_defaults, priors, known_bad_directions)
+
+<span class="cm"># STEP 4 -- spend the held-out set ONCE</span>
+final = run(held_out_250, prompt_block)
+<span class="cm"># if it does not hold up here, the gains were fitted to the tuning set</span>
+</pre>
+
+<h3>What can be tuned now, and what is gated</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>controls affecting</th><th>measured by</th><th>needs the oracle?</th><th class="num">questions available now</th></tr></thead>
+  <tbody>
+    <tr><td>the answering machine &mdash; grounding, over-answering</td><td>unsupported claims, claims not asked about</td><td class="good">no</td><td class="num good">all 2,119</td></tr>
+    <tr><td>retrieval &mdash; rounds, k, vocabulary, filter</td><td>passages found, useful fraction</td><td class="bad">yes</td><td class="num">307 built so far</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>This asymmetry is worth exploiting immediately: <strong>the answering machine can be tuned at full scale today</strong>, because its two measures compare the answer against the question and the passages and need no answer key. Retrieval tuning is limited by how much of the archive has been labelled.</p>
+
+<h2>What is measured, in plain terms</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th class="num">#</th><th>plainly</th><th>the standard name</th><th>blames</th><th>can it run live?</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td>it said something no passage supports</td><td>faithfulness</td><td class="c">assembly</td><td class="good">yes</td></tr>
+    <tr><td class="num">2</td><td>a passage that answers this existed and was never found</td><td>context recall</td><td class="c">retrieval</td><td class="bad">no &mdash; needs the answer key</td></tr>
+    <tr><td class="num">3</td><td>a useful passage was found and then ignored</td><td>context utilization</td><td class="c">assembly</td><td class="bad">no &mdash; needs the answer key</td></tr>
+    <tr><td class="num">4</td><td>it said things nobody asked about</td><td>answer relevancy</td><td class="c">both</td><td class="good">yes</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Each is reported as <strong>the share of questions that fail it</strong>, with the raw counts beside it. No single score, no weighted total &mdash; because a change that trades a retrieval failure for an assembly failure is not an improvement, and one number would hide that.</p>
+
+<div class="flag">
+  <span class="k">the structural limit this imposes</span>
+  <p>Measures 2 and 3 need the answer key, so <strong>they can never be feedback at answer time.</strong> The controller can be told "you invented this" and "this wasn't asked about". It can never be told "you missed a passage that exists."</p>
+  <p>Coverage therefore cannot be corrected after the fact &mdash; it has to be got right by searching well. That is the whole reason the query writer is the most important control.</p>
+</div>
+
+<h2>Rules that keep the measurement honest</h2>
+
+<ol>
+  <li><strong>The judge sees what the model saw &mdash; no more, no less.</strong> Five separate bugs have come from breaking this: a baseline quoted from the wrong configuration, a judge truncated at 60,000 characters, a judge shown the deployed passages instead of the arm's own, a setting read from a command line instead of the run, and a filtered configuration that recorded its whole pool. Every one flattered whatever was newest.</li>
+  <li><strong>Run it twice or it is not a result.</strong> The one noise figure available is on a retired measure and is worth about 3 points. Nothing smaller counts.</li>
+  <li><strong>The answer key never enters the loop.</strong> It is the ruler. A ruler inside the thing being measured makes every number meaningless.</li>
+  <li><strong>250 questions stay untouched</strong> until a configuration is being committed to. They overlap the tuning set by only 39 questions, so they are genuinely separate.</li>
+  <li><strong>Every arm's answers are kept on disk.</strong> Five measures have already been retired; each retirement would have meant regenerating everything if the answers had not survived.</li>
+</ol>
+
+<h2>How the code is actually structured</h2>
+
+<p>Everything above is the design. This section is what exists on disk, so the two can be compared. <strong>They do not fully agree, and the disagreements are named.</strong></p>
+
+<div class="flag">
+  <span class="k">read this first</span>
+  <p><strong>There are two runners, not one, and they are structured differently.</strong> <code>run.py</code> is the arm that currently scores best and it loads its instructions from markdown files. <code>ladder.py</code> is the arm that is provably equivalent to the deployed system and it holds its prompts inline.</p>
+  <p>And <strong><code>modules.md</code> &mdash; the operator's manual in the section above &mdash; is loaded by no code at all.</strong> It is a design artifact written in this conversation and not yet wired to either runner.</p>
+</div>
+
+<h3>Every file, and who reads it</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>file</th><th class="num">lines</th><th>what it is</th><th>loaded by</th></tr></thead>
+  <tbody>
+    <tr><td colspan="4" style="background:var(--surface-2)"><strong>the runners</strong></td></tr>
+    <tr><td><code>harness/ladder.py</code></td><td class="num">704</td><td>levels 0&ndash;5. Level 0 proven byte-identical to deployed; each level adds one thing</td><td>&mdash; entry point</td></tr>
+    <tr><td><code>harness/run.py</code></td><td class="num">315</td><td>the first loop. Best-scoring arm. Real agent turn-loop with four tools</td><td>&mdash; entry point</td></tr>
+    <tr><td colspan="4" style="background:var(--surface-2)"><strong>instructions as data</strong></td></tr>
+    <tr><td><code>harness/modules.md</code></td><td class="num">350</td><td>the operator's manual: five parts per stage, with what was already tried and lost</td><td class="bad">nothing yet</td></tr>
+    <tr><td><code>harness/AGENTS.md</code></td><td class="num">55</td><td>the creator-independent paradigm</td><td><code>run.py</code></td></tr>
+    <tr><td><code>harness/agents/answerer.md</code></td><td class="num">63</td><td>how to answer; tools it may use</td><td><code>run.py</code></td></tr>
+    <tr><td><code>harness/agents/sufficiency.md</code></td><td class="num">62</td><td>the sufficiency judge's rubric; no tools</td><td><strong>both</strong></td></tr>
+    <tr><td><code>harness/commands/answer.md</code></td><td class="num">56</td><td>the three-phase command</td><td><code>run.py</code></td></tr>
+    <tr><td><code>harness/creators/&lt;name&gt;/creator.md</code></td><td class="num">5,668 words</td><td>the style route. <strong>96% his actual speech</strong> &mdash; the same 18 verbatim passages the deployed prompt uses, in the same order, plus 198 words of rules</td><td><code>run.py</code>, <code>loop.py</code></td></tr>
+    <tr><td colspan="4" style="background:var(--surface-2)"><strong>the shared owners &mdash; why equivalence holds</strong></td></tr>
+    <tr><td><code>answer_bench.py</code></td><td class="num">298</td><td><code>prompt_head()</code> and <code>searches()</code>: the deployed prompt and passage rendering. <strong>One owner, two callers</strong></td><td>ladder, chain</td></tr>
+    <tr><td><code>agent.py</code></td><td class="num">367</td><td>the real answering function. <code>run(&hellip;, max_turns=5)</code> &mdash; the loop that already existed</td><td>everything</td></tr>
+    <tr><td><code>retrieval_bench.py</code></td><td class="num">539</td><td>the query writer (a model call) and the search primitive</td><td>everything</td></tr>
+    <tr><td><code>tools.py</code></td><td class="num">266</td><td><code>Session</code>: pool with stable numbering, search, read, relevance</td><td>ladder, run, prefilter</td></tr>
+    <tr><td colspan="4" style="background:var(--surface-2)"><strong>the instruments &mdash; offline only</strong></td></tr>
+    <tr><td><code>oracle.py</code></td><td class="num">286</td><td>builds the answer key. Full sweep, then a strict second pass</td><td>&mdash; entry point</td></tr>
+    <tr><td><code>chain.py</code></td><td class="num">467</td><td>the four measures, the thresholds, and <code>blame()</code> which names the step</td><td>&mdash; entry point</td></tr>
+    <tr><td><code>prefilter.py</code></td><td class="num">157</td><td>tests the filter against the answer key <em>without generating answers</em></td><td>ladder, entry point</td></tr>
+    <tr><td><code>harness/why.py</code></td><td class="num">163</td><td>reads the model's own narration on questions the loop lost</td><td>&mdash; entry point</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Why equivalence holds, in two lines of code</h3>
+
+<p>This is the whole mechanism, and it is worth seeing because it is the difference between a comparison that means something and one that does not.</p>
+
+<pre><span class="cm"># answer_bench.py -- ONE owner for the deployed context</span>
+def prompt_head(subject, config, n_ex=18):   <span class="cm"># line 105</span>
+    <span class="cm"># identity prompt + 18 verbatim samples + "150-250 words, to one person"</span>
+    return head, situation
+
+def searches(item, bm, chunks, k, expand):   <span class="cm"># line 122</span>
+    <span class="cm"># each query renders ITS OWN hits, with THAT query's match score, under its
+    # own SEARCH line. A passage two queries find appears twice, as it does live.</span>
+    return "\n".join(convo), got
+
+<span class="cm"># the deployed path calls them</span>
+convo, got = searches(item, bm, chunks, k, expand)        <span class="cm"># answer_bench.py:171</span>
+head, situation = prompt_head(a.subject, a.config)        <span class="cm"># answer_bench.py:246</span>
+
+<span class="cm"># the harness calls THE SAME FUNCTIONS -- not a copy</span>
+convo, got = ab.searches(item, bm, chunks, k, expand)     <span class="cm"># ladder.py:334</span>
+head, _    = ab.prompt_head(a.creator, paths.DEFAULT_CONFIG)  <span class="cm"># ladder.py:586</span>
+</pre>
+
+<p>Because there is no second copy, the harness cannot drift from the deployed prompt. That was verified before any model call was spent &mdash; the two prompt strings were built side by side and compared: <strong>identical, 14,996 words</strong> &mdash; and then level 0 reproduced the deployed run at <strong>100 of 100 byte-identical answers</strong>.</p>
+
+<h3>The control flow of <code>ladder.run()</code></h3>
+
+<pre><span class="cm"># harness/ladder.py:331 -- the real structure, condensed but not simplified</span>
+
+BUDGET      = 6   <span class="cm"># turns in the tool loop</span>
+GAP_ROUNDS  = 3   <span class="cm"># gap-check rounds at level 4</span>
+L5_ROUNDS   = 2   <span class="cm"># level 5 trades a round for the filter's latency</span>
+
+def run(item, bm, chunks, k, expand, head, level, rubric, parts):
+
+    <b>convo, got = ab.searches(item, ...)</b>      <span class="cm"># THE SHARED OWNER. 41 passages.</span>
+    body = head + ["=== QUESTION ===", item.q] + [parts_block(parts)?] + [convo]
+
+    <span class="cm"># ---------- LEVEL 0: the deployed call, nothing added ----------</span>
+    if level == 0:
+        p   = body + [CLOSE_0, agent.FINAL]   <span class="cm"># CLOSE_0 IS the deployed wording</span>
+        raw = llm.call(p)                     <span class="cm"># one call, no tools</span>
+        return ask.parse(raw)["answer"]       <span class="cm"># pull the &lt;answer&gt; block</span>
+
+    <span class="cm"># ---------- LEVELS 1+: a session holding the same passages ----------</span>
+    s = tools.Session(item.q, k=k, expand=expand)
+    for q in item.queries: s.search(q)        <span class="cm"># same queries the deployed path used</span>
+    seeded = set(s.by_num)                    <span class="cm"># so "new" means genuinely new</span>
+
+    close, gaps, shown_ids = CLOSE_1, [], None
+
+    <span class="cm"># ---------- LEVEL 4+: gap-check rounds, executed BEFORE the model answers ----</span>
+    if level &gt;= 4:
+        for _ in range(L5_ROUNDS if level &gt;= 5 else GAP_ROUNDS):
+            found = <b>gaps_in(item.q, have)</b>       <span class="cm"># "MISSING: x | QUERY: y", max 2</span>
+            if not found: break                <span class="cm"># it replied FULL</span>
+            before = set(s.by_num)
+            for miss, query in found: s.search(query)
+            if set(s.by_num) == before: break  <span class="cm"># nothing new: searching again is waste</span>
+
+        <span class="cm"># ---------- LEVEL 5: the filter. The one stage that BREAKS byte-equality ----</span>
+        if level &gt;= 5:
+            kept, dropped = <b>filtered(s, item.q)</b>  <span class="cm"># relevance judge, keep YES+PART</span>
+            convo      = render(s, kept)          <span class="cm"># re-render ONLY what survived</span>
+            body       = head + [question] + [convo]
+            <b>shown_ids  = [chunk_id of each kept]</b>  <span class="cm"># what the assembler ACTUALLY saw</span>
+
+        close = "these things were missing, they were searched for, here they are"
+                <span class="cm"># or "everything the question needs is above"</span>
+
+    <span class="cm"># ---------- LEVEL 3 only: gate on the question having several parts ----------</span>
+    elif level == 3 and len(parts) &gt; 1:
+        gaps  = <b>uncovered(parts, got)</b>            <span class="cm"># per part: YES / THIN / NO</span>
+        close = "these parts are not covered: ... search for them"
+
+    <span class="cm"># ---------- the tool loop ----------</span>
+    msgs = [{"role": "user", "content": body + [TOOLS_NOTE, close, agent.FINAL]}]
+    read = set(s.by_num) if level &gt;= 4 else seeded
+
+    for turn in range(BUDGET):
+        if BUDGET - turn &lt;= 2:
+            msgs += [user: "{n} turns left. Answer now with what you have."]
+
+        text, calls, _ = <b>llm.call_tools(head_system(), msgs, tool_schema())</b>
+
+        <span class="cm"># THE ANSWER IS PROSE, recognised wherever it appears -- alongside tool
+        # calls included. Requiring a tool call threw away 16 finished answers
+        # across 10 questions, and each rewrite shed specifics.</span>
+        if "&lt;answer&gt;" in text:
+            return ask.parse(text)["answer"], {... "chunk_ids": shown_ids or had(...)}
+
+        if not calls:
+            if len(text.split()) &gt;= 90: return text        <span class="cm"># unformatted but complete</span>
+            msgs += [user: "Search, read, or write the final answer."]
+            continue
+
+        for c in calls:                          <span class="cm"># execute: search(query) / read(numbers)</span>
+            out = s.search(c.query) or render(s, c.numbers)
+            results += [tool_result: out]
+
+        <span class="cm"># ---------- LEVEL 2+: the sufficiency judge. FORCED, not offered ----------</span>
+        if level &gt;= 2 and read_something_new:
+            verdict, detail = <b>judge(item.q, passages, rubric)</b>
+            results += [text: "ENOUGH, write it now"
+                            | "NOT COVERED: say so plainly"
+                            | "NOT ENOUGH. Missing: {detail}. Search for that."]
+
+        msgs += [user: results]
+
+    return None, {"error": "budget exhausted"}
+</pre>
+
+<h3>The judge is forced, never offered as a tool</h3>
+
+<p>One line in <code>run.py</code> carries the reason, and it is the design's whole basis:</p>
+
+<pre><span class="cm"># harness/run.py:196 -- THE GATE. Not offered as a tool.</span>
+if read_nums and any(c["name"] == "read" for c in calls):
+    passages        = [(n, s.by_num[n]) for n in sorted(read_nums)]
+    verdict, detail = judge(question, passages, rubric)
+</pre>
+
+<p>If the judge were a tool, the model would choose when to consult it &mdash; and measured, it does not choose to. Given search and read as tools with explicit permission, it searched <strong>0.00 times across 100 questions</strong>. Asked whether it had enough, it said yes <strong>100 out of 100</strong>.</p>
+
+<h3>Every prompt in the system, and what it returns</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>prompt</th><th>lives at</th><th>asks</th><th>returns</th><th>where it runs</th></tr></thead>
+  <tbody>
+    <tr><td><code>PROMPTS["v2"]</code></td><td class="cite">agent.py:77</td><td>you are him, answering one person; everything you assert must be in what you retrieved</td><td>&mdash; (system text)</td><td class="c">answer</td></tr>
+    <tr><td><code>TOOLS</code></td><td class="cite">agent.py:~40</td><td>emit <code>SEARCH:</code> lines; query in HIS vocabulary, not the asker's</td><td><code>SEARCH: &lt;query&gt;</code> lines</td><td class="c">queries</td></tr>
+    <tr><td><code>FINAL</code></td><td class="cite">agent.py:61</td><td>reply in exactly this format</td><td><code>&lt;answer&gt;</code>, <code>&lt;references&gt;</code>, <code>&lt;grounding&gt;</code></td><td class="c">answer</td></tr>
+    <tr><td><code>GAP</code></td><td class="cite">ladder.py:200</td><td>what does the question need that these passages do not cover &mdash; in HIS words</td><td><code>MISSING: x | QUERY: y</code>, or <code>FULL</code></td><td class="c">loop</td></tr>
+    <tr><td><code>SPLIT_FOR_ANSWER</code></td><td class="cite">ladder.py:100</td><td>what is this question actually asking for</td><td>a numbered list</td><td class="c">loop</td></tr>
+    <tr><td><code>PART_COVERAGE</code></td><td class="cite">ladder.py:152</td><td>is there material here for THIS part</td><td><code>YES</code> / <code>THIN</code> / <code>NO</code></td><td class="j">judge</td></tr>
+    <tr><td><code>sufficiency.md</code></td><td class="cite">harness/agents/</td><td>is this enough to answer</td><td><code>ENOUGH</code> / <code>NOT ENOUGH + MISSING:</code> / <code>NOT COVERED</code></td><td class="j">judge</td></tr>
+    <tr><td><code>RELEVANCE</code></td><td class="cite">tools.py:43</td><td>could this passage be used to answer the question</td><td><code>&lt;n&gt; YES|PART|NO</code></td><td class="j">judge</td></tr>
+    <tr><td colspan="5" style="background:var(--surface-2)"><strong>offline instruments &mdash; never run at answer time</strong></td></tr>
+    <tr><td><code>FAITHFUL</code></td><td class="cite">chain.py:83</td><td>is every claim supported by these passages</td><td><code>TOTAL supported=n unsupported=n</code></td><td>measure 1</td></tr>
+    <tr><td><code>USED</code></td><td class="cite">chain.py:104</td><td>did the answer use this passage's material</td><td><code>&lt;n&gt; USED|NOT</code></td><td>measure 3</td></tr>
+    <tr><td><code>ON_QUESTION</code></td><td class="cite">chain.py:133</td><td>does each claim bear on what was asked</td><td><code>TOTAL on=n off=n</code></td><td>measure 4</td></tr>
+    <tr><td><code>SWEEP</code></td><td class="cite">oracle.py:49</td><td>could this passage answer this question</td><td><code>ESSENTIAL|SUPPORTING|NO</code></td><td>answer key</td></tr>
+    <tr><td><code>STRICT</code></td><td class="cite">oracle.py:120</td><td>which of these does an answer actually NEED</td><td><code>NEEDED|NEARBY</code></td><td>answer key</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Where the code does not match the design</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>the design says</th><th>the code does</th><th>gap</th></tr></thead>
+  <tbody>
+    <tr><td>two intelligences</td><td><strong>seven model roles</strong> in the answer path</td><td class="bad">not built</td></tr>
+    <tr><td>two creator-data routes</td><td><strong>two</strong> &mdash; the corpus, and the 18 verbatim passages (carried by <code>creator.md</code>)</td><td class="good">already true &mdash; I had miscounted</td></tr>
+    <tr><td>the controller writes the queries</td><td>a separate model call writes them, <em>before</em> the harness is invoked</td><td class="bad">this is the 79% vs 85% gap</td></tr>
+    <tr><td>judges report, never gate</td><td>the sufficiency judge returns a verdict <em>and an instruction</em></td><td class="bad">partly</td></tr>
+    <tr><td>the filter labels, not deletes</td><td><code>filtered()</code> removes passages and re-renders</td><td class="bad">not built</td></tr>
+    <tr><td>a branch back after the answer is judged</td><td><strong>nothing.</strong> No arm assembles, judges, and retries</td><td class="bad">not built</td></tr>
+    <tr><td>the controller reads a manual of its machinery</td><td><code>modules.md</code> exists and <strong>no code loads it</strong></td><td class="bad">not wired</td></tr>
+    <tr><td>content and style separated at the seam</td><td>one call does both &mdash; persona, 18 samples and a delivery length all sit in the assemble prompt</td><td class="bad">not built</td></tr>
+    <tr><td>k chosen per search</td><td>a module-level constant, 6, everywhere</td><td class="bad">not built</td></tr>
+    <tr><td>equivalence to the deployed system</td><td><code>ladder.py</code> level 0, proven byte-identical</td><td class="good">built</td></tr>
+    <tr><td>a relevance filter with a measured threshold</td><td><code>prefilter.keep()</code> + <code>filtered()</code>, threshold measured</td><td class="good">built, end-to-end effect unscored</td></tr>
+    <tr><td>four measures that name a step</td><td><code>chain.py</code> with <code>blame()</code></td><td class="good">built</td></tr>
+    <tr><td>an answer key that is never in the loop</td><td><code>oracle.py</code>, two-stage, offline</td><td class="good">built</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>So: the instruments are built and the loop is not.</strong> Four of twelve design claims are implemented; the rest are written down and measured against, but the runtime is still the ladder &mdash; seven roles, one k, no retry branch, and the manual unread.</p>
+
+<h2>The harness as it will be built</h2>
+
+<p class="lede">One controller holding one conversation. One judge role, called at two moments. Guarantees written as code, choices written as prompt. Everything the controller learns stays in its context, including the inner loop.</p>
+
+<figure>
+<svg viewBox="0 0 900 520" role="img" aria-label="The planned loop: a controller in one conversation drives an inner retrieval loop with cheap self-measurement, then filtering, then assembly, then a single answer judgement whose findings route back into the same conversation.">
+  <defs>
+    <marker id="pa" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor">
+
+    <rect x="0" y="22" width="126" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <text x="63" y="44" text-anchor="middle">question</text>
+    <line x1="63" y1="56" x2="63" y2="78" stroke="currentColor" stroke-width="1.3" marker-end="url(#pa)"/>
+
+    <!-- the one conversation -->
+    <rect x="0" y="80" width="580" height="392" rx="7" fill="#e6efeb" stroke="#2f6f5e" stroke-width="2"/>
+    <text x="16" y="102" fill="#2f6f5e" font-weight="500" font-size="11">ONE CONVERSATION — THE CONTROLLER</text>
+    <text x="16" y="118" fill="#2f6f5e" font-size="9.5">system text: the machinery manual + the creator's style</text>
+    <text x="16" y="132" fill="#2f6f5e" font-size="9.5">every query, result, label and finding stays in context</text>
+
+    <!-- inner loop -->
+    <rect x="22" y="146" width="416" height="150" rx="5" fill="none" stroke="#2f6f5e" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="34" y="164" fill="#2f6f5e" font-size="10" font-weight="500">INNER LOOP — retrieval strives for its own maximum</text>
+
+    <rect x="34" y="174" width="140" height="28" rx="4" fill="#ffffff" stroke="#2f6f5e"/>
+    <text x="104" y="192" text-anchor="middle" fill="#2f6f5e" font-size="10">write / rewrite query</text>
+    <line x1="174" y1="188" x2="206" y2="188" stroke="#2f6f5e" stroke-width="1.2" marker-end="url(#pa)" color="#2f6f5e"/>
+    <rect x="208" y="174" width="106" height="28" rx="4" fill="none" stroke="#8b969b"/>
+    <text x="261" y="192" text-anchor="middle" fill="#8b969b" font-size="10">search(q, k)</text>
+    <line x1="314" y1="188" x2="346" y2="188" stroke="#2f6f5e" stroke-width="1.2" marker-end="url(#pa)" color="#2f6f5e"/>
+    <rect x="348" y="174" width="80" height="28" rx="4" fill="none" stroke="#8b969b"/>
+    <text x="388" y="192" text-anchor="middle" fill="#8b969b" font-size="10">pool</text>
+
+    <text x="34" y="222" fill="#2f6f5e" font-size="9.5">everything it needs to decide, and NO judge call:</text>
+    <text x="42" y="238" fill="#8b969b" font-size="9.5">free &nbsp;&middot;&nbsp; how many passages were new</text>
+    <text x="42" y="252" fill="#8b969b" font-size="9.5">free &nbsp;&middot;&nbsp; which of your words appear NOWHERE in the archive</text>
+    <text x="42" y="266" fill="#8b969b" font-size="9.5">free &nbsp;&middot;&nbsp; the passages themselves, already in context</text>
+    <text x="34" y="286" fill="#2f6f5e" font-size="9.5" font-style="italic">all of it accumulates; the controller decides: proceed, or rewrite</text>
+
+    <path d="M104,296 C104,320 250,320 250,300" fill="none" stroke="#2f6f5e" stroke-width="1.3" marker-end="url(#pa)" color="#2f6f5e"/>
+    <text x="452" y="196" fill="#2f6f5e" font-size="9.5">cheap: search is</text>
+    <text x="452" y="210" fill="#2f6f5e" font-size="9.5">free and NOTHING</text>
+    <text x="452" y="224" fill="#2f6f5e" font-size="9.5">is judged here.</text>
+    <text x="452" y="244" fill="#2f6f5e" font-size="9.5">iterate as much as</text>
+    <text x="452" y="258" fill="#2f6f5e" font-size="9.5">the budget allows</text>
+
+    <!-- filter -->
+    <rect x="22" y="312" width="416" height="42" rx="5" fill="#ffffff" stroke="#2f6f5e" stroke-width="1.5"/>
+    <text x="34" y="330" fill="#2f6f5e" font-size="10" font-weight="500">CHOOSE — the controller picks what to use</text>
+    <text x="34" y="346" fill="#2f6f5e" font-size="9.5">free: it has the passages. No judge. Its precision is measurable offline.</text>
+    <line x1="230" y1="354" x2="230" y2="374" stroke="#2f6f5e" stroke-width="1.3" marker-end="url(#pa)" color="#2f6f5e"/>
+
+    <!-- assemble -->
+    <rect x="22" y="376" width="416" height="42" rx="5" fill="#ffffff" stroke="#2f6f5e" stroke-width="1.5"/>
+    <text x="34" y="394" fill="#2f6f5e" font-size="10" font-weight="500">ASSEMBLE — substance only, no persona</text>
+    <text x="34" y="410" fill="#2f6f5e" font-size="9.5">claims, each naming its passage; extensions flagged; gaps named</text>
+    <line x1="230" y1="418" x2="230" y2="438" stroke="#2f6f5e" stroke-width="1.3" marker-end="url(#pa)" color="#2f6f5e"/>
+
+    <rect x="22" y="440" width="416" height="22" rx="4" fill="none" stroke="#2f6f5e" stroke-width="1.2" stroke-dasharray="3 3"/>
+    <text x="34" y="455" fill="#2f6f5e" font-size="9.5">GUARANTEE, in code: it searched at least once, and the judge runs before this is accepted</text>
+
+    <!-- judge -->
+    <line x1="438" y1="450" x2="600" y2="450" stroke="#a8562c" stroke-width="1.5" marker-end="url(#pa)" color="#a8562c"/>
+    <rect x="602" y="392" width="290" height="116" rx="6" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.8"/>
+    <text x="616" y="412" fill="#a8562c" font-weight="500" font-size="11">THE ANSWER JUDGE — once, at the end</text>
+    <text x="616" y="430" fill="#a8562c" font-size="9.5">sees question, answer, pool, and the labels</text>
+    <text x="616" y="444" fill="#a8562c" font-size="9.5">never the controller's reasoning</text>
+    <text x="616" y="464" fill="#a8562c" font-size="9.5">emits NAMES at claim granularity:</text>
+    <text x="624" y="478" fill="#a8562c" font-size="9.5">this claim has no passage · this was not asked</text>
+    <text x="624" y="492" fill="#a8562c" font-size="9.5">about · nothing here addresses X</text>
+
+    <path d="M746,392 C746,340 300,330 300,304" fill="none" stroke="#a8562c" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#pa)" color="#a8562c"/>
+    <text x="616" y="360" fill="#a8562c" font-size="10" font-weight="500">THE RETRY BRANCH</text>
+    <text x="616" y="374" fill="#a8562c" font-size="9.5">findings append to the SAME conversation;</text>
+    <text x="616" y="388" fill="#a8562c" font-size="9.5">the controller plans and re-enters the loop</text>
+
+    <!-- judge role, relevance -->
+    <rect x="602" y="150" width="290" height="116" rx="6" fill="none" stroke="#a8562c" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="616" y="170" fill="#a8562c" font-weight="500" font-size="10.5">EXACTLY ONE JUDGE CALL</text>
+    <text x="616" y="190" fill="#a8562c" font-size="9.5">at the end, on the finished answer. Nothing</text>
+    <text x="616" y="204" fill="#a8562c" font-size="9.5">else in the run is judged.</text>
+    <text x="616" y="226" fill="#a8562c" font-size="9.5">A filter judge cost 7 calls and ~20 seconds</text>
+    <text x="616" y="240" fill="#a8562c" font-size="9.5">of a 60-second budget: level 1 ran 17s,</text>
+    <text x="616" y="254" fill="#a8562c" font-size="9.5">level 5 with the filter ran 38-48s.</text>
+  </g>
+</svg>
+<figcaption>Two intelligences and, per question, <strong>exactly one judge call</strong> &mdash; on the finished answer. Nothing else is judged, because a filter judge cost seven calls and roughly a third of the budget. The inner loop judges nothing &mdash; the controller has the passages, the new-count and the absent-words line in front of it and decides for itself whether to proceed or rewrite. The dashed retry arrow is the only genuinely new piece of code; no configuration has ever assembled, been judged, and gone back.</figcaption>
+</figure>
+
+<h3>The runner, in pseudocode</h3>
+
+<pre><span class="cm"># harness/loop.py -- replaces run.py and ladder.py</span>
+
+SECONDS      = 60      <span class="cm"># the whole budget, not a turn count</span>
+MAX_RETRIES  = 1       <span class="cm"># at 60s there is time for about one</span>
+
+def answer(question, creator):
+    <span class="cm"># TWO creator-data routes, and only two</span>
+    system = read("modules.md") + read("controller.md") + persona(creator)
+    s      = Session(question)          <span class="cm"># the pool: stable numbers, dedup</span>
+    msgs   = [user: question]
+    state  = {searched: 0, retries: 0, findings: []}
+
+    while time_left(SECONDS):
+        text, calls = llm.call_tools(system, msgs, TOOLS,
+                                     <b>cache_prefix=True</b>)   <span class="cm"># the stable prefix</span>
+        msgs += [assistant: text, calls]
+        out = []
+
+        for c in calls:
+
+            <span class="cm"># ---- the inner loop: retrieval measuring itself ----</span>
+            if c.name == "search":
+                mark = set(s.by_num)
+                r    = s.search(c.query, k=c.k or 6)     <span class="cm"># k IS the model's choice</span>
+                new  = set(s.by_num) - mark
+                state.searched += 1
+
+                <span class="cm"># NO JUDGE HERE. The controller has the passages, the new-count
+                # and the absent-words line in front of it; deciding "proceed or
+                # rewrite" needs no verdict. All of it is appended so it
+                # ACCUMULATES -- otherwise the absent-words line is emitted and
+                # forgotten, and it can re-issue a query it already tried against
+                # a deterministic index.</span>
+                out += [r.index,                          <span class="cm"># n new / n already held</span>
+                        r.absent_words,                   <span class="cm"># free: index lookup</span>
+                        s.first_lines(new)]               <span class="cm"># free: already in the pool</span>
+
+            elif c.name == "read":
+                out += [s.read(c.numbers)]      <span class="cm"># NO 12,000-char cap. It silently</span>
+                                                <span class="cm"># truncated 84% of reads: asked 26,</span>
+                                                <span class="cm"># received 7.</span>
+
+            <span class="cm"># No filter stage and no filter judge. Choosing which passages to
+            # use is part of assembling, and the controller already has them.
+            # A filter judge was 7 calls and ~20s of a 60s budget: level 1 ran
+            # 17s, level 5 with it ran 38-48s. Whether the controller chooses as
+            # well is an EXACT offline count -- precision against the answer key
+            # -- so it does not need a judge in the loop to find out.</span>
+
+            <span class="cm"># ---- the outer loop: one judgement, then the retry branch ----</span>
+            elif c.name == "answer":
+                <b>if state.searched == 0:</b>          <span class="cm"># GUARANTEE, in code.</span>
+                    out += ["Search first."]      <span class="cm"># Left free, it skips retrieval and</span>
+                    continue                     <span class="cm"># answers from its own knowledge.</span>
+
+                findings = <b>judge_answer(question, c.text,
+                                        s.pool, s.labels)</b>   <span class="cm"># no history</span>
+                if not findings or state.retries &gt;= MAX_RETRIES:
+                    return c.text                <span class="cm"># accepted, or out of retries</span>
+                state.retries += 1
+
+                <span class="cm"># findings append to the SAME conversation. The controller
+                # already knows what it searched and wrote, so planning costs
+                # no extra call -- which is the whole argument for one brain.</span>
+                state.findings += findings
+                out += [render(findings)]
+
+        msgs += [user: out]
+
+    return best_so_far(msgs)      <span class="cm"># budget spent: return the last draft</span>
+</pre>
+
+<h3>Guarantees are code. Choices are prompt.</h3>
+
+<p>This is what answers "what if it is too free". The failure mode measured is not chaos &mdash; it is <strong>inertia</strong>: given tools and permission, it searched <strong>0.00 times in 100 questions</strong>. So the minimum actions are <code>if</code> statements the model cannot decline, and everything else is open.</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>forced, in code</th><th>why &mdash; measured</th></tr></thead>
+  <tbody>
+    <tr><td>at least one search before an answer is accepted</td><td>left free, it skipped retrieval on questions it judged out of domain and answered from its own knowledge</td></tr>
+
+    <tr><td>the answer judge runs before an answer is accepted</td><td>asked to rule on itself, it said yes 100 of 100</td></tr>
+
+    <tr><td>a wall-clock budget, not a turn count</td><td>turns cost wildly different amounts; 60 seconds is the real constraint</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>free, in the prompt</th><th>why &mdash; measured</th></tr></thead>
+  <tbody>
+    <tr><td>what to query, and how to rephrase it</td><td>the controller's own queries found <strong>85%</strong>; my prompt's found <strong>79%</strong></td></tr>
+    <tr><td><strong>k, per search call</strong></td><td>k=6 and k=25 are both compromises applied uniformly; per-call k has never been tried</td></tr>
+    <tr><td>whether to search again, and how many times</td><td>forcing rounds helped (68%&rarr;85%); forbidding them gave 0.00 searches</td></tr>
+    <tr><td>which vocabulary source to draw on</td><td>four sources exist, none compared</td></tr>
+    <tr><td>whether to re-filter after new passages</td><td>today the filter never sees what the loop finds &mdash; a bug</td></tr>
+    <tr><td>which passages to use, and how many</td><td>every attempt to narrow this by instruction lost, four times</td></tr>
+    <tr><td>whether to accept or reject a finding</td><td>flagged honest extensions are marked unsupported <em>by design</em>; blind compliance deletes good material</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>What gets deleted, and why</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>deleted</th><th>at</th><th>because</th></tr></thead>
+  <tbody>
+    <tr><td><code>gaps_in()</code> and the pre-loop gap rounds</td><td class="cite">ladder.py:223, :396</td><td>the controller noticing a gap is a decision, not a service. Its queries found 79% against the controller's 85%, and its reasoning never reached the conversation</td></tr>
+    <tr><td><code>split_for_answer()</code></td><td class="cite">ladder.py:125</td><td>it already decomposes implicitly, and better &mdash; its nine queries covered both halves of a two-part question using <em>his</em> concepts, which a mechanical split cannot produce</td></tr>
+    <tr><td><code>uncovered()</code> / <code>PART_COVERAGE</code></td><td class="cite">ladder.py:152, :170</td><td>level 3 gated searching on this and gained <strong>nothing</strong> &mdash; 66%, identical to no loop, because it fires on 17 of 100 questions</td></tr>
+    <tr><td>the 12,000-character cap on tool results</td><td class="cite">run.py:193, ladder.py:511</td><td>truncated <strong>84% of reads</strong>. The model asked for 26 passages and received about 7, silently. An unjustified copied default</td></tr>
+    <tr><td>deletion inside the filter</td><td class="cite">ladder.py:256</td><td>it makes "the question was not addressed" un-attributable, and passages found later bypass it entirely (<code>ladder.py:503</code>)</td></tr>
+    <tr><td><code>BUDGET</code> as a turn count</td><td class="cite">ladder.py:55, run.py:35</td><td>a turn holding 80 passages costs 45 seconds and a turn holding 8 costs 5. Budget the seconds</td></tr>
+    <tr><td class="good">nothing &mdash; this one was my error</td><td class="cite">run.py:106, answer_bench.py:105</td><td>I listed these as two competing style routes. They are the <strong>same 18 passages in the same order</strong>. There was one route all along, so "defect #1 of five" was spurious and there were <strong>four</strong> differences, not five</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Planned file layout</h3>
+
+<pre>harness/
+  <b>loop.py</b>              the runner. Wiring only: load, bind, loop, budget.
+                        Replaces run.py (315 lines) and ladder.py (704).
+
+  <b>modules.md</b>           the machinery manual, loaded into system text.
+                        Five parts per stage, including ALREADY TRIED.
+                        <span class="cm">exists (350 lines) -- currently loaded by nothing</span>
+
+  <b>controller.md</b>        what the controller is, and the two requirements:
+                        understand the machinery; turn findings into a plan.
+
+  judges/
+    <b>relevance.md</b>       passage labels. Called during retrieval.
+    <b>answer.md</b>          the three findings, at claim granularity, with the
+                        trace: WHICH passage each claim came from.
+
+  creators/&lt;name&gt;/
+    <b>creator.md</b>         the style route. One per creator; nothing else
+                        in the tree names a creator.
+
+  <span class="cm">deleted: AGENTS.md, agents/answerer.md, agents/sufficiency.md,</span>
+  <span class="cm">         commands/answer.md -- folded into controller.md and judges/</span>
+</pre>
+
+<h3>Build order, and the two things that come first</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th class="num">#</th><th>step</th><th>why here</th><th class="num">cost</th></tr></thead>
+  <tbody>
+    <tr><td class="num">0a</td><td><strong>A noise floor</strong> &mdash; one configuration, twice</td><td>the only noise figure we have is on a <em>retired</em> measure. Until this exists no result below is interpretable</td><td class="num">~40 min</td></tr>
+    <tr><td class="num">0b</td><td><strong>Score <code>bench_turns4</code> on the four measures</strong></td><td>already on disk. It is the existing loop at 4 rounds. If it matches the harness, most of this build becomes optional</td><td class="num good">free</td></tr>
+    <tr><td class="num">1</td><td>Remove the 12,000-char cap; re-run the best arm</td><td>a bug affecting 84% of reads. Two current measures are provisional until this is done</td><td class="num">~30 min</td></tr>
+    <tr><td class="num">2</td><td>Prompt caching on the stable prefix</td><td>plumbing that gates everything: accumulating the inner loop is correct and unaffordable without it</td><td class="num">small</td></tr>
+    <tr><td class="num">3</td><td>Filter labels instead of deleting; covers loop-found passages</td><td>fixes the bypass at <code>ladder.py:503</code> and restores attribution</td><td class="num">small</td></tr>
+    <tr><td class="num">4</td><td>Fold the gap check into the controller; accumulate the inner loop</td><td>the 79%&ndash;85% gap, and three signals currently emitted and discarded</td><td class="num">medium</td></tr>
+    <tr><td class="num">5</td><td>Expose <code>k</code> per search call</td><td>free degree of freedom; the constant is a compromise on every question</td><td class="num">small</td></tr>
+    <tr><td class="num">6</td><td><strong>The retry branch</strong></td><td>the only genuinely new mechanism. Zero arms have done it</td><td class="num">medium</td></tr>
+    <tr><td class="num">7</td><td>Separate content from style at the seam</td><td>makes every content measure mean something; frees ~7,500 tokens per call</td><td class="num">medium</td></tr>
+    <tr><td class="num">8</td><td>Tune on the question set, then spend the held-out 250 <strong>once</strong></td><td>fitting prompts on the iteration set makes it training data</td><td class="num">large</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="flag">
+  <span class="k">why 0a and 0b come before anything is built</span>
+  <p>Three separate times this week a build reached a place a parameter already reached. Levels 3, 4 and 5 were three builds; turning <code>turns</code> from 1 to 4 got there with a one-character change.</p>
+  <p><code>bench_turns4.json</code> is the existing loop at four rounds, <strong>already run, never scored</strong>. It costs nothing to score and it could remove most of steps 4 through 6 from this list.</p>
+</div>
+
+<h2>The sanity check, before any quality claim</h2>
+
+<p class="lede">Whether the answers are <em>good</em> is a separate question from whether the machinery is being <em>used</em>. This section is the second one, and it has to pass first &mdash; a quality number from a controller that is improvising means nothing.</p>
+
+<p>Run on <strong>5 questions</strong> drawn from the 100 every other arm was measured on, with the full conversation and the chain of thought recorded per question. Five questions is a read, not a measurement; every number below should be treated that way.</p>
+
+<h3>Is it following the flow, or doing its own thing?</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>check</th><th class="num">result</th><th>what a failure would have meant</th></tr></thead>
+  <tbody>
+    <tr><td>searched before answering</td><td class="num good">5 / 5</td><td>answering from its own knowledge &mdash; the failure the system exists to prevent</td></tr>
+    <tr><td>read full passages before answering</td><td class="num good">5 / 5</td><td>answering off the index alone: a first line is not a claim</td></tr>
+    <tr><td>went through the judge</td><td class="num good">5 / 5</td><td>the forced gate not firing</td></tr>
+    <tr><td>called anything but <code>search</code> / <code>read</code></td><td class="num good">never</td><td>reaching for a tool it was not given</td></tr>
+    <tr><td>repeated a query against a deterministic index</td><td class="num good">0 / 40</td><td>not understanding that a repeat returns nothing</td></tr>
+    <tr><td>pasted the question in as a query</td><td class="num good">0 / 116</td><td>bypassing the query writer</td></tr>
+    <tr><td><strong>citations traceable to what it was shown</strong></td><td class="num">44 / 45</td><td><strong>inventing provenance</strong> &mdash; and one was invented</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="flag">
+  <span class="k">the one real breach</span>
+  <p>It cited <code>00:02:05</code> from a video where it had only ever been shown <code>00:05:59&ndash;00:07:17</code> and <code>00:10:39&ndash;00:12:11</code>. Right video, invented timestamp. <strong>1 of 45 citations.</strong></p>
+  <p>This is checkable in code without a judge &mdash; the pool is known, so a reference that is not in it is a set-membership test. It belongs in the forced column.</p>
+</div>
+
+<h3>Is it using the controls, and reacting to the feedback?</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>control or signal</th><th class="num">measured</th><th>reading</th></tr></thead>
+  <tbody>
+    <tr><td><strong>k, chosen per search</strong></td><td class="num good">varied in 5 / 5</td><td>values 5, 6 and 8, varying <em>within</em> one question. It was a hardcoded constant two days ago</td></tr>
+    <tr><td><strong>the absent-word signal</strong></td><td class="num good">14 warnings, 0 reuses</td><td>it drops every word the archive says does not exist. This signal was printed and ignored for the system's entire life</td></tr>
+    <tr><td>searches per question</td><td class="num">8.0</td><td>matches the ~9 measured when free</td></tr>
+    <tr><td>reads per question</td><td class="num">3.8 calls &times; 4.9 passages</td><td>it reads in bulk rather than one at a time</td></tr>
+    <tr><td>chain of thought recorded</td><td class="num good">39 / 41 turns</td><td>was <strong>0 of 67</strong> before &mdash; adaptive thinking was on but the blocks were being discarded</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Does it know that searching is word-matching, so it must write in his idiom?</h3>
+
+<p>Yes, and the chain of thought shows it deciding this before acting, in <strong>5 of 5</strong> questions. Its own words:</p>
+
+<pre>"I should search using his own vocabulary -- terms like feeling stuck,
+ restarting your life, whether it's too late, <b>puer aeternus</b>, taking the
+ plunge, waiting and stagnation... framing the queries in his idiom."
+
+"I should search using his specific terminology -- discipline as a verb,
+ willpower, controlled versus autonomous motivation, action crisis."
+
+"I'll phrase the underlying question in his own terms."
+</pre>
+
+<p>And the behaviour matches the intent: <strong>93%</strong> of its query words exist in the archive, only <strong>8%</strong> are lifted from the asker's question.</p>
+
+<p><strong>One question went the other way, deliberately</strong> &mdash; on catcalling it reasoned <em>"phrasing my queries in the viewer's own vocabulary"</em>. That looks like a violation and is probably correct: the archive literally contains "catcalls, whistles and stares", so there the viewer's words <em>were</em> his words. A subtler rule than the prompt states, which the controller appears to have worked out.</p>
+
+<h3>Did it act on the judge, or just retry?</h3>
+
+<p>It planned. Three examples from its reasoning on receiving findings:</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>what it did</th><th>its own words</th></tr></thead>
+  <tbody>
+    <tr><td><strong>triaged by cost</strong></td><td><em>"That's a simple word swap I can accept &mdash; 'most dudes' to 'a lot of dudes' &mdash; no need to re-query."</em></td></tr>
+    <tr><td><strong>flagged instead of deleting</strong></td><td><em>"marking the 'don't schedule a reflection day' idea as my own extension rather than something grounded"</em></td></tr>
+    <tr><td><strong>earned the right to decline</strong></td><td><em>"since the archive search confirmed that term isn't present at all, I'm justified in saying I haven't covered that topic"</em></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>That third one is the rule this document sets out being followed exactly: "I haven't covered that" is a claim about 292 passages, and may only be said after searching and getting nothing.</p>
+
+<h3>Two behavioural faults</h3>
+
+<p><strong>It batches the first turn and then stops batching.</strong> The turn shapes, where <code>4s0r</code> means four searches and no reads:</p>
+
+<pre>therapy            4s0r 0s1r 2s0r 0s1r ANS 1s1r ANS 2s0r 0s1r ANS   10 turns  219s
+mental health day  4s0r 2s1r 2s1r 1s1r 1s1r 0s1r 1s0r ANS ...       14 turns  337s
+discipline         4s0r 0s1r 0s1r ANS                                4 turns   72s
+</pre>
+
+<p>A third of all turns make exactly one call, and each turn is a <strong>~22 second round trip</strong>. Batching the same work into two turns instead of six would have saved roughly 86 seconds on one question. Turns averaged <strong>8.2 against a designed 4</strong>, and time <strong>177s against a 60s budget</strong>.</p>
+
+<p><strong>And on one question it retried twice without searching at all.</strong> The pool stayed at <strong>54 passages across all three judgements</strong> &mdash; it rewrote rather than re-queried, against its own stated prior that retrieval causes 63% of failures and the assembler ignoring material causes 2%.</p>
+
+<h2>Auditing the judge</h2>
+
+<p>The judge was checked the same way &mdash; against the passages it was shown, not against its own confidence. <strong>It is reliable on one fault type and not the other.</strong></p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>fault type</th><th>what it asks</th><th class="num">reliability</th></tr></thead>
+  <tbody>
+    <tr><td><strong>UNSUPPORTED</strong></td><td>does a passage state this claim</td><td class="good">strong</td></tr>
+    <tr><td><strong>OFFTOPIC</strong></td><td>was this asked about</td><td>not exercised enough to say</td></tr>
+    <tr><td><strong>MISSING</strong></td><td>was something asked and not answered</td><td class="bad">weak &mdash; 1 of 4 flatly wrong, 1 oscillated</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Where it was right</h3>
+
+<p>It caught the answer asserting <em>"I don't use the word placebo; that's the frame I'd use instead"</em> &mdash; a first-person claim about the speaker's own vocabulary with <strong>no passage behind it</strong>. Its reasoning traced every other claim in that answer to a numbered passage and then isolated this one:</p>
+
+<pre>"The closing line, 'I don't use the word placebo,' is a claim about the
+ speaker's own vocabulary and practice. No passage in the list mentions
+ placebo at all, and none says anything about the speaker avoiding or
+ rejecting that term. It is asserted in the speaker's voice as a statement
+ about himself with no basis in the supplied material."
+</pre>
+
+<p>It also caught <em>"most men don't think catcalling is a big deal"</em> as an overstatement of what the passage supports; the controller accepted "a lot of dudes". That is the granularity this document asks for &mdash; a named claim and a named passage, not a score.</p>
+
+<h3>Where it was wrong</h3>
+
+<p><strong>Flatly wrong once.</strong> It reported that the catcalling answer <em>"never states what catcalling actually does to the person experiencing it"</em>. The answer says:</p>
+
+<pre>"Imagine someone you're not attracted to. Now imagine that person, every
+ few days to once a month, stares at you, makes sexual advances, touches
+ you in ways you don't want. Once? Fine, you can handle it once.
+ <b>What does every few days do to your psychology?</b>"
+</pre>
+
+<p>It wanted the effect <em>stated</em> and got it <em>evoked</em> &mdash; by the same thought-experiment device the creator uses in the passage itself.</p>
+
+<p><strong>And it oscillated.</strong> On the mental-health-day question it raised the same MISSING in judgement 1, <strong>cleared it in judgement 2, then raised it again in judgement 3</strong> &mdash; on an answer that by then contained a direct prescription (<em>"point the day at actions. Two questions worth the whole day&hellip;"</em>). Same fault, three reads, two verdicts.</p>
+
+<div class="flag">
+  <span class="k">this is the fourth completeness judge to fail here</span>
+  <p>Span overlap against the source passage. The holistic "does it answer the question" judge. The decomposer that agreed with an independent one on only 57 of 100 questions. Now MISSING.</p>
+  <p><strong>Grounding judges keep working; completeness judges keep breaking.</strong> Four attempts is a pattern, not three unlucky prompts. The difference looks structural: UNSUPPORTED has to name a claim and a passage, so it cannot report an impression. MISSING has no anchor, so it does.</p>
+</div>
+
+<h2>What the sanity check changed</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>fix</th><th>evidence it came from</th><th class="num">state</th></tr></thead>
+  <tbody>
+    <tr><td><code>MAX_RETRIES</code> 2 &rarr; 1</td><td>the second retry was wasted 4 of 6 times: findings per judgement went [3,1,1], [4,1,1], [1,1,1], [1,2,2]. Both cases where it "helped" were recovering from the first retry making things worse</td><td class="num good">applied</td></tr>
+    <tr><td><code>HARD_TURNS</code> 16 &rarr; 10</td><td>max useful was ~8; the 14-turn run spent them one call at a time</td><td class="num good">applied</td></tr>
+    <tr><td>told it a turn costs ~22s, and to batch</td><td>a third of turns made one call</td><td class="num good">applied</td></tr>
+    <tr><td><strong>validate citations in code</strong></td><td>one invented timestamp in 45 citations. The pool is known, so this is a set-membership test, not a judgement</td><td class="num">proposed</td></tr>
+    <tr><td><strong>a MISSING-driven retry must search first</strong></td><td>the pool stayed at 54 across three judgements on one question</td><td class="num">proposed</td></tr>
+    <tr><td><strong>make MISSING show its work</strong></td><td>UNSUPPORTED is reliable <em>because</em> it must name a claim and a passage. MISSING should have to quote the part of the answer it examined</td><td class="num">proposed</td></tr>
+    <tr><td class="good">nothing &mdash; leave it alone</td><td>the absent-word signal: 14 warnings, 0 reuses</td><td class="num good">working</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>Deliberately not fixed yet: the latency.</strong> 177s mean is far past budget, but three of the applied fixes cut turns directly. Reaching for a clock now would make it impossible to tell which change bought what.</p>
+
+<h2>What is not known</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>open question</th><th>why it matters</th></tr></thead>
+  <tbody>
+    <tr><td>Is the loop better than simply turning the existing rounds up?</td><td>Every "deployed" baseline ran <strong>1 round against a default of 5</strong>. So "the loop wins" may partly mean "a loop beats no loop", which was never in doubt. <strong>This is the first thing to settle.</strong></td></tr>
+    <tr><td>What is the noise on the four measures?</td><td>Without it, no tuning result is interpretable. Prerequisite, not part of the search.</td></tr>
+    <tr><td>Does the filter help the finished answer?</td><td>Its mechanism is measured &mdash; 62% smaller, nothing needed lost. Its effect on the answer is not. One run recorded the wrong passage set and had to be thrown away.</td></tr>
+    <tr><td>Does retrying after a judgement help at all?</td><td><strong>No configuration has ever done it.</strong> It is the centre of this design and has zero measurements behind it.</td></tr>
+    <tr><td>Is word-overlap search the real ceiling?</td><td>The controller already writes nine good queries in his own vocabulary and still finds only 86% of what is needed. That points at the matching method, not the querying.</td></tr>
+    <tr><td>Can the style loop be closed?</td><td>Not yet. Its judge scores 98&ndash;100% on everything tried, so it cannot rank two outputs and cannot drive a loop. Style is deliberately out of scope until that is fixed.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="meta" style="margin-top:3rem">Derived document. Owners are <code>engines/knowledge_style/METRICS.md</code>, <code>SYSTEM.md</code>, <code>proto/BASELINES.md</code>, and the code they cite.</p>
+
+</div>

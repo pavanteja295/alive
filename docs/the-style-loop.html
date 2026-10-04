@@ -1,0 +1,911 @@
+<title>The Style Loop</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#18222c; --ink-soft:#4a5a67; --ink-faint:#7b8b95;
+    --paper:#f6f7f4; --surface:#ffffff; --surface-2:#eef1ed;
+    --rule:#d8ded9; --rule-hard:#b9c3bc;
+    --ctrl:#2f6f5e;     /* the controller, everywhere on this page */
+    --judge:#a8562c;    /* the judge, everywhere on this page */
+    --fixed:#98a3a8;    /* fixed / deterministic */
+    --warn:#8a6d1f; --net:#4a5c94;
+    --ctrl-wash:#e6efeb; --judge-wash:#f6e9e1; --warn-wash:#f5efdc; --net-wash:#e7eaf3;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ink:#e4e9e5; --ink-soft:#a8b5ad; --ink-faint:#7d8a83;
+      --paper:#151a18; --surface:#1d2422; --surface-2:#242c29;
+      --rule:#2f3a36; --rule-hard:#41504a;
+      --ctrl:#6fc0a6; --judge:#e09163; --fixed:#6b7672; --warn:#ccae5c; --net:#8fa3d8;
+      --ctrl-wash:#1c2b26; --judge-wash:#2e211a; --warn-wash:#2a2517; --net-wash:#1e2331;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e4e9e5; --ink-soft:#a8b5ad; --ink-faint:#7d8a83;
+    --paper:#151a18; --surface:#1d2422; --surface-2:#242c29;
+    --rule:#2f3a36; --rule-hard:#41504a;
+    --ctrl:#6fc0a6; --judge:#e09163; --fixed:#6b7672; --warn:#ccae5c; --net:#8fa3d8;
+    --ctrl-wash:#1c2b26; --judge-wash:#2e211a; --warn-wash:#2a2517; --net-wash:#1e2331;
+  }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Source Sans 3","Helvetica Neue",Arial,sans-serif;
+    font-size:16.5px; line-height:1.62; padding-inline:20px; padding-block:0;
+  }
+  .wrap{max-width:900px; margin:0 auto; padding-block:44px 80px;}
+  h1,h2,h3{font-family:"Newsreader",Georgia,serif; font-weight:600;
+           text-wrap:balance; line-height:1.18;}
+  h1{font-size:2.6rem; margin:0 0 .3rem;}
+  h2{font-size:1.6rem; margin:3.2rem 0 .3rem; padding-top:1.4rem;
+     border-top:1px solid var(--rule);}
+  h3{font-size:1.14rem; margin:2rem 0 .3rem;}
+  .dek{font-family:"Newsreader",Georgia,serif; font-size:1.22rem; font-style:italic;
+       color:var(--ink-soft); margin:0 0 .5rem; max-width:58ch;}
+  .meta{font-family:"IBM Plex Mono",monospace; font-size:.73rem; letter-spacing:.06em;
+        text-transform:uppercase; color:var(--ink-faint); margin-bottom:2.4rem;}
+  p{max-width:68ch; margin:.85rem 0;}
+  .lede{font-size:1.06rem;}
+  code{font-family:"IBM Plex Mono",monospace; font-size:.85em;
+       background:var(--surface-2); padding:.1em .34em; border-radius:3px;}
+  strong{font-weight:600;}
+  .c{color:var(--ctrl); font-weight:600;}
+  .j{color:var(--judge); font-weight:600;}
+  .f{color:var(--fixed); font-weight:600;}
+  .n{color:var(--net); font-weight:600;}
+
+  figure{margin:2rem 0;}
+  figure svg{display:block; width:100%; height:auto; max-width:100%;}
+  figcaption{font-size:.86rem; color:var(--ink-soft); margin-top:.6rem; max-width:66ch;}
+
+  .scroll{overflow-x:auto; margin:1.5rem 0; -webkit-overflow-scrolling:touch;}
+  table{border-collapse:collapse; width:100%; font-size:.9rem; min-width:520px;}
+  th,td{text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--rule);
+        vertical-align:top;}
+  th{font-family:"IBM Plex Mono",monospace; font-size:.69rem; text-transform:uppercase;
+     letter-spacing:.07em; color:var(--ink-faint); font-weight:400;
+     border-bottom:1px solid var(--rule-hard);}
+  td.num,th.num{text-align:right; font-family:"IBM Plex Mono",monospace;
+                font-variant-numeric:tabular-nums;}
+  tbody tr:hover td{background:var(--surface-2);}
+  .good{color:var(--ctrl); font-weight:600;}
+  .bad{color:var(--judge); font-weight:600;}
+
+  pre{background:var(--surface); border:1px solid var(--rule); border-radius:5px;
+      padding:1rem 1.15rem; overflow-x:auto; font-family:"IBM Plex Mono",monospace;
+      font-size:.8rem; line-height:1.6; margin:1.3rem 0;}
+  pre .cm{color:var(--ink-faint);}
+  pre b{color:var(--ctrl); font-weight:500;}
+
+  .def{border:1px solid var(--rule); border-radius:5px; background:var(--surface);
+       margin:1.4rem 0; overflow:hidden;}
+  .def table{min-width:460px;} .def th{background:var(--surface-2);}
+
+  .flag{background:var(--warn-wash); border-left:3px solid var(--warn);
+        padding:.95rem 1.15rem; margin:1.5rem 0; font-size:.94rem;
+        border-radius:0 4px 4px 0;}
+  .flag p{margin:.3rem 0;}
+  .flag .k{font-family:"IBM Plex Mono",monospace; font-size:.7rem;
+           text-transform:uppercase; letter-spacing:.09em; color:var(--warn);
+           display:block; margin-bottom:.35rem; font-weight:600;}
+  .note{background:var(--surface); border:1px solid var(--rule); border-radius:5px;
+        padding:.95rem 1.15rem; margin:1.4rem 0; font-size:.94rem;}
+  .note .k{font-family:"IBM Plex Mono",monospace; font-size:.7rem;
+           text-transform:uppercase; letter-spacing:.09em; color:var(--ink-faint);
+           display:block; margin-bottom:.35rem;}
+  ul,ol{max-width:68ch; padding-left:1.2rem;} li{margin:.4rem 0;}
+  .cite{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--ink-faint);}
+</style>
+
+
+<div class="wrap">
+
+<h1>The Style Loop</h1>
+<p class="dek">One controller, a trained network it calls as a tool, three sheets fitted from the person's own archive, and a locked testbed that says whether what comes out reads as him.</p>
+<p class="meta">alive / engines / knowledge_style &middot; 18 September 2026 &middot; design document</p>
+
+<p class="lede">This describes the style half of the system: the part that takes the substance of an answer and renders it as him speaking. It begins where <em>The Content Loop</em> stops and ends at the voice. It follows that document section for section, so the two can be read against each other. <strong>The evaluators and the testbed are built and measured. The harness is proposed.</strong> Every claim says which it is.</p>
+
+<h2>The whole shape, before any part of it</h2>
+
+<figure>
+<svg viewBox="0 0 900 250" role="img" aria-label="A question enters the content loop and leaves as substance plus the passages it was built from. The style loop turns that into him speaking, in two renders: one to the voice and one to subtitles. This document covers the style loop.">
+  <defs><marker id="a1" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">
+    <rect x="0" y="74" width="86" height="42" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <text x="43" y="100" text-anchor="middle">question</text>
+    <line x1="86" y1="95" x2="126" y2="95" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+    <rect x="128" y="68" width="140" height="54" rx="5" fill="none" stroke="#98a3a8" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="198" y="90" text-anchor="middle" fill="#98a3a8">the content loop</text>
+    <text x="198" y="107" text-anchor="middle" fill="#98a3a8" font-size="9.5">built, measured, shipped</text>
+    <line x1="268" y1="88" x2="320" y2="78" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+    <line x1="268" y1="102" x2="320" y2="112" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+    <text x="294" y="64" text-anchor="middle" font-size="9" fill="#7b8b95">the answer</text>
+    <text x="294" y="134" text-anchor="middle" font-size="9" fill="#7b8b95">its passages</text>
+    <rect x="322" y="26" width="256" height="138" rx="6" fill="#e6efeb" stroke="#2f6f5e" stroke-width="2"/>
+    <text x="450" y="52" text-anchor="middle" fill="#2f6f5e" font-weight="500" font-size="13">THE STYLE LOOP</text>
+    <text x="450" y="72" text-anchor="middle" fill="#2f6f5e" font-size="9.5">a controller, a trained network it calls,</text>
+    <text x="450" y="87" text-anchor="middle" fill="#2f6f5e" font-size="9.5">three sheets fitted from his archive,</text>
+    <text x="450" y="102" text-anchor="middle" fill="#2f6f5e" font-size="9.5">disfluency it places itself</text>
+    <text x="450" y="128" text-anchor="middle" fill="#2f6f5e" font-size="10" font-weight="500">THIS DOCUMENT</text>
+    <text x="450" y="143" text-anchor="middle" fill="#2f6f5e" font-size="9">proposed, not built</text>
+    <line x1="578" y1="78" x2="628" y2="62" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+    <line x1="578" y1="112" x2="628" y2="128" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+    <rect x="630" y="38" width="150" height="46" rx="5" fill="none" stroke="#98a3a8" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="705" y="58" text-anchor="middle" fill="#98a3a8" font-size="10.5">spoken render</text>
+    <text x="705" y="74" text-anchor="middle" fill="#98a3a8" font-size="9">to the voice. keeps everything</text>
+    <rect x="630" y="106" width="150" height="46" rx="5" fill="none" stroke="#98a3a8" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="705" y="126" text-anchor="middle" fill="#98a3a8" font-size="10.5">written render</text>
+    <text x="705" y="142" text-anchor="middle" fill="#98a3a8" font-size="9">subtitles. strips the stumbles</text>
+    <line x1="322" y1="196" x2="578" y2="196" stroke="#a8562c" stroke-width="1.3"/>
+    <line x1="322" y1="192" x2="322" y2="200" stroke="#a8562c" stroke-width="1.3"/>
+    <line x1="578" y1="192" x2="578" y2="200" stroke="#a8562c" stroke-width="1.3"/>
+    <text x="450" y="188" text-anchor="middle" fill="#a8562c" font-size="9.5">scored here, offline, on the SPOKEN render</text>
+    <text x="450" y="214" text-anchor="middle" fill="#a8562c" font-size="10" font-weight="500">TWO EVALUATORS &mdash; style, and content survival</text>
+    <text x="450" y="229" text-anchor="middle" fill="#a8562c" font-size="9">87 questions, locked. Built and measured</text>
+  </g>
+</svg>
+<figcaption>The style loop receives two things from the content loop, not one: the answer, and the passages it was built from. Those passages are his verbatim words on this exact subject, which is the strongest style material in the system and costs nothing, because the retrieval already happened.</figcaption>
+</figure>
+
+<p>It emits <strong>two renders of one string</strong>. The voice hears the stumbles; the subtitle does not. That split is the reason disfluency can exist at all as text: without it, the thing that makes the audio sound like him makes the caption look broken.</p>
+
+<h2>The invariant: one intelligence, two ways in</h2>
+
+<p class="lede">The content loop's invariant was two intelligences and two creator routes. Here there is one intelligence, and the change is deliberate.</p>
+
+<p>The style network is not a second intelligence. It is <strong>a trained map from text to text with no prompt at all</strong> &mdash; its own code calls this the no-prompt-at-inference contract, and the input is wrapped in a chat template with no system message. It cannot be reasoned with, only parameterised. So exactly one thing in this loop forms an opinion: <span class="c">the controller</span>.</p>
+
+<figure>
+<svg viewBox="0 0 900 320" role="img" aria-label="One controller with four tools. One is the trained style network, which takes no prompt. Three are deterministic code: reading his passages, counting his habits, and inserting disfluency at positions the controller names. Two creator routes: his archive and three derived sheets.">
+  <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor">
+    <rect x="0" y="116" width="182" height="76" rx="6" fill="#e6efeb" stroke="#2f6f5e" stroke-width="2"/>
+    <text x="91" y="142" text-anchor="middle" fill="#2f6f5e" font-weight="500" font-size="12">THE CONTROLLER</text>
+    <text x="91" y="160" text-anchor="middle" fill="#2f6f5e" font-size="9.5">one conversation, accumulating</text>
+    <text x="91" y="175" text-anchor="middle" fill="#2f6f5e" font-size="9.5">the only thing that decides</text>
+
+    <text x="256" y="20" font-size="9.5" letter-spacing="1" fill="#7b8b95">ONE TOOL IS A MODEL, AND IT TAKES NO PROMPT</text>
+    <rect x="256" y="30" width="252" height="52" rx="5" fill="#e7eaf3" stroke="#4a5c94" stroke-width="1.8"/>
+    <text x="268" y="50" fill="#4a5c94" font-weight="500">restyle</text>
+    <text x="268" y="65" fill="#4a5c94" font-size="9.5">text in, his register out. Trained adapter.</text>
+    <text x="268" y="77" fill="#4a5c94" font-size="9.5">Tuned by decoding and chunking, not words.</text>
+    <path d="M182,146 L250,62" stroke="#4a5c94" stroke-width="1.3" marker-end="url(#a2)" color="#4a5c94" fill="none"/>
+
+    <text x="256" y="106" font-size="9.5" letter-spacing="1" fill="#7b8b95">THREE ARE CODE &mdash; NO MODEL, NO LATENCY, NO OPINION</text>
+    <rect x="256" y="116" width="252" height="46" rx="5" fill="none" stroke="#98a3a8" stroke-width="1.5"/>
+    <text x="268" y="134" font-weight="500">hear</text>
+    <text x="268" y="149" fill="#7b8b95" font-size="9.5">his passages, already retrieved by the</text>
+    <text x="268" y="159" fill="#7b8b95" font-size="9.5">content loop. No search needed</text>
+    <path d="M182,150 L250,139" stroke="#98a3a8" stroke-width="1.3" marker-end="url(#a2)" color="#98a3a8"/>
+
+    <rect x="256" y="170" width="252" height="46" rx="5" fill="none" stroke="#98a3a8" stroke-width="1.5"/>
+    <text x="268" y="188" font-weight="500">measure</text>
+    <text x="268" y="203" fill="#7b8b95" font-size="9.5">this draft against his twelve habits.</text>
+    <text x="268" y="213" fill="#7b8b95" font-size="9.5">Counting. The free signal it loops on</text>
+    <path d="M182,160 L250,192" stroke="#98a3a8" stroke-width="1.3" marker-end="url(#a2)" color="#98a3a8"/>
+
+    <rect x="256" y="224" width="252" height="58" rx="5" fill="none" stroke="#98a3a8" stroke-width="1.5"/>
+    <text x="268" y="242" font-weight="500">break</text>
+    <text x="268" y="257" fill="#7b8b95" font-size="9.5">wrap a span so the voice hears a stumble</text>
+    <text x="268" y="267" fill="#7b8b95" font-size="9.5">and the subtitle does not. At positions</text>
+    <text x="268" y="277" fill="#7b8b95" font-size="9.5">THE CONTROLLER names. Mechanical</text>
+    <path d="M182,172 L250,248" stroke="#98a3a8" stroke-width="1.3" marker-end="url(#a2)" color="#98a3a8"/>
+
+    <rect x="548" y="30" width="342" height="98" rx="5" fill="none" stroke="#2f6f5e" stroke-width="1.4"/>
+    <text x="562" y="50" fill="#2f6f5e" font-weight="500">THE CREATOR ROUTES, AND THERE ARE TWO</text>
+    <text x="562" y="68" fill="#2f6f5e" font-size="9.5">1 &nbsp;his archive &mdash; 292 passages, 86k words of his</text>
+    <text x="574" y="81" fill="#2f6f5e" font-size="9.5">real speech, reached through <tspan font-weight="500">hear</tspan></text>
+    <text x="562" y="99" fill="#2f6f5e" font-size="9.5">2 &nbsp;three sheets, all DERIVED from route 1:</text>
+    <text x="574" y="112" fill="#2f6f5e" font-size="9.5">style, disfluency, prompts</text>
+    <text x="562" y="124" fill="#8a6d1f" font-size="9">Every prompt creator-free and linted, as the content side is.</text>
+
+    <rect x="548" y="140" width="342" height="70" rx="5" fill="#f5efdc" stroke="#8a6d1f" stroke-width="1.4"/>
+    <text x="562" y="160" fill="#8a6d1f" font-weight="500">WHY break IS NOT A MODEL</text>
+    <text x="562" y="177" fill="#8a6d1f" font-size="9.5">The content loop folded its query writer in. Same move.</text>
+    <text x="562" y="190" fill="#8a6d1f" font-size="9.5">At his rate a 190-word answer earns HALF a stumble, so</text>
+    <text x="562" y="203" fill="#8a6d1f" font-size="9.5">whether and where is judgement, not texture.</text>
+
+    <rect x="548" y="224" width="342" height="58" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.4"/>
+    <text x="562" y="244" fill="#a8562c" font-weight="500">WHAT IS NOT IN THE LOOP</text>
+    <text x="562" y="261" fill="#a8562c" font-size="9.5">Neither evaluator. A judging step inside the content loop</text>
+    <text x="562" y="274" fill="#a8562c" font-size="9.5">measured 20 seconds of a 60-second budget and was removed.</text>
+  </g>
+</svg>
+<figcaption>Four tools. One is a model that decides nothing and cannot be prompted; three are code with no opinion to decide with. The disfluency tool is deliberately the dumbest thing here, because the interesting part of it is <em>where</em>, and where is judgement.</figcaption>
+</figure>
+
+<h2>The words used here</h2>
+
+<div class="def"><div class="scroll"><table>
+<thead><tr><th>Word</th><th>Means, exactly</th></tr></thead>
+<tbody>
+<tr><td><strong>the controller</strong></td><td>The one model that reasons. Reads his passages, calls the network, decides whether to call it again, places disfluency, and writes the final string.</td></tr>
+<tr><td><strong>the network</strong></td><td>The trained adapter. Text in, text out, <em>no prompt</em>. Several exist on disk; none has been run at this seam.</td></tr>
+<tr><td><strong>the archive</strong></td><td>292 passages, 85,925 words of his real speech. The ground truth for everything derived.</td></tr>
+<tr><td><strong>the testbed</strong></td><td>87 questions, each carrying the question, the content loop's answer, and <em>his own</em> answer. Locked by hash <code>d385d7fbf437</code>.</td></tr>
+<tr><td><strong>the style judge</strong></td><td>Six passages, three of his and three of an arm's, from six different questions, with his whole archive in front of it. Rates each 0&ndash;100 and names what gave it away.</td></tr>
+<tr><td><strong>the content check</strong></td><td>Not a new judge. The four measures the content loop already ships, re-run on the styled text with the original retrieval untouched.</td></tr>
+<tr><td><strong>the floor</strong></td><td>How often the style judge calls <em>him</em> a machine. He is a spread, not a point, so this is the best any arm could score.</td></tr>
+<tr><td><strong>a tell</strong></td><td>One of seven named categories the judge must pick from when it says what gave a passage away, plus a quote from that passage and a quote of what he does instead.</td></tr>
+<tr><td><strong>a sheet</strong></td><td>A file fitted once from the archive and read at run time. Not a control; the input to one.</td></tr>
+<tr><td><strong>spoken / written render</strong></td><td>The two outputs of one marked-up string. The voice gets the first, subtitles the second, and <strong>the judge scores the first</strong>.</td></tr>
+</tbody>
+</table></div></div>
+
+<h2>The chain, and what is adjustable in it</h2>
+
+<figure>
+<svg viewBox="0 0 900 300" role="img" aria-label="The chain in order: the controller stylises using his retrieved passages and the style sheet, the network rewrites, the controller repairs and places disfluency, then gates, then the two renders. Adjustable items are marked at each step.">
+  <defs><marker id="a4" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor">
+    <rect x="0" y="30" width="176" height="58" rx="5" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.7"/>
+    <text x="12" y="48" fill="#2f6f5e" font-weight="500">1 &nbsp;CONTROLLER</text>
+    <text x="12" y="63" fill="#2f6f5e" font-size="9.5">his passages + style sheet</text>
+    <text x="12" y="76" fill="#2f6f5e" font-size="9.5">&rarr; a first pass</text>
+    <path d="M176,59 L214,59" stroke="currentColor" stroke-width="1.3" marker-end="url(#a4)"/>
+    <rect x="216" y="30" width="176" height="58" rx="5" fill="#e7eaf3" stroke="#4a5c94" stroke-width="1.7"/>
+    <text x="228" y="48" fill="#4a5c94" font-weight="500">2 &nbsp;NETWORK</text>
+    <text x="228" y="63" fill="#4a5c94" font-size="9.5">trained map, no prompt.</text>
+    <text x="228" y="76" fill="#4a5c94" font-size="9.5">may be called again</text>
+    <path d="M392,59 L430,59" stroke="currentColor" stroke-width="1.3" marker-end="url(#a4)"/>
+    <rect x="432" y="30" width="176" height="58" rx="5" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.7"/>
+    <text x="444" y="48" fill="#2f6f5e" font-weight="500">3 &nbsp;CONTROLLER</text>
+    <text x="444" y="63" fill="#2f6f5e" font-size="9.5">repair, then place the</text>
+    <text x="444" y="76" fill="#2f6f5e" font-size="9.5">stumble, if this one gets one</text>
+    <path d="M608,59 L646,59" stroke="currentColor" stroke-width="1.3" marker-end="url(#a4)"/>
+    <rect x="648" y="30" width="120" height="58" rx="5" fill="none" stroke="#8a6d1f" stroke-width="1.7"/>
+    <text x="660" y="48" fill="#8a6d1f" font-weight="500">4 &nbsp;GATES</text>
+    <text x="660" y="63" fill="#8a6d1f" font-size="9.5">all faults in</text>
+    <text x="660" y="76" fill="#8a6d1f" font-size="9.5">one message</text>
+    <path d="M708,88 L708,116" stroke="#8a6d1f" stroke-width="1.3" marker-end="url(#a4)" color="#8a6d1f"/>
+    <path d="M652,72 L620,72 L620,104 L120,104 L120,88" stroke="#8a6d1f" stroke-width="1.1" fill="none" stroke-dasharray="3 3" marker-end="url(#a4)" color="#8a6d1f"/>
+    <text x="330" y="100" font-size="9" fill="#8a6d1f">reject &rarr; back to 3, or to 1</text>
+    <rect x="628" y="122" width="160" height="42" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <text x="708" y="140" text-anchor="middle" font-size="10">one marked-up string</text>
+    <text x="708" y="155" text-anchor="middle" font-size="9" fill="#7b8b95">two renders come off it</text>
+
+    <text x="0" y="132" font-size="9.5" letter-spacing="1" fill="#7b8b95">WHAT IS ADJUSTABLE, BY STEP</text>
+    <text x="0" y="152" font-size="9.5" fill="#2f6f5e">1 &nbsp;which framing, how many of his passages to read</text>
+    <text x="0" y="168" font-size="9.5" fill="#4a5c94">2 &nbsp;which adapter, decoding, how the input is segmented, whether to re-send</text>
+    <text x="0" y="184" font-size="9.5" fill="#2f6f5e">3 &nbsp;whether this answer stumbles, and where</text>
+    <text x="0" y="200" font-size="9.5" fill="#8a6d1f">4 &nbsp;fixed. Gates are not adjustable by the controller &mdash; that is what makes them gates</text>
+
+    <rect x="0" y="222" width="900" height="66" rx="5" fill="#f5efdc" stroke="#8a6d1f" stroke-width="1.3"/>
+    <text x="14" y="242" fill="#8a6d1f" font-weight="500">WHY THE CONTROLLER GOES BOTH BEFORE AND AFTER THE NETWORK</text>
+    <text x="14" y="259" fill="#8a6d1f" font-size="9.5">The network's measured failures are a reversed claim in 20% of outputs and a phrase loop in 23%. Only the controller can</text>
+    <text x="14" y="272" fill="#8a6d1f" font-size="9.5">repair those, so something must come after it. Putting the whole controller pass before it instead would also hand the network an</text>
+    <text x="14" y="284" fill="#8a6d1f" font-size="9.5">input unlike anything it was trained on &mdash; the same provenance gap that already cost this system 4 points of content survival.</text>
+  </g>
+</svg>
+<figcaption>Four steps, and step 3 exists because of what step 2 is measured to do wrong. Whether step 1 is worth having at all is the first thing the harness should settle: prompting a model into his register, with no trained network, is an arm that has already measured <em>worse than doing nothing</em>.</figcaption>
+</figure>
+
+<h3>The markup, and why there are two renders</h3>
+
+<p>Disfluency exists so the audio sounds like him. The same string is also the subtitle. Those two want different text, and the speech-markup standard already has the element that resolves it.</p>
+
+<pre><span class="cm">source     </span>it's &lt;sub alias="a a core human desire"&gt;a core human desire&lt;/sub&gt;.&lt;break time="400ms"/&gt;
+<span class="cm">spoken     </span>it's a a core human desire. [400ms pause]
+<span class="cm">written    </span>it's a core human desire.</pre>
+
+<p>The <code>alias</code> is what is spoken; the element's text content is what survives into the written form. <code>bookmark</code> is not spoken and raises an event carrying <strong>its offset in the audio stream</strong>, which is subtitle timing. <code>break</code> takes a strength (x-weak 250ms through x-strong 1250ms) or an exact time up to 20,000ms, and <code>mstts:silence</code> places exact silence at nine named positions.</p>
+
+<div class="flag"><span class="k">a correction to this repo's own note</span>
+<p><code>references/SURVEY.md</code> §16 states that markup cannot carry a stammer because no element repeats a word. The first half is right and the conclusion is wrong: no element <em>generates</em> a repeat, but <code>sub</code> <em>carries</em> one, because the spoken form and the written form are different attributes of the same element. <code>problems.md</code> N16 leans on the wrong version. Both need amending.</p>
+<p>Two things still have to be checked rather than assumed: this is Azure's dialect, while the voice provider currently in use is ElevenLabs, whose newer model replaced break tags with bracketed cues; and the page states that <strong>personal voices do not support all SSML tags</strong>, which is exactly the category a cloned voice falls into.</p></div>
+
+<h2>Two models, and the wall between them</h2>
+
+<p>The content loop's wall is between the controller and its judge: one reasons, one reports, and neither sees the other's work. Here the wall runs somewhere else, and it matters more.</p>
+
+<div class="scroll"><table>
+<thead><tr><th></th><th class="c">The controller</th><th class="n">The network</th></tr></thead>
+<tbody>
+<tr><td>what it is</td><td>a frontier model holding one conversation</td><td>a local trained adapter over a frozen base</td></tr>
+<tr><td>sees the question</td><td>yes</td><td><strong>no</strong></td></tr>
+<tr><td>sees his archive</td><td>yes, the retrieved part</td><td><strong>no</strong></td></tr>
+<tr><td>takes a prompt</td><td>yes, and it is the main lever</td><td><strong>no. None. By design</strong></td></tr>
+<tr><td>tuned by</td><td>words</td><td>decoding, segmentation, which checkpoint</td></tr>
+<tr><td>known failures</td><td>scaffolds, balances clauses, closes tidily</td><td>reverses a claim in 20% of outputs; loops a phrase in 23%</td></tr>
+</tbody>
+</table></div>
+
+<p><strong>The wall is that the network knows nothing about the task.</strong> It has never seen a question, a passage or an instruction. That is what makes it swappable and what makes it dumb: it cannot be told to preserve a number, so the thing that catches it reversing one has to sit outside it.</p>
+
+<h2>What each part of the system can possibly know</h2>
+
+<div class="scroll"><table>
+<thead><tr><th>Part</th><th>Can know</th><th>Cannot know, ever</th></tr></thead>
+<tbody>
+<tr><td>the controller</td><td>the question, the answer, the passages it was built from, the three sheets, its own previous attempts and why they were rejected</td><td>its own score. Neither evaluator is in the path</td></tr>
+<tr><td>the network</td><td>the string it was handed</td><td>the question, the passages, that a style target exists at all</td></tr>
+<tr><td>the gates</td><td>counts: words, habit rates, disfluency budget, surface scaffolding markers</td><td>whether the prose is any good. They can only refuse, never approve</td></tr>
+<tr><td>the style judge</td><td>his whole archive, and six passages with no idea which is which</td><td>which question any passage answers, and whether any two are related</td></tr>
+<tr><td>the content check</td><td>the styled text, and the passages the content loop retrieved</td><td>anything about style. It would score a perfect copy of the input at 100%</td></tr>
+</tbody>
+</table></div>
+
+<p>Two of these are load-bearing. <strong>The controller cannot see its score</strong>, which is what keeps the number an evaluation instead of a training signal. And <strong>the content check knows nothing about style</strong>, which is why it can be trusted as the guard: nothing a style improvement does can flatter it.</p>
+
+<h2>Four findings, and which step each one implicates</h2>
+
+<p class="lede">All four are measured on the locked testbed. Together they say the design above is roughly right and that one of its three stages is much smaller than it looks.</p>
+
+<h3>One. What gives the machine away is structure, not vocabulary</h3>
+
+<p>The style judge must name a category and quote the evidence. Over 87 machine answers:</p>
+
+<div class="scroll"><table>
+<thead><tr><th>Tell</th><th class="num">Share</th><th>Means</th><th>Implicates</th></tr></thead>
+<tbody>
+<tr><td><strong>SCAFFOLDED</strong></td><td class="num bad">41%</td><td>labelled or enumerated structure, signposted openings</td><td>step 1, and the network's segmentation</td></tr>
+<tr><td>BALANCED</td><td class="num">20%</td><td>parallel clauses, tidy antithesis, a punchline close</td><td>step 1. <strong>No gate can detect this</strong></td></tr>
+<tr><td>ARRIVES_FINISHED</td><td class="num">14%</td><td>no self-repair, no restart, nothing abandoned</td><td>step 3, and the network</td></tr>
+<tr><td>SUMMARISES</td><td class="num">10%</td><td>closes by restating itself</td><td>step 1, gateable</td></tr>
+<tr><td>OTHER</td><td class="num">8%</td><td>named in prose</td><td>&mdash;</td></tr>
+<tr><td>REGISTER</td><td class="num">6%</td><td>word choice that is not his</td><td>the network, and <code>hear</code></td></tr>
+<tr><td>NO_DIGRESSION</td><td class="num">1%</td><td>goes straight through; he wanders and returns</td><td>step 1</td></tr>
+</tbody>
+</table></div>
+
+<p><strong>Nothing is cited about rhythm and almost nothing about vocabulary.</strong> 71% of it is how the argument is shaped. That is mostly a prompt problem, which is the cheapest kind, and it reorders the priorities the three-stage plan started with.</p>
+
+<h3>Two. The biggest tell is only half mechanical</h3>
+
+<p>A rule for labelled openers, ordinal scaffolds and inline signposts fires on <strong>38 of 87</strong> machine answers against <strong>8 of 87</strong> of his. Real signal, worth gating. But against what the judge means by <code>SCAFFOLDED</code> it is weak: it catches 19 of the 36 it labelled that way, and fires on 19 of the 51 it labelled otherwise.</p>
+
+<p>So the gate removes a visible difference and <em>does not</em> cover the finding. The rest is in how the argument is built, which only step 1 can change.</p>
+
+<h3>Three. A stammer is worth about a fifth of the distance</h3>
+
+<figure>
+<svg viewBox="0 0 900 220" role="img" aria-label="On the judge's 0 to 100 scale the machine sits at 9.2 and he sits at 84.7. Among his own answers, those containing a literal stammer rate 78.3 and those without 67.9, so a stammer accounts for roughly 10 points of the 75-point gap.">
+  <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor">
+    <line x1="60" y1="104" x2="840" y2="104" stroke="#b9c3bc" stroke-width="1.2"/>
+    <g fill="#7b8b95" font-size="9">
+      <line x1="60" y1="100" x2="60" y2="108" stroke="#b9c3bc"/><text x="60" y="124" text-anchor="middle">0</text>
+      <line x1="450" y1="100" x2="450" y2="108" stroke="#b9c3bc"/><text x="450" y="124" text-anchor="middle">50</text>
+      <line x1="840" y1="100" x2="840" y2="108" stroke="#b9c3bc"/><text x="840" y="124" text-anchor="middle">100</text>
+    </g>
+    <text x="450" y="144" text-anchor="middle" font-size="9" fill="#7b8b95">the style judge's rating: how likely this is the real person</text>
+    <circle cx="132" cy="104" r="7" fill="#a8562c"/>
+    <text x="132" y="84" text-anchor="middle" fill="#a8562c" font-weight="500">9.2</text>
+    <text x="132" y="70" text-anchor="middle" fill="#a8562c" font-size="9.5">the machine now</text>
+    <circle cx="721" cy="104" r="7" fill="#2f6f5e"/>
+    <text x="721" y="84" text-anchor="middle" fill="#2f6f5e" font-weight="500">84.7</text>
+    <text x="721" y="70" text-anchor="middle" fill="#2f6f5e" font-size="9.5">him</text>
+    <line x1="132" y1="176" x2="721" y2="176" stroke="#b9c3bc" stroke-width="1"/>
+    <line x1="132" y1="172" x2="132" y2="180" stroke="#b9c3bc"/>
+    <line x1="721" y1="172" x2="721" y2="180" stroke="#b9c3bc"/>
+    <rect x="132" y="158" width="80" height="36" rx="3" fill="#f5efdc" stroke="#8a6d1f" stroke-width="1.3"/>
+    <text x="172" y="173" text-anchor="middle" fill="#8a6d1f" font-size="9.5" font-weight="500">~10 pts</text>
+    <text x="172" y="186" text-anchor="middle" fill="#8a6d1f" font-size="9">a stammer</text>
+    <rect x="214" y="158" width="507" height="36" rx="3" fill="none" stroke="#a8562c" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="468" y="173" text-anchor="middle" fill="#a8562c" font-size="9.5" font-weight="500">~65 pts &mdash; HOW THE ARGUMENT IS BUILT</text>
+    <text x="468" y="186" text-anchor="middle" fill="#a8562c" font-size="9">cannot be inserted afterwards</text>
+    <text x="60" y="212" font-size="9.5" fill="#7b8b95">His answers with a literal stammer rate 78.3; without, 67.9. All six of his lowest-rated answers contain zero.</text>
+  </g>
+</svg>
+<figcaption>The distance the style loop has to travel. Step 3 is real and it is the smallest of the three; the dashed block belongs to steps 1 and 2.</figcaption>
+</figure>
+
+<h3>Four. His disfluency is scarcer than it sounds, and one form is not a tell at all</h3>
+
+<div class="scroll"><table>
+<thead><tr><th>Per 100 words</th><th class="num">Him</th><th class="num">The machine</th><th>Reading</th></tr></thead>
+<tbody>
+<tr><td>word repeat, <code>a a partner</code></td><td class="num good">0.21</td><td class="num">0.01</td><td>the real signal, and it is small</td></tr>
+<tr><td>filled pause, <code>uh</code> / <code>um</code></td><td class="num good">0.09</td><td class="num">0.00</td><td>smaller still: 8 of his 87 answers carry one</td></tr>
+<tr><td>restart marker, <code>I mean</code>, <code>let me</code></td><td class="num">0.13</td><td class="num bad">0.18</td><td><strong>not a tell.</strong> The machine already does it more</td></tr>
+</tbody>
+</table></div>
+
+<p>At that rate a 190-word answer earns <strong>half a stumble</strong>. Step 3 is not adding texture to a paragraph; it is deciding whether this particular answer gets one.</p>
+
+<div class="flag"><span class="k">and every rate above is a floor, not the truth</span>
+<p>They are measured off transcripts, and the transcriber dropped disfluency, bleeped words and mis-transcribed others before we saw the text. The layer that would carry his real speech with timing intact does not exist in this system. 0.40 disfluencies per 100 words across the archive is what was written down, not what he did &mdash; and a cloned voice learns from the audio, not from this.</p></div>
+
+<h2>The three controls</h2>
+
+<p class="lede">The content loop has twelve. This has three, and the difference is not that this system is simpler: it is that most of what looks like a control here is a gate, and a gate is not something the controller sets.</p>
+
+<div class="scroll"><table>
+<thead><tr><th>#</th><th>Control</th><th>The controller chooses</th><th>Attacks</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td><strong>how to use the incoming passages</strong></td><td>which framing, how many of his passages to read, whether to try another framing after a rejection</td><td>SCAFFOLDED 41%, BALANCED 20%, SUMMARISES 10%, REGISTER 6%</td></tr>
+<tr><td class="num">2</td><td><strong>how to drive the network</strong></td><td>which adapter, decoding, how the input is segmented, whether to send it again</td><td>REGISTER, looping, ARRIVES_FINISHED</td></tr>
+<tr><td class="num">3</td><td><strong>disfluency placement</strong></td><td>whether this answer stumbles, and where</td><td>ARRIVES_FINISHED 14%</td></tr>
+</tbody>
+</table></div>
+
+<p>Control 2 has no prompt in it, which is the thing most likely to be got wrong. The adapter takes no system message, so "prompt the network differently" is not available; what is available is temperature, top-p, repetition penalty, the no-repeat window, which checkpoint, and how a long input is split before rewriting.</p>
+
+<p><strong>That last one is worth a test rather than an assumption.</strong> Inputs over a word limit are sentence-split, rewritten <em>independently</em>, and joined. Segments rewritten in isolation and stitched is a plausible source of the self-contained, tidily-closing paragraphs the judge flags at 41% and 20%. Varying the split alone would say.</p>
+
+<h3>And the nine gates, which are not controls</h3>
+
+<div class="scroll"><table>
+<thead><tr><th>Gate</th><th>Refuses</th><th>Derived from</th></tr></thead>
+<tbody>
+<tr><td>labelled openers, ordinal scaffolds, inline signposts</td><td>surface scaffolding</td><td>a rule; 38 vs 8 on the testbed</td></tr>
+<tr><td>a closing sentence that restates the answer</td><td>SUMMARISES</td><td>a rule</td></tr>
+<tr><td>word band</td><td>an answer outside his length distribution</td><td>his 190 &plusmn; 89 words</td></tr>
+<tr><td>habit band, twelve features</td><td>any rate outside his range, <strong>over or under</strong></td><td>his archive</td></tr>
+<tr><td>disfluency budget</td><td>more stumbles than he makes</td><td>his 0.30 per 100 words</td></tr>
+<tr><td>content survives</td><td>a dropped or reversed claim</td><td>the shipped four measures</td></tr>
+<tr><td>markup is well formed</td><td>a render that cannot be produced</td><td>the markup spec</td></tr>
+<tr><td>turn backstop</td><td>a loop that never settles</td><td>&mdash;</td></tr>
+<tr><td>wall clock</td><td>nothing. <strong>Off</strong></td><td>&mdash;</td></tr>
+</tbody>
+</table></div>
+
+<p>Two of these are bands rather than caps, and that shape is what makes them ungameable. The content loop caps answer length because shorter is never a fault; here an answer at 60 words is as unlike him as one at 400. Same for the habit band: overshooting his filler rate fails it exactly as undershooting does, which is why the earlier authorship metric could be won by repeating one word fifty times and these cannot.</p>
+
+<p>The wall clock is off deliberately, the same call the content loop made: a budget from the start mixes "how good can this get" with "how good can it get in a minute". Quality first, then read the latency it actually needs and set the budget from that.</p>
+
+<h2>Where every configuration sits today</h2>
+
+<p>One arm has been measured: the content loop's answer with no styling at all. It is the baseline everything must beat. The rest is what exists on disk and has never been run at this seam.</p>
+
+<div class="scroll"><table>
+<thead><tr><th>Arm</th><th>State</th><th class="num">Style judge</th><th class="num">Floor</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td>the content answer, unstyled</td><td class="good">measured</td><td class="num bad">9.2</td><td class="num">3.4%</td><td>the baseline. AUC 0.999, d&prime; 4.35</td></tr>
+<tr><td>controller stylises, no network</td><td class="bad">not run here</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td>the nearest prior measurement scored it <strong>worse than doing nothing</strong></td></tr>
+<tr><td>the trained adapter alone</td><td class="bad">not run here</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td>several on disk, five datasets. All trained on the wrong input shape</td></tr>
+<tr><td>both in series</td><td class="bad">never tried</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td>the design above. Untested end to end</td></tr>
+<tr><td>plus disfluency</td><td class="bad">not built</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td>worth ~10 of 75 points, measured indirectly</td></tr>
+</tbody>
+</table></div>
+
+<p>On the older style corpora, which restyle paragraphs from the training distribution rather than answers, four adapter variants separate from him at 0.933, 0.961, 0.969 and 0.992 on counter-based separability, against a floor of 0.606 &mdash; and a prompted base model at 0.999, worse than the untouched input's 0.978. <strong>Those numbers are on the wrong input shape</strong> and are quoted only to say which arms have ever been distinguished from each other at all.</p>
+
+<div class="flag"><span class="k">the knob that is already turned past its end</span>
+<p>Judged by distance to his stylistic centre, in units of his own spread, the adapter sits at <strong>3.16</strong> and <em>he</em> sits at <strong>3.25</strong>. The machine is closer to his average than he is, and it is still identified as a machine essentially every time.</p>
+<p>He is a spread, not a point. Minimising distance to his centre produces something more average-him than him, which is the flattening the whole problem is made of. Judged instead by distance between the two <em>distributions</em>, the same adapter is <em>worse</em> than doing nothing: 154 against 128, with his own floor at 23. <strong>Two readings of the same twelve numbers, opposite answers</strong> &mdash; which is why "maximise the style metric" has no referent yet.</p></div>
+
+<h2>Requirement one: the controller must understand its own machinery</h2>
+
+<p>The content controller is handed a manual of its own stages, because a model that does not know what a control does cannot reach for it. The same holds here, and there is one fact it must have that is counter-intuitive enough to state twice.</p>
+
+<h3>One stage, as the controller actually receives it</h3>
+
+<pre><span class="cm">## restyle</span>
+
+Hands a passage to a model trained on this person's speech. Text in, text out.
+
+<b>IT TAKES NO INSTRUCTION.</b> There is no prompt, no system message, nothing you
+can ask it for. Wording your request differently changes nothing, because your
+words are not sent. What you can change:
+
+  which checkpoint   several exist and they fail differently
+  decoding           greedy loops a phrase in roughly a quarter of outputs.
+                     Escalating ONLY the outputs that loop kept content at
+                     0.927; a blanket setting dropped it to 0.859
+  segmentation       a long input is sentence-split, each part rewritten
+                     ALONE, and the parts joined. Suspect this when the result
+                     reads as a list of self-contained paragraphs
+  send it again      its output can be fed back through
+
+<b>IT WILL SOMETIMES REVERSE A CLAIM.</b> Measured at one in five outputs on an
+earlier checkpoint, while every automatic score read fine. Read what comes
+back against what you sent. This is why you run after it and not only before.</pre>
+
+<p>The manual carries the mechanism and none of his facts: the archive's size, his rates and his vocabulary are filled in from whichever creator is loaded, and the file is linted for creator-specific content exactly as the content side's twelve prompt files are.</p>
+
+<h2>Requirement two: the controller must turn findings into an ordered plan</h2>
+
+<p>The style judge returns three fields per failure, and the third is the one that makes a plan possible.</p>
+
+<pre><span class="cm">tell     </span>SCAFFOLDED
+<span class="cm">evidence </span>"Short answer: no. On the living situation: ... The other thing"
+<span class="cm">instead  </span>"And so this this sense of compassion also comes in, right? Like
+<span class="cm">         </span> you start to realize that, oh, maybe this person is..."</pre>
+
+<p><strong>The second and third fields are a pair.</strong> What the machine did, and what he does at that moment, quoted from his own archive. That is the whole reason the judge is shown 86,000 words: not to help it decide, but to say what should have happened instead.</p>
+
+<p>The ordering rule carries over from the content loop unchanged, because the reason for it is unchanged: <strong>group the findings by what would fix them, and re-reach before re-writing.</strong> Several tells share one cause &mdash; scaffolding, balanced clauses and a summarising close are frequently one decision about how to open &mdash; and a controller that fixes them one at a time spends its budget discovering that.</p>
+
+<p>Two bounds, both measured on the content side: <strong>one retry, not two</strong> (across six retried questions the second was wasted four times, and the two apparent saves were recovering from the first retry making things worse), and the judge is not in the loop by default, because a judging step inside it measured 20 seconds of a 60-second budget.</p>
+
+<h2>How the three sheets get fitted, and on what</h2>
+
+<p class="lede">These are artifacts, not controls: fitted once, read at run time, frozen until refitted. And they split along the same line the two renders do, which is the reason to keep them apart.</p>
+
+<figure>
+<svg viewBox="0 0 900 230" role="img" aria-label="Text idiosyncrasies go into the style sheet, survive into the written render, and are what the style judge scores. Speaking idiosyncrasies go into the delivery sheet, exist only in the spoken render, and are judged by a listener. A third group, prosody and breath, cannot be learned from text at all.">
+  <defs><marker id="a5" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor">
+    <rect x="0" y="26" width="240" height="66" rx="5" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.8"/>
+    <text x="12" y="46" fill="#2f6f5e" font-weight="500">TEXT IDIOSYNCRASIES</text>
+    <text x="12" y="62" fill="#2f6f5e" font-size="9.5">markers, openers, sentence shape,</text>
+    <text x="12" y="74" fill="#2f6f5e" font-size="9.5">doubling for emphasis, his phrases</text>
+    <text x="12" y="87" fill="#2f6f5e" font-size="9">visible on the page</text>
+    <path d="M240,59 L296,59" stroke="#2f6f5e" stroke-width="1.3" marker-end="url(#a5)" color="#2f6f5e"/>
+    <rect x="298" y="26" width="150" height="66" rx="5" fill="none" stroke="#2f6f5e" stroke-width="1.4"/>
+    <text x="373" y="52" text-anchor="middle" fill="#2f6f5e">style sheet</text>
+    <text x="373" y="70" text-anchor="middle" fill="#2f6f5e" font-size="9">fitted from the archive</text>
+    <text x="373" y="83" text-anchor="middle" fill="#2f6f5e" font-size="9">+ failure pairs</text>
+    <path d="M448,59 L504,59" stroke="#2f6f5e" stroke-width="1.3" marker-end="url(#a5)" color="#2f6f5e"/>
+    <rect x="506" y="26" width="150" height="66" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <text x="581" y="52" text-anchor="middle">both renders</text>
+    <text x="581" y="70" text-anchor="middle" font-size="9" fill="#7b8b95">spoken AND written</text>
+    <path d="M656,59 L712,59" stroke="#a8562c" stroke-width="1.3" marker-end="url(#a5)" color="#a8562c"/>
+    <rect x="714" y="26" width="176" height="66" rx="5" fill="#f6e9e1" stroke="#a8562c" stroke-width="1.6"/>
+    <text x="802" y="52" text-anchor="middle" fill="#a8562c" font-weight="500">THE STYLE JUDGE</text>
+    <text x="802" y="70" text-anchor="middle" fill="#a8562c" font-size="9">scores this half</text>
+    <text x="802" y="83" text-anchor="middle" fill="#a8562c" font-size="9">and only this half</text>
+
+    <rect x="0" y="106" width="240" height="66" rx="5" fill="#e7eaf3" stroke="#4a5c94" stroke-width="1.8"/>
+    <text x="12" y="126" fill="#4a5c94" font-weight="500">SPEAKING IDIOSYNCRASIES</text>
+    <text x="12" y="142" fill="#4a5c94" font-size="9.5">filled pauses, word repeats,</text>
+    <text x="12" y="154" fill="#4a5c94" font-size="9.5">restarts, and where they land</text>
+    <text x="12" y="167" fill="#4a5c94" font-size="9">heard, not read</text>
+    <path d="M240,139 L296,139" stroke="#4a5c94" stroke-width="1.3" marker-end="url(#a5)" color="#4a5c94"/>
+    <rect x="298" y="106" width="150" height="66" rx="5" fill="none" stroke="#4a5c94" stroke-width="1.4"/>
+    <text x="373" y="132" text-anchor="middle" fill="#4a5c94">delivery sheet</text>
+    <text x="373" y="150" text-anchor="middle" fill="#4a5c94" font-size="9">fitted from the archive</text>
+    <text x="373" y="163" text-anchor="middle" fill="#4a5c94" font-size="9">only. No questions spent</text>
+    <path d="M448,139 L504,139" stroke="#4a5c94" stroke-width="1.3" marker-end="url(#a5)" color="#4a5c94"/>
+    <rect x="506" y="106" width="150" height="66" rx="5" fill="none" stroke="#4a5c94" stroke-width="1.3"/>
+    <text x="581" y="132" text-anchor="middle" fill="#4a5c94">spoken render only</text>
+    <text x="581" y="150" text-anchor="middle" font-size="9" fill="#7b8b95">stripped from subtitles</text>
+    <path d="M656,139 L712,139" stroke="#98a3a8" stroke-width="1.3" marker-end="url(#a5)" color="#98a3a8"/>
+    <rect x="714" y="106" width="176" height="66" rx="5" fill="none" stroke="#98a3a8" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="802" y="132" text-anchor="middle" fill="#7b8b95">A LISTENER</text>
+    <text x="802" y="150" text-anchor="middle" fill="#7b8b95" font-size="9">no text metric on it,</text>
+    <text x="802" y="163" text-anchor="middle" fill="#7b8b95" font-size="9">deliberately</text>
+
+    <rect x="0" y="186" width="890" height="38" rx="5" fill="none" stroke="#8a6d1f" stroke-width="1.3" stroke-dasharray="4 3"/>
+    <text x="14" y="205" fill="#8a6d1f" font-weight="500">A THIRD GROUP THAT NEITHER SHEET CAN HOLD:</text>
+    <text x="300" y="205" fill="#8a6d1f" font-size="9.5">pause length, breath, emphasis by volume, pitch movement, speed changes.</text>
+    <text x="14" y="218" fill="#8a6d1f" font-size="9.5">None is in the text, because the transcriber never wrote it down. The layer that would carry it does not exist in this system.</text>
+  </g>
+</svg>
+<figcaption>The split is not tidiness. It decides what each sheet is scored by: the style judge reads text, so it must never be pointed at the delivery sheet, or inserting stumbles becomes a way to win the number.</figcaption>
+</figure>
+
+<h3>Sheet one: the style sheet &mdash; his text idiosyncrasies</h3>
+
+<p>Fitted from the archive: 292 passages, 85,572 words after the scrub. Five sections, all counted rather than described.</p>
+
+<div class="def"><div class="scroll"><table>
+<thead><tr><th>Section</th><th>What is in it, for this creator</th></tr></thead>
+<tbody>
+<tr><td><strong>discourse markers</strong><br><span class="cite">rate per 100 words</span></td><td><code>like</code> 1.62 &middot; <code>so</code> 1.57 &middot; <code>right?</code> 0.59 &middot; <code>okay / alright</code> 0.32 &middot; <code>guys / y'all</code> 0.24 &middot; <code>actually</code> 0.20 &middot; <code>you know</code> 0.12 &middot; <code>basically</code> 0.09 &middot; <code>and so</code> 0.08 &middot; <code>literally</code> 0.05 &middot; <code>I mean</code> 0.02</td></tr>
+<tr><td><strong>how he opens a sentence</strong><br><span class="cite">share of 6,674 sentences</span></td><td><code>So</code> <strong>15.3%</strong> &middot; <code>And</code> <strong>10.2%</strong> &middot; <code>I</code> 6.4% &middot; <code>The</code> 4.0% &middot; <code>But</code> 3.3% &middot; <code>This</code> 3.0% &middot; <code>You</code> 2.5% &middot; <code>It's</code> 2.1% &middot; <code>We</code> 2.1% &middot; <code>Okay</code> 1.8% &middot; <code>Like</code> 1.7%</td></tr>
+<tr><td><strong>sentence shape</strong></td><td>median <strong>10</strong> words, mean 12.9, spread 10.9. p10 = 4, p90 = 26, longest 157. <strong>16% of his sentences are under five words.</strong> The spread is the signature, not the mean</td></tr>
+<tr><td><strong>doubling for emphasis</strong></td><td>Overwhelmingly <em>function</em> words, not adjectives: <code>I I</code> 43 &middot; <code>the the</code> 30 &middot; <code>that that</code> 20 &middot; <code>a a</code> 18 &middot; <code>this this</code> 16 &middot; <code>in in</code> 13 &middot; <code>is is</code> 12. <code>really really</code> appears only 8 times</td></tr>
+<tr><td><strong>phrases he reaches for</strong><br><span class="cite">count in the archive</span></td><td><code>a lot of people</code> 51 &middot; <code>the way that you</code> 31 &middot; <code>if we look at</code> 29 &middot; <code>I don't know if</code> 26 &middot; <code>if you look at</code> 24 &middot; <code>there's a lot of</code> 22 &middot; <code>like oh my god</code> 20 &middot; <code>and this is where</code> 18 &middot; <code>a little bit more</code> 18</td></tr>
+<tr><td><strong>failure pairs</strong><br><span class="cite">from a development split, not the archive</span></td><td>Per failure, what the machine wrote and what he does at that moment, both quoted. This is the only section that needs answered questions, and the style judge produces it as a side effect of scoring</td></tr>
+</tbody>
+</table></div></div>
+
+<p>The doubling row is the one a naive implementation gets wrong. <strong>He repeats grammar, not content.</strong> An injector that doubles adjectives to sound spontaneous produces something that is not him at all, and no rate check would catch it because the rate would be correct.</p>
+
+<div class="flag"><span class="k">why every row above is a count</span>
+<p>The style prompt on disk says he "talks fast, thinks out loud, repeats himself for emphasis". That arm is measured and it scored <strong>worse than doing nothing</strong> &mdash; separability 0.999 against 0.978 for the untouched input. The content side's creator file works because it is 96% his actual speech rather than prose about him. <strong>A sheet made of adjectives produces a performance of the adjectives.</strong></p></div>
+
+<h3>Sheet two: the delivery sheet &mdash; his speaking idiosyncrasies</h3>
+
+<p>Fitted from the archive only. No questions are spent on it, which is deliberate: his answers in the testbed carry roughly 50 disfluency events in total, and the archive carries 347 across 187 of its 292 passages. Seven times the data, and the testbed stays clean for evaluation.</p>
+
+<div class="def"><div class="scroll"><table>
+<thead><tr><th>Section</th><th>What is in it, for this creator</th></tr></thead>
+<tbody>
+<tr><td><strong>filled pauses</strong></td><td>Two forms only, and both are rare: <code>uh</code> 21 times, <code>um</code> 18. No <code>er</code>, no <code>hm</code>. <strong>0.05 per 100 words</strong></td></tr>
+<tr><td><strong>word repeats</strong></td><td><strong>308</strong> in the archive, <strong>60 distinct forms</strong>, 0.36 per 100 words. The forms are the doubling row of sheet one: function words</td></tr>
+<tr><td><strong>where a repeat lands</strong></td><td>Median at <strong>one third</strong> through the sentence. <strong>39% fall in the first quarter</strong>, only 16% in the last. He stumbles entering a thought, not leaving one</td></tr>
+<tr><td><strong>the budget</strong></td><td>0.41 events per 100 words combined. On a 190-word answer that is <strong>0.8 events</strong> &mdash; so most answers get one and some get none</td></tr>
+<tr><td><strong>restarts</strong></td><td>Recorded and <strong>excluded from injection.</strong> <code>I mean</code>, <code>let me</code> and friends run 0.13 per 100 words for him and <strong>0.18 for the machine</strong>, which already does it more. Adding them moves the wrong way</td></tr>
+<tr><td><strong>pause length, breath, emphasis, pitch</strong></td><td><strong>Absent.</strong> None is in the text. This is where the markup's <code>break</code> and <code>mstts:silence</code> would be driven from, and there is nothing to drive them with until the audio layer exists</td></tr>
+</tbody>
+</table></div></div>
+
+<p>The position row is what makes injection placeable rather than random, and it is the half a rate alone cannot give you. <strong>The rate says how often; the position says where; the forms say which word.</strong> All three are needed and all three are measurable from text.</p>
+
+<div class="flag"><span class="k">every number in this sheet is a floor</span>
+<p>The transcriber dropped disfluency, bleeped words and mis-transcribed others before we saw the text. 0.41 events per 100 words is what was <em>written down</em>. The true rate in the audio is almost certainly higher, and a cloned voice learns from the audio rather than from this sheet &mdash; which is why "does the voice produce hesitation by itself" is still an open question that could remove this sheet entirely.</p></div>
+
+<h3>Sheet three: the prompt library</h3>
+
+<p>The framings control 1 chooses between. The only sheet fitted on answered questions, and therefore the only one that forces a development split. It is also the sheet that should be <em>written</em> first and fitted later, because the judge already says what is wrong: scaffolding 41%, balanced clauses 20%, summarising closes 10%.</p>
+
+<h3>What fitting actually does, in order</h3>
+
+<ol>
+<li><strong>Measure the judge's rerun noise first.</strong> Identical inputs, identical settings, twice. On the content side this was skipped and it cost five prompt variants that were unresolvable by construction: rerunning the same configuration moved 17 of 20 question scores and flipped 7 pass/fail. The across-question noise here is known and healthy &mdash; a 1.1-point move is readable out of 75 points of headroom &mdash; but that is a different number and does not substitute.</li>
+<li><strong>Fit the two archive sheets.</strong> No questions touched, so nothing is spent and no split is contaminated.</li>
+<li><strong>Write the first prompts against the diagnosis, do not search for them.</strong> The judge already says scaffolding 41%, balanced 20%, summarising 10%. With 87 questions, writing against a named failure is far more sample-efficient than fitting, and it has a target where a search would be groping.</li>
+<li><strong>Measure each arm alone</strong> before any controller wraps them: the network by itself, prompting by itself, both in series. Three arms, no training. A controller wrapping two unmeasured stages cannot be debugged.</li>
+<li><strong>Only then fit the prompt library</strong>, if the written prompts have stopped improving.</li>
+</ol>
+
+<h3>What can be fitted now, and what is gated</h3>
+
+<div class="scroll"><table>
+<thead><tr><th>Thing</th><th>State</th><th>Gated on</th></tr></thead>
+<tbody>
+<tr><td>the disfluency sheet</td><td class="good">now</td><td>nothing. Archive only, free, no GPU</td></tr>
+<tr><td>the style sheet, the archive half</td><td class="good">now</td><td>nothing</td></tr>
+<tr><td>the rerun-noise number</td><td class="good">now</td><td>nothing. One run</td></tr>
+<tr><td>the creator-free rewrite prompt</td><td class="good">now</td><td>nothing. The prompt on disk names his profession and his subject matter</td></tr>
+<tr><td>the style sheet, the failure half</td><td class="num">next</td><td>a development split that is not the reported set</td></tr>
+<tr><td>the prompt library</td><td class="num">next</td><td>the rerun-noise number, and a split</td></tr>
+<tr><td>anything about the network</td><td class="bad">gated</td><td>which adapter, and batching. Generation is one passage at a time because the adapter cannot attach to the fast runtime</td></tr>
+<tr><td>disfluency in audio</td><td class="bad">gated</td><td>the provider decision, and whether a cloned voice supports the markup at all</td></tr>
+</tbody>
+</table></div>
+
+<h2>What is measured, in plain terms</h2>
+
+<p><strong>Two evaluators, and neither is allowed to stand alone.</strong> One asks whether it reads as him. The other asks whether it still says what it was handed. An arm can win either while losing the other badly.</p>
+
+<div class="scroll"><table>
+<thead><tr><th>Evaluator</th><th>The question it answers</th><th>Reported as</th></tr></thead>
+<tbody>
+<tr><td><strong>the style judge</strong></td><td>shown his archive and six passages, three his and three the arm's, from six different questions: which are him?</td><td>the arm's mean rating, with the floor beside it</td></tr>
+<tr><td><strong>the content check</strong></td><td>the four measures the content loop already ships, re-run on the styled text</td><td>the delta against the same four on the unstyled answer</td></tr>
+</tbody>
+</table></div>
+
+<p>The content check writes no measure of its own. It produces a report in the shape the existing scorer consumes, carrying the styled text and <strong>the original run's retrieval untouched</strong> &mdash; the style stage does not retrieve, so scoring it against a freshly retrieved set would credit or blame it for retrieval it never did. That also gives a free self-check: <strong>context recall must not move at all</strong>, and if it does, the bridge is broken rather than the arm.</p>
+
+<h3>Which readout to steer on, which to report</h3>
+
+<p>The style judge was measured three ways on the same locked testbed and the same arm. The differences decide which number goes where.</p>
+
+<div class="scroll"><table>
+<thead><tr><th>Format</th><th class="num">AUC</th><th class="num">d&prime;</th><th class="num">Floor</th><th class="num">His</th><th class="num">Arm's</th></tr></thead>
+<tbody>
+<tr><td>one passage at a time, no archive</td><td class="num">0.974</td><td class="num">3.93</td><td class="num good">8.0%</td><td class="num">71.7</td><td class="num">21.3</td></tr>
+<tr><td>lineup of six, no archive</td><td class="num">0.999</td><td class="num">4.55</td><td class="num">1.1%</td><td class="num">87.3</td><td class="num">14.8</td></tr>
+<tr><td>lineup of six, whole archive</td><td class="num bad">1.000</td><td class="num">5.05</td><td class="num bad">0.0%</td><td class="num">86.9</td><td class="num">10.2</td></tr>
+<tr><td><strong>lineup, archive, must give reasons</strong></td><td class="num">0.999</td><td class="num">4.35</td><td class="num">3.4%</td><td class="num">84.7</td><td class="num good">9.2</td></tr>
+</tbody>
+</table></div>
+
+<ul>
+<li><strong>The pile saturated it, not the archive.</strong> Going from one-at-a-time to a lineup moved AUC 0.974 to 0.999 by itself; the whole archive on top moved it 0.999 to 1.000.</li>
+<li><strong>What the archive bought is confidence and reasons.</strong> The arm's rating fell 14.8 to 10.2, and only with the archive can the judge quote what he does instead.</li>
+<li><strong>Requiring reasons made it less certain, and that is an improvement.</strong> Floor 0.0% back up to 3.4%. Having to name a category and quote evidence stops it committing freely.</li>
+<li><strong>AUC is not the readout.</strong> Pinned at 0.999 it cannot report progress. The arm's mean rating can: 9.2 today, 84.7 to climb to, and a 1.1-point move is readable.</li>
+<li>A judge sorting on <strong>word count alone</strong> scores 0.864 on this same split. The judge beats a ruler by 0.135, so it is reading more than length &mdash; and that margin is the thing to watch, not the headline.</li>
+</ul>
+
+<h2>Rules that keep the measurement honest</h2>
+
+<ol>
+<li><strong>The testbed is locked by a hash of its three frozen columns</strong> &mdash; the question, the input, the reference. Adding an arm as a new field is legal; changing a question, an input or a reference is refused, loudly, before anything is scored. Verified by tampering with one row and confirming the judge refuses.</li>
+<li><strong>Typography is scrubbed in code, identically on both sides.</strong> Before it, the em dash appeared in 95 of 100 machine answers and 3 of his. An instruction only covers a cue a judge would have <em>named</em>; a typographic tell can be used silently and then explained as something else.</li>
+<li><strong>Length is not normalised</strong>, deliberately. Truncating one side to match the other would change the rhythm being measured. It is forbidden in the prompt and verified in the verdicts: 0 of 174 named a forbidden cue, and the correlation of word count with rating is &minus;0.12 on the machine side.</li>
+<li><strong>The judge never sees the marked-up string</strong>, only the spoken render. Angle brackets would be a giant tell.</li>
+<li><strong>Nothing is fitted on the set that is reported.</strong> Three sheets get fitted on questions, so the 87 become a development set the moment fitting starts, and a second disjoint draw is locked for reporting.</li>
+<li><strong>Distinct answers of his, not distinct questions.</strong> The first build had 100 questions carrying only 87 different answers of his, because several questions are answered by the same stretch of a take.</li>
+<li><strong>Read the verdicts.</strong> Every instrument on this axis that was not read turned out to be measuring something else.</li>
+</ol>
+
+<div class="flag"><span class="k">the instrument that nearly lied, and how it was caught</span>
+<p>The counter that verifies the judge ignored transcript artifacts first reported <strong>36%</strong> of verdicts in violation. It was matching "mid-sentence false start" and "self-correction" &mdash; which are the style tells, not the banned ones. Reading all 195 verdicts found none, and the corrected rate is 0 of 174.</p>
+<p>Separately, the first run silently dropped five verdicts, <strong>all from one side</strong>, because a strict JSON parse failed on quotes inside free prose. A one-sided loss is the shape of bias no summary statistic shows.</p></div>
+
+<h2>How the code is actually structured</h2>
+
+<h3>Every file, and who reads it</h3>
+
+<div class="scroll"><table>
+<thead><tr><th>File</th><th>Is</th><th>Read by</th><th>State</th></tr></thead>
+<tbody>
+<tr><td><code>tools/evalset.py</code></td><td>builds the testbed and writes its lock; owns the scrub</td><td>a person, once per content run</td><td class="good">built</td></tr>
+<tr><td><code>eval_&lt;run&gt;.lock.json</code></td><td>hashes and provenance, no corpus text</td><td>every instrument, before scoring</td><td class="good">built</td></tr>
+<tr><td><code>tools/lineup.py</code></td><td>the style judge</td><td>a person, per arm</td><td class="good">built</td></tr>
+<tr><td><code>tools/detect.py</code></td><td>the one-at-a-time judge; owns the shared scoring and the banned-cue list</td><td><code>lineup.py</code> imports from it</td><td class="good">built</td></tr>
+<tr><td><code>tools/restyled.py</code></td><td>bridges a style arm into the shipped content scorer</td><td>a person, per arm</td><td class="good">built</td></tr>
+<tr><td><code>chain.py</code></td><td>the four content measures</td><td>unchanged, and must stay so</td><td class="good">shipped</td></tr>
+<tr><td><code>tools/styledist.py</code></td><td>the twelve counters and their floors</td><td>the gates, and diagnosis</td><td class="good">built</td></tr>
+<tr><td><code>llm.py</code></td><td>one cached, provenance-stamped call path. Now takes a cached prefix</td><td>everything</td><td class="good">shipped</td></tr>
+<tr><td><code>TESTBED.md</code></td><td>the rebuild recipe</td><td>a person</td><td class="good">built</td></tr>
+<tr><td><code>styleloop.py</code></td><td>the harness</td><td>&mdash;</td><td class="bad">proposed</td></tr>
+<tr><td><code>stylesheet.py</code>, <code>disfluency.py</code></td><td>fit the two archive sheets</td><td>&mdash;</td><td class="bad">proposed</td></tr>
+<tr><td><code>render.py</code></td><td>one marked-up string to two renders</td><td>the judge, the voice, subtitles</td><td class="bad">proposed</td></tr>
+<tr><td><code>selftest.py</code></td><td>the deterministic half, checked before questions are spent</td><td>a person, before every run</td><td class="bad">proposed for style</td></tr>
+</tbody>
+</table></div>
+
+<h3>Why the evaluators cannot be the same judge</h3>
+
+<p>The content loop proves its harness equivalent to the deployed path in two lines. The equivalent claim here is a separation, not an equivalence, and it is the one thing in this design that could silently fail.</p>
+
+<p>The style judge is read by the controller. The reported number must not be. But both are the same family of model asked nearly the same question, and both key on the same cues. <strong>A controller tuned until the judge stops complaining is a controller tuned against the score, one model removed</strong>, and nothing in the numbers would show it.</p>
+
+<p>Two things close it, and neither is optional once fitting starts:</p>
+
+<ul>
+<li><strong>A second locked testbed</strong>, a disjoint draw of questions, never fitted on. The 87 become development.</li>
+<li><strong>Measure how far the two agree</strong> on the same questions. If the judge's reasons predict the reported rating almost perfectly, they are one instrument under two names. If they disagree usefully, the critic is carrying information the score does not, which is the case for having it.</li>
+</ul>
+
+<h3>The control flow of one answer</h3>
+
+<pre><span class="cm"># proposed. mirrors loop.py's shape, including what it deliberately omits</span>
+
+answer, passages = from the content run
+msgs = [handed the answer, the passages, the style sheet]
+
+while turns &lt; HARD_TURNS:
+    text, calls = controller(msgs)
+
+    <span class="cm"># the styled answer is PROSE, recognised wherever it appears.</span>
+    <span class="cm"># requiring a tool call for it threw away 16 finished answers</span>
+    <span class="cm"># on the content side, and each rewrite shed specifics.</span>
+    if "&lt;styled&gt;" in text:
+        draft = parse(text)
+        faults = <b>gate_check</b>(draft)        <span class="cm"># ALL gates, one message</span>
+        if faults: msgs += [text, faults]; continue
+        return draft                        <span class="cm"># no judge in the path</span>
+
+    for c in calls:
+        if c is <b>hear</b>:     out = his passages, by index
+        if c is <b>measure</b>:  out = the twelve counters vs his bands
+        if c is <b>restyle</b>: out = network(c.text, decoding=c.decoding)
+        if c is <b>break</b>:   out = wrap the named spans, return both renders
+
+    msgs += [blocks unchanged, results]     <span class="cm"># thinking blocks replayed as-is</span></pre>
+
+<h3>The network is a tool, the judges are not</h3>
+
+<p>On the content side the judge is <strong>forced</strong> rather than offered: a model given a judge as an optional tool will not call it when it is confident, and confidence is uncorrelated with being right. The same logic applies here with the opposite conclusion for each piece.</p>
+
+<div class="scroll"><table>
+<thead><tr><th>Piece</th><th>Offered as a tool?</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>the network</td><td class="good">yes</td><td>it decides nothing, so a wrong call costs one round trip and nothing else</td></tr>
+<tr><td><code>measure</code></td><td class="good">yes</td><td>free and deterministic. There is no reason to ration it</td></tr>
+<tr><td>the gates</td><td class="bad">no, forced</td><td>a gate the controller may skip is advice, and advice lost twice on the content side</td></tr>
+<tr><td>either evaluator</td><td class="bad">no, absent</td><td>not in the path at all. The controller cannot see its own score</td></tr>
+</tbody>
+</table></div>
+
+<h3>Every prompt in the system, and what it returns</h3>
+
+<div class="scroll"><table>
+<thead><tr><th>Prompt</th><th>Returns</th><th>Creator-free?</th></tr></thead>
+<tbody>
+<tr><td>the style judge</td><td>per passage: a rating 0&ndash;100, one of seven tell labels, the evidence quoted, and what he does instead quoted from the archive</td><td class="good">yes</td></tr>
+<tr><td>the one-at-a-time judge</td><td>a rating and a tell</td><td class="good">yes</td></tr>
+<tr><td>the four content measures</td><td>unchanged from the content loop</td><td class="good">yes</td></tr>
+<tr><td>the controller's manual</td><td>&mdash; it is read, not answered</td><td class="good">yes, with numbers filled from the loaded archive</td></tr>
+<tr><td>the controller's instructions</td><td>the styled answer, in the format</td><td class="bad">to be written</td></tr>
+<tr><td><code>style_prompt.txt</code></td><td>a rewrite</td><td class="bad"><strong>no.</strong> Names his profession and his subject matter. Blocks measuring the prompted arm</td></tr>
+</tbody>
+</table></div>
+
+<h3>Where the code does not match the design</h3>
+
+<ul>
+<li><strong>The one-at-a-time judge was frozen in <code>METRICS.md</code> as "the acceptance test" before the lineup existed.</strong> The document above now assigns the lineup the reporting role and keeps the one-at-a-time judge for the floor and the AUC. `METRICS.md` has not been amended to say so, and it is the owner.</li>
+<li><code>lineup.py</code> imports its scoring and its banned-cue list from <code>detect.py</code>, so the two cannot diverge &mdash; but that makes <code>detect.py</code> the owner of shared machinery while also being an instrument, which is the kind of double role that drifts.</li>
+<li><code>SURVEY.md</code> §16 and <code>problems.md</code> N16 both state that markup cannot carry a stammer. It can, via <code>sub</code>. Not yet corrected.</li>
+<li>The testbed has <strong>no train/test split</strong>, which was right when nothing optimised against it.</li>
+</ul>
+
+<h2>The harness as it will be built</h2>
+
+<h3>Guarantees are code. Choices are prompt.</h3>
+
+<p>Every gate in the table earlier exists because the prompt version of it is expected to lose, and on the content side that expectation was measured: asking the model not to invent a connecting sentence was tried twice and lost twice, while a code gate took unnumbered claims from 283 to zero. A guaranteed change also needs no statistics to verify, which matters most when the noise floor is wide.</p>
+
+<p>The split here: <strong>quantity is code, placement is prompt.</strong> How many stumbles is his measured rate and the controller may not exceed it. Where they go is judgement and only the controller can decide it.</p>
+
+<h3>What gets deleted, and why</h3>
+
+<ul>
+<li><strong>The five-verdict content judge I wrote for this stage.</strong> Deleted. It was a second content instrument with no justification, and it would have made a style regression and a content regression report in different units.</li>
+<li><strong>The pairwise style judge</strong> as a scoreboard item. Kept as machinery, never reported: 98&ndash;100% across four adapters, two base sizes, two datasets and five decoding settings.</li>
+<li><strong>Corpus-level style aggregates.</strong> A naive copy baseline wins them. Any aggregate is computed per passage and then averaged.</li>
+<li><strong>"Share of the gap closed" per feature.</strong> Monotone, therefore gameable, and the existing numbers include a 502% where an arm overshot.</li>
+</ul>
+
+<h3>Planned file layout</h3>
+
+<pre>recipes/style-pairs/
+  TESTBED.md              the rebuild recipe          <span class="cm">built</span>
+  tools/evalset.py        testbed + lock + the scrub  <span class="cm">built</span>
+  tools/lineup.py         the style judge             <span class="cm">built</span>
+  tools/detect.py         one-at-a-time + shared      <span class="cm">built</span>
+  tools/restyled.py       bridge to chain.py          <span class="cm">built</span>
+  tools/styledist.py      the twelve counters         <span class="cm">built</span>
+  styleloop.py            the harness                 <span class="cm">proposed</span>
+  manual.md               the controller's machinery  <span class="cm">proposed</span>
+  controller_style.md     its instructions            <span class="cm">proposed</span>
+  render.py               one string, two renders     <span class="cm">proposed</span>
+  sheets/&lt;creator&gt;/
+    style.md              specimens + rates           <span class="cm">proposed, archive-fitted</span>
+    disfluency.json       forms + rate + positions    <span class="cm">proposed, archive-fitted</span>
+    prompts/              the framings                <span class="cm">proposed, split-fitted</span></pre>
+
+<p>The <code>sheets/&lt;creator&gt;/</code> directory is the entire per-creator surface. Nothing above it names a person.</p>
+
+<h3>Build order, and the two things that come first</h3>
+
+<div class="scroll"><table>
+<thead><tr><th>#</th><th>Step</th><th>Cost</th><th>Why here</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>the judge's rerun noise</td><td>one run, no GPU</td><td>skipping it cost the content side five unresolvable prompt variants</td></tr>
+<tr><td class="num">2</td><td>make the rewrite prompt creator-free</td><td>minutes</td><td>blocks measuring the prompted arm at all</td></tr>
+<tr><td class="num">3</td><td>a second locked testbed</td><td>one content run, ~40 min API</td><td>three sheets get fitted on questions; without this the reported number is a report of the fit</td></tr>
+<tr><td class="num">4</td><td>fit the two archive sheets</td><td>free</td><td>touches no questions, so it cannot contaminate anything</td></tr>
+<tr><td class="num">5</td><td>the disfluency probe, no harness</td><td>~3 min</td><td>insert stumbles into the 87 at his rate, re-run the judge. Tells you what step 3 is worth before building it</td></tr>
+<tr><td class="num">6</td><td>each arm alone: network, prompting, series</td><td>GPU for two of three</td><td>a controller wrapping unmeasured stages cannot be debugged</td></tr>
+<tr><td class="num">7</td><td>batch the network</td><td>&mdash;</td><td>gates any controller that calls it more than once</td></tr>
+<tr><td class="num">8</td><td>the controller</td><td>&mdash;</td><td>everything above is a prerequisite for it; none of it is a prerequisite for the others</td></tr>
+</tbody>
+</table></div>
+
+<h2>The sanity check, before any quality claim</h2>
+
+<p>The content harness's rule: read what the model actually did on a handful of questions before believing any number from a hundred. Five behavioural questions, each with a specific thing to look for.</p>
+
+<h3>Is it following the flow, or doing its own thing?</h3>
+<p>Did it read any of his passages before writing, or go straight to the network? Did it call the network at all, or quietly answer in its own voice and skip the stage? The trace has to show the calls, not just the output.</p>
+
+<h3>Is it using the controls, and reacting to the feedback?</h3>
+<p><code>measure</code> is free, so a controller that never calls it is leaving the only signal it has on the table. And when a gate hands something back, does the next draft change the thing that was named, or reshuffle wording until something passes?</p>
+
+<h3>Does it know the network takes no prompt?</h3>
+<p>The specific failure to look for: the controller writing an instruction into the text it sends to the network, as though the network would read it. That instruction is not just ignored, it is <em>rewritten and returned as content</em>, which is how a directive ends up inside a finished answer.</p>
+
+<h3>Did it act on the judge, or just retry?</h3>
+<p>The judge's reasons go back, not its labels, and the test is whether the next attempt addresses the named category or simply tries again. Grouping matters: if scaffolding, balanced clauses and a summarising close all came back, a controller that treats them as three problems is spending its budget on one.</p>
+
+<h3>Two behavioural faults to expect</h3>
+<ul>
+<li><strong>Lifting his phrasing wholesale.</strong> The passages in front of it are his real words on this subject, so copying them scores beautifully on the style judge while importing claims the answer never made. Faithfulness and padding are the two content measures that would move, which is precisely why the content check is not optional.</li>
+<li><strong>Buying style with content.</strong> Compressing toward his length is a requirement, and the cheapest way to hit it is to drop a claim. The content check catches it; a style number alone never would.</li>
+</ul>
+
+<h2>Auditing the judge</h2>
+
+<h3>Where it was right</h3>
+<ul>
+<li><strong>It ignored everything it was told to ignore.</strong> 0 of 174 verdicts named length, censor marks, punctuation, truncation or topic, across three formats.</li>
+<li><strong>It beat a ruler.</strong> Word count alone scores 0.864 on the same split; the judge scores 0.999.</li>
+<li><strong>Its floor is coherent.</strong> The passages of his it calls machine are short ones where he genuinely speaks in finished sentences, and its stated reason is nearly identical each time. That is a real property of him, not judge error.</li>
+<li><strong>Its "instead" quotes are real.</strong> When it says what he does at that moment, it is quoting the archive in front of it rather than composing something plausible.</li>
+</ul>
+
+<h3>Where it was wrong, or where reading it changed the design</h3>
+<ul>
+<li><strong>It over-committed until it was made to explain itself.</strong> Floor 0.0% and AUC 1.000 with reasons not required; 3.4% and 0.999 with them.</li>
+<li><strong>Length is still 86% of the way to its answer.</strong> Not a fault in the judge, but the margin over a ruler is the thing to watch as arms improve, not the headline.</li>
+<li><strong>The tell distribution contradicted the plan.</strong> The single-item judge's free-text reasons made disfluency look like the dominant problem. Forced to name a category, the same judge puts scaffolding at 41% and disfluency at 14%.</li>
+</ul>
+
+<h2>What the sanity check changed</h2>
+
+<p>Nothing yet &mdash; the harness does not exist. What reading the <em>judge</em> changed, before any harness was written:</p>
+
+<ul>
+<li><strong>The reported readout moved from AUC to the arm's mean rating</strong>, because AUC is pinned at 0.999 and cannot show progress while the rating has 75 points of headroom and 1.1-point resolution.</li>
+<li><strong>The content judge was deleted and replaced by a bridge to the shipped one.</strong></li>
+<li><strong>Step ordering flipped:</strong> the controller runs after the network as well as before, because the network's failures need repair and only the controller can do it.</li>
+<li><strong>The priority list was reordered</strong> from disfluency-first to structure-first, on the tell distribution.</li>
+<li><strong>Markup moved from ruled-out to load-bearing</strong>, once the reason for disfluency was stated as audio rather than text.</li>
+</ul>
+
+<h2>What is not known</h2>
+
+<ul>
+<li><strong>The judge's rerun noise.</strong> The single most important missing number, and one run away.</li>
+<li><strong>Whether prompting and the network stack or compete.</strong> Never tested together. The one measurement touching it says prompting alone is harmful.</li>
+<li><strong>Which adapter.</strong> Several on disk, all trained on the wrong input shape, none run at this seam.</li>
+<li><strong>Whether independent segment rewriting causes the scaffolding.</strong> Cheap to test, untested.</li>
+<li><strong>How much the judge's reasons and the reported rating agree.</strong> Decides whether the split is a formality or the only thing keeping the number honest.</li>
+<li><strong>Whether a cloned voice supports <code>sub</code> and <code>bookmark</code></strong>, and which provider dialect we are committing to.</li>
+<li><strong>Whether a cloned voice produces hesitation by itself</strong>, in which case no text stage owns disfluency and step 3 should not exist.</li>
+<li><strong>What his real disfluency rate is.</strong> Every number here is measured off a transcriber's reading of the audio, and the layer that would carry the truth does not exist in this system.</li>
+</ul>
+
+<p class="cite">Owners, if this page and they disagree: <code>METRICS.md</code> for the measures &middot; <code>TESTBED.md</code> for the testbed and its rebuild &middot; <code>SYSTEM.md</code> for the seams &middot; <code>problems.md</code> for what is unresolved. This page is derived from those and owns nothing.</p>
+
+</div>

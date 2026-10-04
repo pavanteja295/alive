@@ -1,0 +1,9 @@
+{
+ "videos": {"folder": "<creator>", "ids": ["<youtube id>", "..."],
+            "download": ["--full", "--no-video", "--a2f", "--subs"]},
+ "answers": {"creator": "<answer engine id>"},
+ "voice": {"profile": "<voice profile>", "release_step": null},
+ "clips": {"profile": "<face-clips profile>", "takes": ["<youtube id of each recording to track>"]},
+ "motion": {"profile": "<audio-to-mesh profile>", "run": null, "wrong": "<what is still wrong with it>"},
+ "render": {"profile": "<mesh-to-render profile>", "deployed": true, "wrong": "<what is still wrong with it>"}
+}

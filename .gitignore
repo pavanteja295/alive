@@ -1,0 +1,83 @@
+# ── Verbatim creator transcripts ────────────────────────────────────────────
+# The corpus is copyrighted third-party video. Everything below embeds it as
+# text, so none of it is committed. All of it is rebuildable from the takes:
+#   make onboard SUBJECT=<name> TAKES=<path>
+engines/knowledge_style/proto/work/*/store/
+engines/knowledge_style/proto/work/*/chats/
+engines/knowledge_style/proto/work/*/arms/runs_*.json
+!engines/knowledge_style/proto/work/*/arms/*_scored.json
+# The style testbed embeds his verbatim answers and the answers built from his
+# transcripts, so the DATA stays out and the LOCK goes in. The lock is hashes,
+# counts and provenance with no corpus text, and it is what makes a later rebuild
+# checkable: rebuild, and the hash either matches the committed lock or it does not.
+engines/knowledge_style/proto/work/*/style_corpus/eval_*.json
+engines/knowledge_style/proto/work/*/style_corpus/eval_*.jsonl
+!engines/knowledge_style/proto/work/*/style_corpus/eval_*.lock.json
+# Judge verdicts quote the passages they judged, and the derived sheets are built
+# out of his transcripts -- 8 full before/after pairs in one of them. Same rule as
+# the testbed: the DATA stays out, the GENERATOR and the LOCK go in, and a rebuild
+# either reproduces the committed hash or it does not.
+engines/knowledge_style/proto/work/*/style_corpus/*.jsonl
+engines/knowledge_style/proto/recipes/style-pairs/sheets/
+# Any run output anywhere, including stale copies left at the proto root by an
+# earlier layout. The narrow rule above missed those and a verbatim phrase from
+# the corpus reached the index; the check that caught it is worth keeping.
+engines/knowledge_style/proto/runs_*.json
+engines/knowledge_style/proto/batch_results.json
+engines/knowledge_style/proto/baseline_single_scored.json
+engines/knowledge_style/proto/cache/
+
+# ── Kept deliberately ───────────────────────────────────────────────────────
+# work/*/oracle.json      relevance labels: timestamps, no transcript text.
+#                         expensive to rebuild and the whole scoreboard.
+# work/*/questions.json   the probe set.
+# work/*/map.json         navigation metadata, not content.
+# work/*/ledger.md        the convergence loop's state.
+# arms/*_scored.json      the evidence: recall, abstention, faithfulness.
+#                         no answers, no span text.
+
+# ── Derived / transient ─────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.log
+engines/knowledge_style/proto/doc_stats.json
+
+# Question corpora and rendered reports carry VERBATIM transcript text.
+# Same class of leak as runs_*.json: the artifact is derived, the content is
+# the creator's. Regenerate with `make qcorpus`, never commit.
+engines/knowledge_style/proto/work/*/qcorpus*.jsonl
+engines/knowledge_style/proto/work/*/reports/
+engines/knowledge_style/proto/*.html
+
+# Style pairs and pilot artifacts: the pair IS verbatim transcript by design.
+engines/knowledge_style/proto/work/*/style_pairs*.jsonl
+engines/knowledge_style/proto/work/*/pilot/
+engines/knowledge_style/proto/work/*/*_pairs*.jsonl
+engines/knowledge_style/proto/work/*/*_paircheck.json
+
+# Papers live with the system (problems.md N20) but the PDFs are external content:
+# fetched, not authored. The entry in REFERENCES.md is what we own.
+engines/*/references/pdf/
+
+# a pinned API key for the prototype, never committed
+engines/knowledge_style/proto/work/.protokey
+
+# per-question traces from smoke tests and selftests -- scratch, regenerable
+engines/knowledge_style/proto/work/*/traces/
+
+# ── The live app and its data ───────────────────────────────────────────────
+# data/ and externals/ are the machine's: README.md says what goes in each. The face
+# engine reaches them through relative links that ARE committed (engines/audio2face).
+/data/
+/externals/
+# the trained models: not released yet. recipes/README.md says how to rebuild them.
+/checkpoints/
+/.run/
+# Style-pair outputs embed creators' verbatim transcripts; they slipped past the rules
+# above as prev_slices/ and verbatim_trim. The style recipes are not in this release.
+engines/knowledge_style/proto/work/*/prev_slices/
+engines/knowledge_style/proto/work/*/verbatim_trim.jsonl
+engines/knowledge_style/proto/work/*/style_corpus/
+# All per-creator answer-engine state is data (data/answers/); its run records embed
+# text derived from the creators' transcripts and are rebuilt by the recipe.
+engines/knowledge_style/proto/work/

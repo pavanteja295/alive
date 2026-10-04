@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live render</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#0E1519; --panel:#151E23; --sunk:#111A1F; --line:#24313A; --line2:#33434C;
+    --ink:#E2EAED; --ink2:#A8B8C0; --muted:#74858D;
+    --keep:#1E9BB2; --cut:#D06A2E; --good:#3FB27E;
+    --sans:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --mono:"IBM Plex Mono","SF Mono",Menlo,Consolas,monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:13px}
+
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;
+    padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+  header h1{font-family:var(--sans);font-weight:700;font-size:17px;margin:0;letter-spacing:-.01em}
+  header .sub{color:var(--muted);font-size:11.5px}
+  header .spacer{flex:1}
+  .tg{display:flex;border:1px solid var(--line2);background:var(--sunk)}
+  .tg span{padding:5px 9px;color:var(--muted);font-size:11px;align-self:center;
+    border-right:1px solid var(--line2);letter-spacing:.06em}
+  .tg button{background:none;border:0;color:var(--ink2);font-family:var(--mono);
+    font-size:11.5px;padding:5px 11px;cursor:pointer}
+  .tg button[aria-pressed="true"]{background:var(--keep);color:#04181D;font-weight:500}
+  .tg button:focus-visible{outline:2px solid var(--keep);outline-offset:-2px}
+
+  main{display:grid;grid-template-columns:250px minmax(0,1fr) 280px}
+  @media (max-width:1150px){main{grid-template-columns:1fr}}
+
+  .shelf{border-right:1px solid var(--line);padding:12px 0 40px}
+  .shelf h2{font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin:16px 16px 6px;font-weight:600}
+  .shelf h2:first-child{margin-top:2px}
+  .clip{display:block;width:100%;text-align:left;background:none;border:0;
+    border-left:3px solid transparent;color:var(--ink2);font-family:var(--mono);
+    font-size:12.5px;padding:8px 16px;cursor:pointer;line-height:1.45}
+  .clip:hover{background:var(--panel);color:var(--ink)}
+  .clip[aria-pressed="true"]{border-left-color:var(--keep);background:var(--panel);color:var(--ink)}
+  .clip em{display:block;font-style:normal;color:var(--muted);font-size:11px}
+  .clip:focus-visible{outline:2px solid var(--keep);outline-offset:-2px}
+
+  .stage{padding:20px;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .face{width:100%;max-width:620px}
+  .face .cap{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:8px 12px;border:1px solid var(--line);border-bottom:0;background:var(--panel);
+    font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+  .face .cap b{font-weight:500;color:var(--ink2);text-transform:none;letter-spacing:0}
+  .box{position:relative;aspect-ratio:1/1;background:#0b1114;border:1px solid var(--line);
+    display:grid;place-items:center;overflow:hidden}
+  .box img{width:100%;height:100%;object-fit:cover;display:block}
+  .box .idle{color:var(--muted);font-size:12.5px;text-align:center;padding:26px;line-height:1.8}
+
+  /* one track, two things on it: what has been heard, and what has been made */
+  .track{position:relative;width:100%;max-width:620px;height:22px;background:var(--sunk);
+    border:1px solid var(--line2)}
+  .track i{position:absolute;top:0;bottom:0;display:block}
+  .track .ready{left:0;background:var(--keep);opacity:.22;width:0}
+  .track .head{left:0;width:2px;background:var(--ink)}
+  .track b{position:absolute;right:6px;top:3px;font-weight:400;font-size:11px;color:var(--muted)}
+
+  audio{width:100%;max-width:620px;height:34px;filter:invert(.9) hue-rotate(180deg)}
+
+  .sync{width:100%;max-width:620px;display:flex;flex-wrap:wrap;align-items:center;
+    gap:8px 12px;padding:10px 12px;background:var(--panel);border:1px solid var(--line)}
+  .sync label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .sync input{flex:1 1 180px;min-width:150px;accent-color:var(--keep)}
+  .sync output{font-family:var(--mono);font-size:14px;color:var(--keep);min-width:70px;
+    text-align:right;font-variant-numeric:tabular-nums}
+  .sync button{background:var(--sunk);border:1px solid var(--line2);color:var(--ink2);
+    font-family:var(--mono);font-size:11.5px;padding:4px 10px;cursor:pointer}
+
+  .diag{width:100%;max-width:620px;font-size:11.5px;color:var(--muted);margin:0;
+    padding:7px 11px;background:var(--sunk);border:1px solid var(--line);line-height:1.6}
+  .note{width:100%;max-width:620px;font-size:12px;color:var(--ink2);line-height:1.65;margin:0}
+
+  .side{border-left:1px solid var(--line);padding:18px 16px 40px}
+  .big{margin:0 0 4px;font-family:var(--sans);font-weight:700;font-size:42px;line-height:1;
+    letter-spacing:-.02em;color:var(--keep);font-variant-numeric:tabular-nums}
+  .big small{font-size:14px;font-weight:500;color:var(--ink2);margin-left:3px}
+  .cap2{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 16px}
+  .kv{display:grid;grid-template-columns:1fr auto;gap:3px 10px;font-size:12px;margin:0 0 14px}
+  .kv dt{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .kv dd.g{color:var(--good)} .kv dd.c{color:var(--cut)}
+  h3{font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin:20px 0 8px;font-weight:600;border-top:1px solid var(--line);
+    padding-top:13px}
+  .speak{width:100%;max-width:620px;display:flex;flex-wrap:wrap;align-items:center;
+    gap:8px 12px;padding:10px 12px;background:var(--panel);border:1px solid var(--line)}
+  .speak > span:first-child{font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted)}
+  .speak input[type=file]{font-family:var(--mono);font-size:11.5px;color:var(--ink2);max-width:210px}
+  .speak button{background:var(--sunk);border:1px solid var(--line2);color:var(--ink2);
+    font-family:var(--mono);font-size:11.5px;padding:5px 11px;cursor:pointer}
+  .speak button[aria-pressed="true"]{background:var(--cut);color:#180c05;border-color:var(--cut)}
+  .speak .hint{flex:1 0 100%;font-size:11.5px;color:var(--muted)}
+  .speak code{color:var(--ink2)}
+  .err{color:var(--cut)}
+  /* every rendered face is labelled, on the picture, so a screen recording carries it */
+  .box{position:relative}
+  .aitag{position:absolute;top:10px;right:10px;background:rgba(10,12,15,.7);color:#fff;
+         font:600 11.5px ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;
+         padding:4px 9px;border-radius:5px;pointer-events:none}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Live render</h1>
+  <span class="sub" id="model">loading…</span>
+  <span class="spacer"></span>
+  <div class="tg">
+    <span>PRECISION</span>
+    <button id="p32" aria-pressed="true">fp32</button>
+    <button id="p16" aria-pressed="false">fp16</button>
+  </div>
+  <div class="tg">
+    <span>HEAD</span>
+    <button id="hgen" aria-pressed="true">moving</button>
+    <button id="hrest" aria-pressed="false">still</button>
+  </div>
+  <div class="tg">
+    <span>AUDIO</span>
+    <button id="whole" aria-pressed="true">whole clip at once</button>
+    <button id="strm" aria-pressed="false">as it arrives</button>
+  </div>
+  <div class="tg" id="wingrp" hidden>
+    <span>WINDOW</span>
+    <button class="win" data-c="1.0" aria-pressed="true">1s</button>
+    <button class="win" data-c="2.0">2s</button>
+    <button class="win" data-c="4.0">4s</button>
+  </div>
+</header>
+
+<main>
+  <nav class="shelf" id="shelf"></nav>
+
+  <div class="stage">
+    <div class="face">
+      <div class="cap"><span id="capL">the avatar, driven by the clip's audio</span><b id="capR">—</b></div>
+      <div class="box">
+        <img id="out" alt="the rendered face" hidden>
+        <span class="aitag">AI-generated</span>
+        <p class="idle" id="idle">pick a clip on the left.<br><br>nothing is pre-rendered.
+          every frame is made after you click, from that clip's audio.</p>
+      </div>
+    </div>
+
+    <div class="track" id="track">
+      <i class="ready" id="tready"></i><i class="head" id="thead"></i>
+      <b id="tlab"></b>
+    </div>
+    <audio id="snd" controls preload="auto"></audio>
+
+    <div class="speak">
+      <span>speak something else</span>
+      <input type="file" id="pick" accept="audio/*,video/*">
+      <button id="rec" type="button">record from the microphone</button>
+      <span class="hint" id="rechint">or drop a wav in <code>pipeline/gauss/live/inbox/</code>
+        and it speaks by itself</span>
+    </div>
+
+    <div class="sync">
+      <label for="off">shift the face against the sound</label>
+      <input type="range" id="off" min="-500" max="500" step="10" value="0">
+      <output id="offv">0 ms</output>
+      <button id="offz" type="button">reset</button>
+    </div>
+
+    <p class="diag" id="diag">idle</p>
+    <p class="note" id="verdict"></p>
+  </div>
+
+  <aside class="side">
+    <p class="big" id="big">—<small>fps</small></p>
+    <p class="cap2" id="biglab">waiting</p>
+    <dl class="kv" id="top">
+      <dt>time to first frame</dt><dd id="ttff">—</dd>
+      <dt>frames made</dt><dd id="frames">—</dd>
+      <dt>faster than realtime</dt><dd id="rt">—</dd>
+      <dt>the face right now</dt><dd id="behind">—</dd>
+    </dl>
+    <h3>this clip, per frame</h3>
+    <dl class="kv" id="stages"></dl>
+    <h3>hearing it</h3>
+    <dl class="kv" id="audio"></dl>
+    <h3>what is resident</h3>
+    <dl class="kv" id="boot"></dl>
+  </aside>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+let fp16 = false, stream = false, win = 1.0, head = 'generate';
+let frames = [], haveMax = -1, shownIdx = -1, offMs = 0;
+let poll = null, pumpAbort = null, current = null, clipNow = null, shelf = [];
+
+function tg(onId, offId, val, set){
+  $(onId).setAttribute('aria-pressed', String(val));
+  $(offId).setAttribute('aria-pressed', String(!val));
+  set(val);
+}
+$('#p16').onclick  = () => tg('#p16','#p32', true,  v => fp16 = v);
+$('#p32').onclick  = () => tg('#p16','#p32', false, v => fp16 = v);
+$('#hgen').onclick = () => tg('#hgen','#hrest', true,  v => head = v ? 'generate' : 'rest');
+$('#hrest').onclick= () => tg('#hgen','#hrest', false, v => head = v ? 'generate' : 'rest');
+$('#strm').onclick = () => { tg('#strm','#whole', true,  v => stream = v); $('#wingrp').hidden = false; };
+$('#whole').onclick= () => { tg('#strm','#whole', false, v => stream = v); $('#wingrp').hidden = true; };
+document.querySelectorAll('.win').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.win').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  win = parseFloat(b.dataset.c);
+});
+$('#off').oninput = e => { offMs = +e.target.value; $('#offv').textContent = offMs + ' ms'; };
+$('#offz').onclick = () => { $('#off').value = 0; offMs = 0; $('#offv').textContent = '0 ms'; };
+
+function kv(sel, rows){
+  const el = $(sel); el.innerHTML = '';
+  for (const [k, v, cls] of rows){
+    const dt = document.createElement('dt'); dt.textContent = k;
+    const dd = document.createElement('dd'); dd.textContent = v; if (cls) dd.className = cls;
+    el.append(dt, dd);
+  }
+}
+function dead(msg){
+  $('#idle').hidden = false;
+  $('#idle').innerHTML = '<span class="err">' + msg + '</span><br><br>'
+    + '<code>python pipeline/gauss/live/server.py --run G4_teeth --compile</code>';
+  $('#biglab').innerHTML = '<span class="err">no server</span>';
+}
+
+function clearFrames(){
+  for (const u of frames) if (u) URL.revokeObjectURL(u);
+  frames = []; haveMax = -1; shownIdx = -1;
+}
+
+// frames arrive carrying the index of the 1/30th of a second they belong to
+async function pump(job){
+  const ctl = new AbortController(); pumpAbort = ctl;
+  let r;
+  try { r = await fetch('/frames?job=' + job, {signal: ctl.signal}); } catch { return; }
+  const rd = r.body.getReader(), dec = new TextDecoder();
+  let buf = '';
+  for (;;){
+    let c;
+    try { c = await rd.read(); } catch { return; }
+    if (c.done) return;
+    buf += dec.decode(c.value, {stream: true});
+    let nl;
+    while ((nl = buf.indexOf('\n')) >= 0){
+      const line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+      if (!line.trim()) continue;
+      let m; try { m = JSON.parse(line); } catch { continue; }
+      if (m.end) return;
+      const bin = atob(m.b64), u8 = new Uint8Array(bin.length);
+      for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+      frames[m.i] = URL.createObjectURL(new Blob([u8], {type: 'image/jpeg'}));
+      if (m.i > haveMax) haveMax = m.i;
+    }
+  }
+}
+
+// ONE CLOCK, AND IT IS THE SOUND.
+// The page plays the very wav the model was given, so frame n belongs to second n/30
+// of what is being heard and there is nothing left to drift. When a frame has not been
+// made yet the face holds the last one it has AND THE PAGE SAYS SO -- a held picture
+// with no explanation is what made this look like a broken renderer.
+function tick(){
+  const snd = $('#snd'), img = $('#out');
+  const D = clipNow ? clipNow.seconds : 0;
+  if (haveMax >= 0 && D > 0){
+    const at = snd.currentTime;
+    const want = Math.round((at + offMs / 1000) * 30);
+    const j = Math.min(Math.max(want, 0), haveMax);
+    if (j !== shownIdx && frames[j]){
+      img.src = frames[j]; shownIdx = j;
+      if (img.hidden){ img.hidden = false; $('#idle').hidden = true; }
+    }
+    const ready = (haveMax + 1) / 30, behind = at - ready;
+    $('#tready').style.width = (100 * Math.min(ready / D, 1)).toFixed(1) + '%';
+    $('#thead').style.left  = (100 * Math.min(at / D, 1)).toFixed(1) + '%';
+    $('#tlab').textContent =
+      `heard ${at.toFixed(1)}s · made ${ready.toFixed(1)}s of ${D.toFixed(1)}s`;
+    const waiting = behind > 1 / 30;
+    $('#behind').textContent = waiting ? behind.toFixed(2) + ' s behind' : 'keeping up';
+    $('#behind').className = waiting ? 'err' : 'g';
+    $('#diag').innerHTML =
+      `audio ${at.toFixed(2)}s ${snd.paused ? '(paused)' : '(playing)'} · `
+      + `showing frame ${shownIdx} of ${haveMax} made · clip is ${Math.round(D*30)} frames`
+      + (waiting ? ' · <span class="err">no frame exists for this moment yet — '
+                   + 'the face is holding the last one it has</span>' : '');
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// A JOB THAT ALREADY EXISTS -- posted audio, or a file that landed in the inbox --
+// joins the same path as a clip click from here down.
+async function attach(job, label, seconds){
+  if (poll) { clearInterval(poll); poll = null; }
+  if (pumpAbort) { pumpAbort.abort(); pumpAbort = null; }
+  clearFrames();
+  clipNow = {id: label, seconds: seconds, kind: 'spoken'};
+  document.querySelectorAll('.clip').forEach(b => b.setAttribute('aria-pressed','false'));
+  const img = $('#out'), snd = $('#snd');
+  img.hidden = true; img.removeAttribute('src');
+  $('#idle').hidden = false; $('#idle').textContent = 'listening to ' + label + '\u2026';
+  $('#big').innerHTML = '\u2014<small>fps</small>'; $('#biglab').textContent = 'listening';
+  $('#verdict').textContent = ''; kv('#stages', []); kv('#audio', []);
+  $('#capR').textContent = (fp16 ? 'fp16' : 'fp32')
+    + ' \u00b7 head ' + (head === 'rest' ? 'still' : 'moving, generated');
+  current = job;
+  snd.src = '/audio?job=' + job;
+  pump(job);
+  const start = () => snd.play().catch(() => {
+    $('#capL').textContent = 'press play below to start the sound'; });
+  let misses = 0, began = stream;
+  if (stream) start();
+  poll = setInterval(async () => {
+    const s = await fetch('/stats?job=' + job).then(x => x.json()).catch(() => null);
+    if (current !== job) return;
+    if (!s){ if (++misses >= 4){ clearInterval(poll); poll = null;
+                                 dead('the server stopped answering mid-clip.'); } return; }
+    misses = 0;
+    paint(s, clipNow);
+    if (!began && haveMax >= 0){ began = true; start(); }
+    if (s.state === 'done' || s.state === 'error'){ clearInterval(poll); poll = null; }
+  }, 150);
+}
+
+async function speak(blob, label){
+  const q = new URLSearchParams({label: label, fp16: fp16 ? '1' : '0',
+                                 stream: stream ? '1' : '0', chunk: win, head: head});
+  let j;
+  try {
+    const r = await fetch('/speak?' + q, {method: 'POST', body: blob});
+    j = await r.json();
+    if (j.error) throw 0;
+  } catch { return dead('the server would not take that audio.'); }
+  attach(j.job, j.label, j.seconds);
+}
+
+// ANYTHING THAT LANDS IN THE INBOX SPEAKS WITHOUT ANYONE CLICKING.
+// Whatever was dropped before this page loaded is marked seen first, or opening the
+// page replays the last thing the server did instead of doing what was asked.
+let lastSeen = null, watching = false;
+async function watchInbox(){
+  const j0 = await fetch('/latest').then(x => x.json()).catch(() => null);
+  lastSeen = j0 ? j0.job : null;
+  watching = true;
+}
+setInterval(async () => {
+  if (!watching) return;
+  const j = await fetch('/latest').then(x => x.json()).catch(() => null);
+  if (!j || !j.job || j.job === lastSeen) return;
+  lastSeen = j.job;
+  const s = await fetch('/stats?job=' + j.job).then(x => x.json()).catch(() => null);
+  if (s) attach(j.job, s.label || 'inbox', s.seconds || 0);
+}, 700);
+
+async function run(clip, btn){
+  if (poll) { clearInterval(poll); poll = null; }
+  if (pumpAbort) { pumpAbort.abort(); pumpAbort = null; }
+  clearFrames();
+  clipNow = clip;
+  document.querySelectorAll('.clip').forEach(b =>
+    b.setAttribute('aria-pressed', String(b === btn)));
+
+  const img = $('#out'), snd = $('#snd');
+  snd.pause(); snd.removeAttribute('src'); snd.load();
+  img.hidden = true; img.removeAttribute('src');
+  $('#idle').hidden = false; $('#idle').textContent = 'listening to the clip…';
+  $('#big').innerHTML = '—<small>fps</small>'; $('#biglab').textContent = 'listening';
+  $('#diag').textContent = 'starting…'; $('#verdict').textContent = '';
+  kv('#stages', []); kv('#audio', []);
+  $('#capR').textContent = (fp16 ? 'fp16' : 'fp32')
+    + ' · head ' + (head === 'rest' ? 'still' : 'moving, generated');
+
+  // THE WAV THE MODEL WAS GIVEN, not the mp4. Same samples, same length, so frame n
+  // and second n/30 line up by construction; the mp4's audio is a re-encode of it and
+  // its container runs a few milliseconds longer. It carries real controls too, so a
+  // browser that refuses to autoplay costs one click rather than a frozen picture.
+  snd.src = '/audio?job=' + '';   // set once the job exists
+
+  const q = new URLSearchParams({clip: clip.id, fp16: fp16 ? '1' : '0',
+                                 stream: stream ? '1' : '0', chunk: win, head: head});
+  let j;
+  try {
+    const r = await fetch('/run?' + q);
+    if (!r.ok) throw 0;
+    j = await r.json();
+  } catch { return dead('the server is not answering.'); }
+  if (j.error) { $('#idle').textContent = j.error; return; }
+  current = j.job;
+  snd.src = '/audio?job=' + j.job;
+  pump(j.job);
+
+  // Streaming means the sound is arriving now, so it starts now and the face catches up
+  // when the model can answer -- the blank opening IS the measurement. Otherwise the
+  // clip is heard from the first finished frame, so the face is never asked to show a
+  // moment it has not been made for.
+  const start = () => snd.play().catch(() => {
+    $('#capL').textContent = 'press play below to start the sound'; });
+  if (stream) start();
+
+  let misses = 0, began = stream;
+  poll = setInterval(async () => {
+    const s = await fetch('/stats?job=' + j.job).then(x => x.json()).catch(() => null);
+    if (current !== j.job) return;
+    if (!s){ if (++misses >= 4){ clearInterval(poll); poll = null;
+                                 dead('the server stopped answering mid-clip.'); } return; }
+    misses = 0;
+    paint(s, clip);
+    if (!began && haveMax >= 0){ began = true; start(); }
+    if (s.state === 'done' || s.state === 'error'){ clearInterval(poll); poll = null; }
+  }, 150);
+}
+
+function paint(s, clip){
+  if (s.state === 'error'){
+    $('#biglab').innerHTML = '<span class="err">' + (s.note || 'failed') + '</span>';
+    $('#idle').hidden = false; $('#idle').textContent = s.note || 'failed';
+    return;
+  }
+  // the head motion must never be allowed to read as a prediction
+  if (s.pose_why) $('#capL').textContent = s.pose_why.startsWith('GENERATED')
+    ? 'the avatar \u2014 lips from the audio, head motion generated, not predicted'
+    : "the avatar, driven by the clip's audio";
+  $('#ttff').textContent   = s.ttff_ms ? (s.ttff_ms / 1000).toFixed(2) + ' s' : '—';
+  $('#frames').textContent = s.total ? s.frames + ' / ' + s.total : '—';
+  $('#rt').textContent     = s.realtime_x ? s.realtime_x.toFixed(2) + '×' : '—';
+
+  if (s.stream && s.lag_ms != null){
+    $('#big').innerHTML = (s.lag_ms / 1000).toFixed(2) + '<small>s behind</small>';
+    $('#biglab').textContent = 'how far the face trails the voice';
+  } else if (s.render_fps){
+    $('#big').innerHTML = s.render_fps.toFixed(0) + '<small>fps</small>';
+    $('#biglab').textContent = 'the rate frames are being made';
+  }
+  if (s.stages){
+    const g = s.stages, tot = s.render_ms_per_frame;
+    kv('#stages', [
+      ['bind blobs to the mesh', g.mesh.toFixed(2) + ' ms'],
+      ['per-frame network',      g.network.toFixed(2) + ' ms'],
+      ['draw the blobs',         g.raster.toFixed(2) + ' ms'],
+      ['jpeg for this page',     (g.encode || 0).toFixed(2) + ' ms'],
+      ['render, per frame',      tot.toFixed(2) + ' ms', tot < 33.3 ? 'g' : 'c'],
+    ]);
+  }
+  if (s.audio){
+    const st = s.audio.stages || {};
+    kv('#audio', [
+      ['whole phase, once', s.audio.ms.toFixed(0) + ' ms'],
+      ['└ speech to controls', (st['speech to controls'] || 0).toFixed(0) + ' ms'],
+      ['└ the rig', (st['the rig'] || 0).toFixed(1) + ' ms'],
+      ['└ layer, fit, placement', (st['layer, fit and placement'] || 0).toFixed(1) + ' ms'],
+    ]);
+  }
+  if (s.state === 'done'){
+    $('#verdict').textContent = s.stream
+      ? `The face ran ${(s.lag_min_ms/1000).toFixed(2)}–${(s.lag_max_ms/1000).toFixed(2)} s `
+        + `behind the voice on a ${s.chunk_s} s window. ${s.lookahead_s.toFixed(1)} s of that is the `
+        + `model needing to hear PAST the moment it is drawing, which is why the face is blank `
+        + `for the first few seconds. That is the model, not the renderer.`
+      : `${s.total} frames made in ${(s.total * s.render_ms_per_frame / 1000).toFixed(1)} s — `
+        + `${s.render_ms_per_frame.toFixed(2)} ms each, ${s.render_fps.toFixed(0)} fps, `
+        + `${s.realtime_x.toFixed(1)}× faster than the speech, so every frame of the clip `
+        + `existed before the sound reached it. If the lips are off, use the slider.`;
+  }
+}
+
+async function boot(){
+  let r;
+  try {
+    const resp = await fetch('/shelf');
+    if (!resp.ok) throw 0;
+    r = await resp.json();
+  } catch { $('#model').innerHTML = '<span class="err">server not running</span>';
+            return dead('nothing is serving on this port.'); }
+  shelf = r.clips;
+  const m = r.model;
+  $('#model').textContent = `${m.run} · ${m.blobs.toLocaleString()} blobs · ${m.size}`
+    + (m.compiled ? ' · compiled' : '') + ` · build ${r.build}`;
+
+  const KINDS = [
+    ['held-out test clip', 'held out — neither model has seen it'],
+    ['unseen recording, same person', 'his voice, a session nothing has read'],
+    ['novel voice', 'a different person entirely'],
+    ['cloned voice', 'his cloned voice — F5-TTS, step 10000'],
+    ['fully generated', 'question → style engine → clone → this face'],
+  ];
+  const nav = $('#shelf'); nav.innerHTML = '';
+  for (const [kind, label] of KINDS){
+    const got = shelf.filter(c => c.kind === kind);
+    if (!got.length) continue;
+    const h = document.createElement('h2'); h.textContent = label; nav.appendChild(h);
+    for (const c of got){
+      const b = document.createElement('button');
+      b.className = 'clip'; b.setAttribute('aria-pressed','false'); b.dataset.id = c.id;
+      b.innerHTML = `${c.id.replace(/^(heldout|unseen|novel|cloned|gen)_/,'')}`
+        + `<em>${c.seconds.toFixed(1)} s · ${Math.round(c.seconds*30)} frames</em>`;
+      b.onclick = () => run(c, b);
+      nav.appendChild(b);
+    }
+  }
+  kv('#boot', [
+    ['renderer + phase one', m.boot_s + ' s, once'],
+    ['per request from now', '0 s'],
+    ['camera', m.camera.slice(-14)],
+  ]);
+
+  await watchInbox();
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('mode') === 'stream') $('#strm').onclick();
+  if (qs.get('fp16') === '1') $('#p16').onclick();
+  if (qs.get('head') === 'rest') $('#hrest').onclick();
+  const want = qs.get('run');
+  if (want){
+    const c = shelf.find(x => x.id === want);
+    const b = [...document.querySelectorAll('.clip')].find(x => x.dataset.id === want);
+    if (c && b) setTimeout(() => run(c, b), 60);
+  }
+}
+$('#pick').onchange = e => {
+  const f = e.target.files[0];
+  if (f) speak(f, f.name.replace(/\.[^.]+$/, ''));
+};
+
+// THE MICROPHONE. Recorded here, converted by the server, and driven through exactly
+// the same path as everything else -- so what you hear back is what the model heard.
+let mr = null;
+$('#rec').onclick = async () => {
+  const b = $('#rec');
+  if (mr && mr.state === 'recording'){ mr.stop(); return; }
+  let s;
+  try { s = await navigator.mediaDevices.getUserMedia({audio: true}); }
+  catch { $('#rechint').innerHTML = '<span class="err">the browser would not give '
+            + 'access to a microphone</span>'; return; }
+  const parts = [];
+  mr = new MediaRecorder(s);
+  mr.ondataavailable = e => parts.push(e.data);
+  mr.onstop = () => {
+    s.getTracks().forEach(x => x.stop());
+    b.textContent = 'record from the microphone'; b.setAttribute('aria-pressed','false');
+    speak(new Blob(parts), 'microphone');
+  };
+  mr.start();
+  b.textContent = 'stop and speak it'; b.setAttribute('aria-pressed','true');
+};
+
+boot();
+</script>
+</body>
+</html>

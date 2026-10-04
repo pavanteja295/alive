@@ -1,0 +1,505 @@
+<title>Harness Equivalence Ladder</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --ink:#18222c; --ink-soft:#4a5a67; --ink-faint:#7b8b95;
+    --paper:#f6f7f4; --surface:#ffffff; --surface-2:#eef1ed;
+    --rule:#d8ded9; --rule-hard:#b9c3bc;
+    --dep:#2f6f5e;      /* the deployed system, everywhere on this page */
+    --har:#a8562c;      /* the harness, everywhere on this page */
+    --warn:#8a6d1f;
+    --dep-wash:#e6efeb; --har-wash:#f6e9e1; --warn-wash:#f5efdc;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ink:#e4e9e5; --ink-soft:#a8b5ad; --ink-faint:#7d8a83;
+      --paper:#151a18; --surface:#1d2422; --surface-2:#242c29;
+      --rule:#2f3a36; --rule-hard:#41504a;
+      --dep:#6fc0a6; --har:#e09163; --warn:#ccae5c;
+      --dep-wash:#1c2b26; --har-wash:#2e211a; --warn-wash:#2a2517;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e4e9e5; --ink-soft:#a8b5ad; --ink-faint:#7d8a83;
+    --paper:#151a18; --surface:#1d2422; --surface-2:#242c29;
+    --rule:#2f3a36; --rule-hard:#41504a;
+    --dep:#6fc0a6; --har:#e09163; --warn:#ccae5c;
+    --dep-wash:#1c2b26; --har-wash:#2e211a; --warn-wash:#2a2517;
+  }
+
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Source Sans 3","Helvetica Neue",Arial,sans-serif;
+    font-size:16.5px; line-height:1.62;
+    padding-inline:20px; padding-block:0;
+  }
+  .wrap{max-width:820px; margin:0 auto; padding-block:44px 80px;}
+  h1,h2,h3{font-family:"Newsreader",Georgia,serif; font-weight:600; text-wrap:balance; line-height:1.18;}
+  h1{font-size:2.5rem; margin:0 0 .3rem;}
+  h2{font-size:1.6rem; margin:3.2rem 0 .2rem; padding-top:1.4rem; border-top:1px solid var(--rule);}
+  h3{font-size:1.16rem; margin:2rem 0 .3rem; font-weight:600;}
+  .dek{font-family:"Newsreader",Georgia,serif; font-size:1.2rem; font-style:italic;
+       color:var(--ink-soft); margin:0 0 .4rem; max-width:60ch;}
+  .meta{font-family:"IBM Plex Mono",monospace; font-size:.74rem; letter-spacing:.06em;
+        text-transform:uppercase; color:var(--ink-faint); margin-bottom:2.6rem;}
+  p{max-width:66ch; margin:.85rem 0;}
+  .lede{font-size:1.06rem;}
+  code,.mono{font-family:"IBM Plex Mono",monospace; font-size:.85em;}
+  code{background:var(--surface-2); padding:.1em .34em; border-radius:3px;}
+  strong{font-weight:600;}
+  .dep{color:var(--dep); font-weight:600;}
+  .har{color:var(--har); font-weight:600;}
+
+  /* answer box: the one thing the reader came for */
+  .answer{background:var(--surface); border-left:3px solid var(--dep);
+          padding:1.1rem 1.3rem; margin:1.6rem 0; border-radius:0 4px 4px 0;
+          box-shadow:0 1px 2px rgba(0,0,0,.05);}
+  .answer p{margin:.35rem 0;}
+  .answer .k{font-family:"IBM Plex Mono",monospace; font-size:.72rem;
+             text-transform:uppercase; letter-spacing:.09em; color:var(--ink-faint);
+             display:block; margin-bottom:.4rem;}
+
+  .scroll{overflow-x:auto; margin:1.5rem 0; -webkit-overflow-scrolling:touch;}
+  table{border-collapse:collapse; width:100%; font-size:.9rem; min-width:480px;}
+  th,td{text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--rule);
+        vertical-align:top;}
+  th{font-family:"IBM Plex Mono",monospace; font-size:.7rem; text-transform:uppercase;
+     letter-spacing:.07em; color:var(--ink-faint); font-weight:400;
+     border-bottom:1px solid var(--rule-hard);}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums;
+                font-family:"IBM Plex Mono",monospace;}
+  tr.hi td{background:var(--dep-wash);}
+  tr.lo td{background:var(--har-wash);}
+  .cite{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--ink-faint);
+        white-space:nowrap;}
+
+  figure{margin:2rem 0;}
+  figure svg{display:block; width:100%; height:auto; max-width:100%;}
+  figcaption{font-size:.85rem; color:var(--ink-soft); margin-top:.6rem; max-width:64ch;}
+
+  /* the five differences */
+  .diff{border:1px solid var(--rule); border-radius:5px; background:var(--surface);
+        margin:1rem 0; overflow:hidden;}
+  .diff > .hd{padding:.65rem 1rem; background:var(--surface-2);
+              border-bottom:1px solid var(--rule);
+              font-family:"Newsreader",Georgia,serif; font-size:1.05rem; font-weight:600;}
+  .diff .grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:0;}
+  .diff .cell{padding:.8rem 1rem; font-size:.9rem; border-right:1px solid var(--rule);}
+  .diff .cell:last-child{border-right:none;}
+  .diff .cell .k{font-family:"IBM Plex Mono",monospace; font-size:.66rem;
+                 text-transform:uppercase; letter-spacing:.08em; display:block;
+                 margin-bottom:.3rem; color:var(--ink-faint);}
+  .diff .cell.fix{background:var(--dep-wash);}
+  @media (max-width:620px){
+    .diff .grid{grid-template-columns:1fr;}
+    .diff .cell{border-right:none; border-bottom:1px solid var(--rule);}
+    .diff .cell:last-child{border-bottom:none;}
+  }
+
+  ul{max-width:66ch; padding-left:1.15rem;}
+  li{margin:.4rem 0;}
+  .flag{background:var(--warn-wash); border-left:3px solid var(--warn);
+        padding:.9rem 1.1rem; margin:1.5rem 0; font-size:.94rem; border-radius:0 4px 4px 0;}
+  .flag p{margin:.3rem 0;}
+  .flag .k{font-family:"IBM Plex Mono",monospace; font-size:.7rem; text-transform:uppercase;
+           letter-spacing:.09em; color:var(--warn); display:block; margin-bottom:.35rem;
+           font-weight:600;}
+  pre{background:var(--surface); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; font-family:"IBM Plex Mono",monospace;
+      font-size:.8rem; line-height:1.5; margin:1.2rem 0;}
+  .step{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--ink-faint);
+        letter-spacing:.08em;}
+</style>
+
+<div class="wrap">
+
+<h1>Harness Equivalence Ladder</h1>
+<p class="dek">How the deployed answer pipeline was reproduced inside the agentic harness, and what the harness costs once the comparison is fair.</p>
+<p class="meta">alive / engines / knowledge_style &middot; 16 September 2026 &middot; 100-question set, k=6</p>
+
+<h2>The question, answered first</h2>
+
+<p class="lede">You asked whether the deployed behaviour was <em>hardcoded</em> into the harness or whether the harness keeps its own flow. Neither, and the distinction matters.</p>
+
+<div class="answer">
+  <span class="k">What was actually done</span>
+  <p>The harness does not contain a copy of the deployed prompt. It <strong>imports the deployed prompt builder and calls it</strong>. Two functions were lifted out of the deployed benchmark and given a single owner; the harness calls those same functions.</p>
+  <p class="mono" style="margin-top:.7rem">answer_bench.py:105 &nbsp;<code>prompt_head()</code>&nbsp; &rarr; who he is, 18 verbatim style exemplars, the 150&ndash;250 word instruction</p>
+  <p class="mono">answer_bench.py:122 &nbsp;<code>searches()</code>&nbsp; &rarr; the retrieved passages, rendered exactly as deployed renders them</p>
+  <p style="margin-top:.7rem">The deployed path calls them at <span class="cite">answer_bench.py:171</span> and <span class="cite">answer_bench.py:246</span>. The harness calls them at <span class="cite">harness/ladder.py:192</span> and <span class="cite">harness/ladder.py:353</span>, having imported the module at <span class="cite">harness/ladder.py:47</span>.</p>
+  <p style="margin-top:.7rem">So equivalence is <strong>structural</strong>. There is no second copy that can drift. If the deployed prompt changes tomorrow, the harness changes with it.</p>
+</div>
+
+<p>The flow above that shared context is the harness's own: a tool-calling conversation, a turn budget, a sufficiency judge. What changed is that the harness no longer builds its own version of the <em>input</em>.</p>
+
+<h2>Why this was necessary</h2>
+
+<p>The first harness was written as a parallel pipeline and then compared to the deployed one. It lost. Nothing could be concluded from that, because it differed in five ways at once, and <strong>not one of the five is a loop</strong>. Each was an independent reason to lose.</p>
+
+<figure>
+<svg viewBox="0 0 820 300" role="img" aria-label="Before: two separate pipelines built independently. After: one shared context builder feeding three harness levels.">
+  <defs>
+    <marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor">
+
+  <text x="0" y="12" font-size="11" letter-spacing="1.2" fill="#7b8b95">BEFORE — TWO PIPELINES, FIVE SILENT DIFFERENCES</text>
+
+  <rect x="0" y="26" width="170" height="52" rx="4" fill="none" stroke="#2f6f5e" stroke-width="1.5"/>
+  <text x="12" y="46" fill="#2f6f5e" font-weight="600">deployed</text>
+  <text x="12" y="62" fill="#2f6f5e" font-size="9.5">its own prompt builder</text>
+
+  <rect x="0" y="92" width="170" height="52" rx="4" fill="none" stroke="#a8562c" stroke-width="1.5"/>
+  <text x="12" y="112" fill="#a8562c" font-weight="600">harness</text>
+  <text x="12" y="128" fill="#a8562c" font-size="9.5">a different prompt builder</text>
+
+  <line x1="170" y1="52" x2="250" y2="52" stroke="#2f6f5e" stroke-width="1.5" marker-end="url(#a1)" color="#2f6f5e"/>
+  <line x1="170" y1="118" x2="250" y2="118" stroke="#a8562c" stroke-width="1.5" marker-end="url(#a1)" color="#a8562c"/>
+
+  <rect x="252" y="30" width="118" height="110" rx="4" fill="none" stroke="#b9c3bc" stroke-dasharray="3 3"/>
+  <text x="311" y="80" text-anchor="middle" font-size="10">compared</text>
+  <text x="311" y="96" text-anchor="middle" font-size="10">head to head</text>
+
+  <text x="392" y="60" font-size="10.5" fill="#8a6d1f">harness loses —</text>
+  <text x="392" y="76" font-size="10.5" fill="#8a6d1f">five candidate causes,</text>
+  <text x="392" y="92" font-size="10.5" fill="#8a6d1f">no way to separate them</text>
+
+  <line x1="0" y1="168" x2="820" y2="168" stroke="#d8ded9"/>
+
+  <text x="0" y="192" font-size="11" letter-spacing="1.2" fill="#7b8b95">AFTER — ONE CONTEXT BUILDER, THREE NESTED LEVELS</text>
+
+  <rect x="0" y="206" width="186" height="58" rx="4" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.5"/>
+  <text x="12" y="226" fill="#2f6f5e" font-weight="600">prompt_head + searches</text>
+  <text x="12" y="241" fill="#2f6f5e" font-size="9.5">answer_bench.py:105, :122</text>
+  <text x="12" y="255" fill="#2f6f5e" font-size="9.5">one owner, both callers</text>
+
+  <line x1="186" y1="222" x2="258" y2="222" stroke="#2f6f5e" stroke-width="1.5" marker-end="url(#a1)" color="#2f6f5e"/>
+  <line x1="186" y1="235" x2="258" y2="248" stroke="#a8562c" stroke-width="1.5" marker-end="url(#a1)" color="#a8562c"/>
+
+  <rect x="260" y="204" width="162" height="34" rx="4" fill="none" stroke="#2f6f5e" stroke-width="1.5"/>
+  <text x="270" y="225" fill="#2f6f5e">deployed, one call</text>
+
+  <rect x="260" y="244" width="330" height="46" rx="4" fill="none" stroke="#a8562c" stroke-width="1.5"/>
+  <text x="270" y="262" fill="#a8562c">level 0 = deployed, no tools</text>
+  <text x="270" y="278" fill="#a8562c">level 1 = + search, read &nbsp;&middot;&nbsp; level 2 = + judge</text>
+
+  <text x="606" y="262" font-size="10.5" fill="#2f6f5e">each level is a strict</text>
+  <text x="606" y="278" font-size="10.5" fill="#2f6f5e">superset of the one below</text>
+  </g>
+</svg>
+<figcaption>The change is not that the harness was tuned to match. It is that both paths now read their context from the same two functions, so a difference in results can only come from the loop.</figcaption>
+</figure>
+
+<h2>The five differences, part by part</h2>
+
+<p>Each block below is one difference: what the deployed system does, what the first harness did instead, and how it is closed now. All three columns cite code.</p>
+
+<div class="diff">
+  <div class="hd">1. The style stage</div>
+  <div class="grid">
+    <div class="cell"><span class="k">deployed</span>18 <strong>verbatim</strong> passages of his own speech, pasted into the prompt under "how you talk and think". <span class="cite">answer_bench.py:105</span></div>
+    <div class="cell"><span class="k">first harness</span>A <strong>5,668-word generated description</strong> of how he talks, assembled once and saved to a creator file. <span class="cite">harness/run.py:106</span></div>
+    <div class="cell fix"><span class="k">now</span>Calls <code>prompt_head()</code>, so it gets the same 18 verbatim exemplars. The generated persona is not loaded at all. <span class="cite">harness/ladder.py:353</span></div>
+  </div>
+</div>
+
+<div class="diff">
+  <div class="hd">2. The match score on every passage</div>
+  <div class="grid">
+    <div class="cell"><span class="k">deployed</span>Every passage is tagged <code>[take_id ts score 4.21]</code>. The score is the model's only ranking signal. <span class="cite">answer_bench.py:122</span></div>
+    <div class="cell"><span class="k">first harness</span>Rendered <code>[7] take_id ts</code> &mdash; <strong>no score</strong>. It was measuring a model denied its ranking signal. <span class="cite">tools.py:173</span></div>
+    <div class="cell fix"><span class="k">now</span>Seeded passages come from <code>searches()</code>. Anything the loop reads later is rendered with its score too. <span class="cite">harness/ladder.py:141</span></div>
+  </div>
+</div>
+
+<div class="diff">
+  <div class="hd">3. Grouping and duplicates</div>
+  <div class="grid">
+    <div class="cell"><span class="k">deployed</span>Passages sit under the <code>SEARCH:</code> line of the query that found them. A passage found twice appears twice.</div>
+    <div class="cell"><span class="k">first harness</span>One flat deduplicated list, no query grouping &mdash; so the model could not see which query surfaced what. <span class="cite">harness/run.py:128</span></div>
+    <div class="cell fix"><span class="k">now</span>Identical grouping and identical duplicates, because it is the same function's output string. <span class="cite">harness/ladder.py:192</span></div>
+  </div>
+</div>
+
+<div class="diff">
+  <div class="hd">4. The length and address instruction</div>
+  <div class="grid">
+    <div class="cell"><span class="k">deployed</span>"Answer in 150&ndash;250 words, as if replying to one person who asked you directly." <span class="cite">answer_bench.py:114</span></div>
+    <div class="cell"><span class="k">first harness</span><strong>Absent.</strong> Length and mode of address were never specified.</div>
+    <div class="cell fix"><span class="k">now</span>Carried inside <code>prompt_head()</code>, so every level has it verbatim.</div>
+  </div>
+</div>
+
+<div class="diff">
+  <div class="hd">5. The output format</div>
+  <div class="grid">
+    <div class="cell"><span class="k">deployed</span>A required reply format &mdash; answer, references, grounding &mdash; parsed after the call. <span class="cite">agent.py:61</span></div>
+    <div class="cell"><span class="k">first harness</span>An <code>answer</code> <strong>tool</strong>. Prose answers were rejected as "not a tool call" &mdash; 16 finished answers discarded across 10 questions. <span class="cite">harness/run.py:69</span></div>
+    <div class="cell fix"><span class="k">now</span>No answer tool exists. The reply is prose in the deployed format, recognised wherever it appears, tool calls alongside included. <span class="cite">harness/ladder.py:238</span></div>
+  </div>
+</div>
+
+<h3>One difference deliberately kept</h3>
+<p>Levels 1 and 2 cannot close with the deployed system's final line, <em>"You have searched enough. Answer now"</em>, because that sentence is false when the model is holding a search tool. They close instead with an instruction to answer now unless a <strong>named</strong> part of the question has no material &mdash; so searching is opt-in rather than the path of least resistance. <span class="cite">harness/ladder.py:63</span></p>
+<p>This is the only prompt text the ladder introduces. It is worth stating plainly because it is the one place a reader should be suspicious.</p>
+
+<h2>The metrics, stated exactly</h2>
+
+<p>Every number on this page comes from one of three judges. They ask different questions, they fail differently, and they must not be merged. The columns in the tables below mean exactly what this section says they mean.</p>
+
+<figure>
+<svg viewBox="0 0 820 268" role="img" aria-label="Three judges: groundedness compares the answer to retrieved passages, fidelity compares it to his verbatim transcript answer, completeness compares it to the parts of the question.">
+  <defs>
+    <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor">
+
+  <rect x="316" y="112" width="152" height="42" rx="4" fill="#e6efeb" stroke="#2f6f5e" stroke-width="1.5"/>
+  <text x="392" y="138" text-anchor="middle" fill="#2f6f5e" font-weight="600">THE ANSWER</text>
+
+  <!-- groundedness, up -->
+  <rect x="316" y="16" width="152" height="42" rx="4" fill="none" stroke="#7b8b95" stroke-width="1.3"/>
+  <text x="392" y="34" text-anchor="middle" font-size="10">the passages that</text>
+  <text x="392" y="48" text-anchor="middle" font-size="10">were retrieved</text>
+  <line x1="392" y1="112" x2="392" y2="62" stroke="#7b8b95" stroke-width="1.3" marker-end="url(#a2)" color="#7b8b95"/>
+  <text x="404" y="88" font-size="10.5" font-weight="600">GROUNDEDNESS</text>
+  <text x="404" y="102" font-size="9.5" fill="#7b8b95">did it invent anything</text>
+
+  <!-- fidelity, left -->
+  <rect x="8" y="112" width="152" height="42" rx="4" fill="none" stroke="#a8562c" stroke-width="1.3"/>
+  <text x="84" y="130" text-anchor="middle" font-size="10" fill="#a8562c">his own verbatim</text>
+  <text x="84" y="144" text-anchor="middle" font-size="10" fill="#a8562c">transcript answer</text>
+  <line x1="316" y1="133" x2="166" y2="133" stroke="#a8562c" stroke-width="1.3" marker-end="url(#a2)" color="#a8562c"/>
+  <text x="180" y="122" font-size="10.5" font-weight="600" fill="#a8562c">FIDELITY</text>
+  <text x="180" y="152" font-size="9.5" fill="#a8562c">did it reach his points</text>
+
+  <!-- completeness, down -->
+  <rect x="316" y="210" width="152" height="46" rx="4" fill="none" stroke="#2f6f5e" stroke-width="1.3"/>
+  <text x="392" y="228" text-anchor="middle" font-size="10" fill="#2f6f5e">the parts of the</text>
+  <text x="392" y="242" text-anchor="middle" font-size="10" fill="#2f6f5e">question asked</text>
+  <line x1="392" y1="154" x2="392" y2="206" stroke="#2f6f5e" stroke-width="1.3" marker-end="url(#a2)" color="#2f6f5e"/>
+  <text x="404" y="176" font-size="10.5" font-weight="600" fill="#2f6f5e">COMPLETENESS</text>
+  <text x="404" y="190" font-size="9.5" fill="#2f6f5e">did it answer what was asked</text>
+
+  <!-- retired -->
+  <rect x="596" y="112" width="216" height="42" rx="4" fill="none" stroke="#b9c3bc" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <text x="704" y="130" text-anchor="middle" font-size="10" fill="#7b8b95">RETIRED: "does this answer</text>
+  <text x="704" y="144" text-anchor="middle" font-size="10" fill="#7b8b95">the question", holistically</text>
+  <line x1="468" y1="133" x2="590" y2="133" stroke="#b9c3bc" stroke-width="1.3" stroke-dasharray="4 3"/>
+  </g>
+</svg>
+<figcaption>Three different reference objects, three different questions. An answer can be perfectly grounded while answering a neighbouring question, and can answer the question fully while reaching none of his points.</figcaption>
+</figure>
+
+<h3>Groundedness &mdash; did it invent anything</h3>
+
+<div class="diff">
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="cell"><span class="k">the question it asks</span>"Mark every factual claim the answer makes. A claim is supported only if an excerpt states it." One line per claim, then a total. <span class="cite">answer_bench.py:35</span></div>
+    <div class="cell"><span class="k">what it returns</span><code>supported / (supported + unsupported)</code> &mdash; a number between 0 and 1. Deployed scores <strong>0.891</strong>.</div>
+    <div class="cell"><span class="k">compared against</span>Every passage the model was given. Not a reference answer &mdash; the retrieved text itself.</div>
+    <div class="cell"><span class="k">what it cannot see</span>Whether the retrieval was the <em>right</em> retrieval. An answer grounded in irrelevant passages scores high. It proves nothing was fabricated, and nothing more.</div>
+  </div>
+</div>
+
+<p>One instrument note that mattered: this judge was truncating its input at 60,000 characters, so it saw 79% of the passages at k=6 but only 25% at k=25. Claims supported by the passages it never saw scored UNSUPPORTED, which made <em>better</em> retrieval read as <em>worse</em> grounding. The cap is gone and an assertion now fails the run if the judge is not shown everything the model saw.</p>
+
+<h3>Fidelity &mdash; did it reach the points he reaches</h3>
+
+<div class="diff">
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="cell"><span class="k">the question it asks</span>"REFERENCE is what a person actually said. CANDIDATE is another answer to the same question. Judge CONTENT only." <span class="cite">answer_bench.py:52</span></div>
+    <div class="cell"><span class="k">what it returns</span>One verdict per answer:<br><code>SAME</code> the same claims<br><code>DROPPED</code> he makes a claim it never reaches<br><code>ADDED</code> it asserts something he does not<br><code>CONTRADICTS</code> it reverses something he says<br><code>ELSEWHERE</code> right claim, wrong thing attached</div>
+    <div class="cell"><span class="k">compared against</span>His actual transcript answer to that question, pulled from the corpus row the question was generated from.</div>
+    <div class="cell"><span class="k">what it cannot see</span><strong>Whether the question was answered.</strong> This is measured, not asserted &mdash; see below.</div>
+  </div>
+</div>
+
+<p>This is the source of every DROPPED and CONTRADICTS figure on the page, and it is the metric I spent the day ranking arms with. Two properties make that a mistake.</p>
+
+<p><strong>SAME has never been returned once</strong> across 600-plus answers. A measure that cannot produce its own pass value is measuring distance from one particular answer, not quality. He answers from one to three passages; the model is handed 41. The modal verdict is ADDED at roughly two thirds, which the metric records without penalising.</p>
+
+<p><strong>And it does not detect incompleteness.</strong> Cross-tabulated against the completeness judge on the deployed arm:</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>fidelity verdict</th><th class="num">answers the question</th><th class="num">misses a part</th></tr></thead>
+  <tbody>
+    <tr><td>ADDED</td><td class="num">58</td><td class="num">8</td></tr>
+    <tr><td>DROPPED</td><td class="num">21</td><td class="num">0</td></tr>
+    <tr><td>CONTRADICTS</td><td class="num">13</td><td class="num">0</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>All 21 DROPPED answers fully answer the question, and <strong>none</strong> of the 8 genuinely incomplete answers were flagged DROPPED. The two are near-orthogonal. DROPPED means "did not reproduce his particular emphasis"; real incompleteness hides inside ADDED &mdash; answers that say plenty, just not the part that was asked.</p>
+
+<p>CONTRADICTS is the one verdict here that survives unchanged, because reversing what he said is wrong under any measurement.</p>
+
+<h3>Completeness &mdash; did it answer what was asked</h3>
+
+<div class="diff">
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="cell"><span class="k">step 1, the split</span>The question is broken into the distinct things it asks, in a call that <strong>never sees any answer</strong>. "Split only where a real answer could cover one and miss the other." <span class="cite">judge2.py:26</span></div>
+    <div class="cell"><span class="k">step 2, per part</span>For each part separately: "Does the answer address THIS PART? Ignore the rest of the question." One word, YES or NO. <span class="cite">judge2.py:43</span></div>
+    <div class="cell"><span class="k">what it returns</span><code>complete</code> &mdash; share of questions where every part is covered<br><code>parts covered</code> &mdash; share of all parts covered<br>reported split by <code>1-part</code> and <code>2+ part</code></div>
+    <div class="cell"><span class="k">compared against</span>The question itself, decomposed. No reference answer is involved at any point.</div>
+  </div>
+</div>
+
+<p>The split is computed once and shared across all arms, so arms are scored on the same decomposition rather than on separate ones. On this 100-question set it yields <strong>40 single-part, 54 two-part, 6 three-part</strong>.</p>
+
+<p><strong>This is the metric that answers "how well does it answer the question", and it is the one the tables should be read on.</strong> Deployed scores 92% complete, 95% of parts covered, 98% on single-part questions and 88% on multi-part.</p>
+
+<h3>The judge this replaced, and why</h3>
+
+<p>An earlier judge asked the question holistically: "does it answer the question", returning FULLY / PARTLY / ADJACENT / NO / DECLINED. <span class="cite">judge.py:22</span></p>
+
+<p>Adversarially tested, it correctly caught off-topic answers, vacuous answers and refusals. But on a genuine two-part question it gave <strong>FULLY to an answer covering only the first part, and also to one covering only the second</strong>. It cannot see incompleteness, because it has no idea what a complete answer contains. Its numbers (91&ndash;97% FULLY) are unusable and are not quoted on this page.</p>
+
+<p>Decomposing first is what fixed it. The lesson generalises: a judge asked to hold the whole question in mind while scoring will score an impression.</p>
+
+<div class="flag">
+  <span class="k">the live weakness in the metric I am now relying on</span>
+  <p>The completeness judge's split is itself a model call, and it over-splits. A second decomposer, written with deliberately different wording, agrees on whether a question is multi-part in only <strong>57 of 100 cases</strong> &mdash; the judge calls 60 questions multi-part, the second calls 17.</p>
+  <p><em>"Am I just lazy compared to disciplined people?"</em> is two parts to the judge and one to the second reader. Both are defensible.</p>
+  <p>So the 98%-versus-88% single-to-multi gap, which the whole failure diagnosis rests on, is soft until the split is settled. This is the next thing to fix, ahead of any further harness work.</p>
+</div>
+
+<h3>What each metric is actually for</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>metric</th><th>use it to decide</th><th>do not use it to decide</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Groundedness</strong></td><td>whether a change made the model invent more</td><td>whether retrieval improved</td></tr>
+    <tr><td><strong>CONTRADICTS</strong></td><td>whether a change made it reverse him more often</td><td>anything about coverage</td></tr>
+    <tr><td><strong>DROPPED / ADDED</strong></td><td>how far the answer sits from his own emphasis</td><td><strong>whether the question was answered</strong></td></tr>
+    <tr><td><strong>Completeness</strong></td><td>whether the question was answered, part by part</td><td>whether the answer is true or grounded</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Only the last row and the first two are safe grounds for promoting a change. The third is the one I was using.</p>
+
+<h2>The parity proof</h2>
+
+<p>Before any model call was spent, the two prompt strings were built side by side and compared. They are the same string, 14,996 words:</p>
+
+<pre>identical: True     prompt words: 14996     passages shown: 31</pre>
+
+<p>Then level 0 was run over all 100 questions and scored on every judge:</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>arm</th><th class="num">ADDED</th><th class="num">DROPPED</th><th class="num">CONTRADICTS</th><th class="num">grounded</th><th class="num">complete</th><th class="num">2+ part</th></tr></thead>
+  <tbody>
+    <tr><td><span class="dep">deployed, k=6</span></td><td class="num">66</td><td class="num">21</td><td class="num">13</td><td class="num">0.891</td><td class="num">92%</td><td class="num">88%</td></tr>
+    <tr class="hi"><td><span class="har">level 0, via harness</span></td><td class="num">66</td><td class="num">21</td><td class="num">13</td><td class="num">0.891</td><td class="num">92%</td><td class="num">88%</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Not just equal in aggregate. Per question: <strong>100 of 100 byte-identical answers</strong>, 100 of 100 identical fidelity verdicts, 100 of 100 identical grounding scores. Generation took zero seconds because every prompt hit the response cache &mdash; which is itself the proof, since the cache is keyed on the prompt text.</p>
+
+<p>What level 0 establishes is narrow and worth stating exactly: <strong>the harness infrastructure adds no distortion of its own.</strong> It reaches parity by having no loop. Any loss above level 0 is now attributable to the loop and to nothing else.</p>
+
+<h2>What the ladder measured</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>arm</th><th>what it is</th><th class="num">DROPPED</th><th class="num">CONTRA</th><th class="num">grounded</th><th class="num">complete</th><th class="num">2+ part</th><th class="num">searches</th></tr></thead>
+  <tbody>
+    <tr><td><span class="dep">deployed k=6</span></td><td>one call</td><td class="num">21%</td><td class="num">13%</td><td class="num">0.891</td><td class="num">92%</td><td class="num">88%</td><td class="num">&mdash;</td></tr>
+    <tr class="hi"><td><span class="har">level 0</span></td><td>deployed, no tools</td><td class="num">21%</td><td class="num">13%</td><td class="num">0.891</td><td class="num">92%</td><td class="num">88%</td><td class="num">0</td></tr>
+    <tr class="hi"><td><span class="har">level 1</span></td><td>+ search, read</td><td class="num">24%</td><td class="num">13%</td><td class="num">0.908</td><td class="num">93%</td><td class="num">88%</td><td class="num">0.00</td></tr>
+    <tr class="lo"><td><span class="har">v4 superset</span></td><td>old design, seeded</td><td class="num">25%</td><td class="num">9%</td><td class="num">0.815</td><td class="num">89%</td><td class="num">83%</td><td class="num">~2</td></tr>
+    <tr class="lo"><td><span class="har">v3</span></td><td>old design, from nothing</td><td class="num">27%</td><td class="num">12%</td><td class="num">0.803</td><td class="num">84%</td><td class="num">75%</td><td class="num">~4</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Read bottom to top, every step that removed a difference recovered ground. Seeding the harness with what the deployed system starts with (v3 &rarr; v4) recovered <strong>8 of the 13 lost points</strong> on multi-part questions. Removing the remaining four differences (v4 &rarr; level 1) recovered the rest.</p>
+
+<h3>And then the loop did not fire</h3>
+
+<div class="flag">
+  <span class="k">the central result</span>
+  <p>At level 1 the model searched <strong>0.00 times across 100 questions</strong>. Given the deployed context, the search tool, and explicit permission to use it, it judged what it already had sufficient every single time. Level 1 is therefore level 0 with a tool schema attached &mdash; and its one-point gain on completeness is noise, not a loop win.</p>
+</div>
+
+<p>This reframes every earlier harness run. The old harness searched three or four times per question not because the model decided it needed more, but because it <strong>started from nothing and had no choice</strong>. The looping was an artefact of the deficit, not evidence of judgement.</p>
+
+<p>Turn budget was also cut from 10 to 6 on the reasoning that a loop which does not fire does not need headroom. <span class="cite">harness/ladder.py:54 versus harness/run.py:35</span></p>
+
+<h2>Why the loop lost, in its own words</h2>
+
+<p>The harness records the model's narration before each tool call. A diagnostic selects multi-part questions where <strong>the loop missed a part and the deployed single call did not</strong> &mdash; losses to the loop, not hard questions &mdash; and puts one call on each with a fixed list of causes, so the output is a distribution rather than anecdotes. <span class="cite">harness/why.py</span></p>
+
+<p>On v3, the worst-performing loop: 60 multi-part questions, <strong>10 lost, 2 won</strong>.</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>cause</th><th class="num">n</th><th>what the narration shows</th></tr></thead>
+  <tbody>
+    <tr><td>NOTHING_FOUND</td><td class="num">5</td><td>It searched the missed part properly, found nothing, and said so outright</td></tr>
+    <tr><td>ANSWERED_FINE</td><td class="num">2</td><td>The part is addressed; the completeness judge is wrong</td></tr>
+    <tr><td>NEVER_NOTICED</td><td class="num">2</td><td>The narration never raises the missed part at all</td></tr>
+    <tr><td>NOTICED_DROPPED</td><td class="num">1</td><td>It named the part, searched it, then answered without it</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The dominant cause is not the loop failing to look. It is the loop looking, finding nothing, and declining. So the follow-up question is whether the deployed answer covered those same parts with real material or by extrapolating. All five were tested against the passages that were actually retrieved:</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>the part the loop declined</th><th>deployed's coverage of it</th></tr></thead>
+  <tbody>
+    <tr><td>Practical steps toward someone you find annoying</td><td><span class="dep">SUPPORTED</span> &mdash; near-verbatim in the passages</td></tr>
+    <tr><td>Reconciling faith with same-sex attraction</td><td><span class="dep">SUPPORTED</span> &mdash; appears verbatim</td></tr>
+    <tr><td>Why the inner voice is harsher to self than to a friend</td><td><span class="har">SPECULATION</span> &mdash; the asymmetry is inferred, not stated</td></tr>
+    <tr><td>Why some people stand upright and others hunch</td><td><span class="har">SPECULATION</span> &mdash; only a general deconditioning remark exists</td></tr>
+    <tr><td>Why pain drives action</td><td><span class="har">SPECULATION</span> &mdash; passages explain inaction under threat, not this</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>The ten losses, attributed</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>verdict</th><th class="num">n</th><th>reading</th></tr></thead>
+  <tbody>
+    <tr class="lo"><td>Genuine loop defect</td><td class="num">5</td><td>2 never noticed the part, 1 noticed and dropped it, 2 searched badly while the material was present</td></tr>
+    <tr class="hi"><td>The loop was right</td><td class="num">3</td><td>It declined where the deployed system extrapolated and was rewarded for it</td></tr>
+    <tr><td>The judge was wrong</td><td class="num">2</td><td>The part is addressed</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>Half the apparent gap is not a loop defect.</strong> The completeness judge asks whether a part was addressed, not whether it was addressed truthfully, so a confident extrapolation scores above an honest omission. The loop's sufficiency check makes it more likely to notice it has nothing and say so &mdash; and that reads as incompleteness.</p>
+
+<h2>The instrument fault that changed the ranking</h2>
+
+<p>Two of the three faults found today are covered above: fidelity does not detect incompleteness, and the completeness judge's split is contested. The third was a plain bug in the reporting.</p>
+
+<h3>The baseline printed under every harness run was the wrong arm</h3>
+<p>Every harness report printed <code>baseline 18.0%</code> and <code>baseline 11.0%</code>. Those are the <strong>k=25</strong> numbers. The harness runs at <strong>k=6</strong>, where the deployed system scores 21% and 13%. So the harness was compared against an arm it never ran, and its contradiction rate &mdash; consistently 8&ndash;12% against the deployed 13% &mdash; was read as a loss when it was a win. The baseline is now computed from the stored run at the matching k rather than typed in. <span class="cite">harness/ladder.py:300</span></p>
+
+<h2>What is not established</h2>
+
+<ul>
+  <li><strong>No noise floor.</strong> No arm has been run twice on any judge. The 92% / 93% spread between level 0 and level 1 is one question and supports no ranking.</li>
+  <li><strong>Level 2 has not been run.</strong> The sufficiency judge's cost is unmeasured on the fair comparison.</li>
+  <li><strong>No demonstrated loop win.</strong> Level 1 matches the deployed system and never uses its tools. The loop has not yet earned its place, and the honest reading is that on this question set, with this retrieval, one call already gets what is available.</li>
+  <li><strong>The decomposition fix is built but untested.</strong> Telling the model what the question owes, up front, addresses 3 of the 10 diagnosed losses. It is available at every level so it can also be tested on the deployed single call &mdash; where a gain would be a finding about the deployed system rather than about loops. <span class="cite">harness/ladder.py:129</span></li>
+</ul>
+
+<p class="meta" style="margin-top:3rem">Derived document. Owners are <code>engines/knowledge_style/SYSTEM.md</code>, <code>METRICS.md</code> and the code cited throughout.</p>
+
+</div>

@@ -1,0 +1,41 @@
+{
+ "videos": {
+  "folder": "huberman",
+  "ids": [
+   "QmOF0crdyRU",
+   "XeN6eGO6FVQ",
+   "HiyzzcuaAac",
+   "9gJLWk3W5GQ",
+   "vXTK0Ac9i1Q"
+  ],
+  "download": [
+   "--full",
+   "--no-video",
+   "--a2f",
+   "--subs"
+  ]
+ },
+ "answers": {
+  "creator": "huberman"
+ },
+ "voice": {
+  "profile": "huberman",
+  "release_step": 8000
+ },
+ "clips": {
+  "profile": "huberman",
+  "takes": [
+   "vXTK0Ac9i1Q"
+  ]
+ },
+ "motion": {
+  "profile": "huberman",
+  "run": "huberman_S_seed0",
+  "wrong": "Barely above a motionless face on the whole-face measure: 42.4% on validation against 39.1% for his average face held still (drk's face_v1 cleared its still face by 11.5 points); most of what is measured for him is a fixed rest-face offset, and the moving part is small. The mouth is learned (aperture corr +0.786, spread +0.764; face_v1 0.828/0.783) but the lips do not close: 22.5% of his most-shut frames stay >1 mm open. Trained on ONE recording (45 clips, 17.7 min), so validation and test share a day and a lighting. The audio/video/tracker sync sheet was NOT yet looked at by a person when this was promoted (2026-09-29, owner away; promoted to unblock the renderer). The corrective layer's edge step under his lower lip is about twice drk's (p99 5.1 vs 2.5 mm) and shows as a tear in the sync sheet's rig panel; it is outside the scored region so does not touch this model's loss, but it reaches the renderer's predicted meshes."
+ },
+ "render": {
+  "profile": "huberman",
+  "deployed": true,
+  "wrong": "the mouth runs about 0.2 s ahead of the voice: his source video's sound is late"
+ }
+}

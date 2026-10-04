@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>The Harness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,300..700&display=swap">
+<style>
+:root{
+  --paper:#faf8f5; --raise:#fffefc; --ink:#1a1714; --mut:#6b625a; --faint:#8d8478;
+  --line:#e0d9d0; --hair:#eee9e2; --ochre:#a8622a; --ochre-soft:#f2e6da;
+  --good:#2f6b4f; --good-soft:#e2ede6; --bad:#9c3b2a; --bad-soft:#f6e3de;
+  --blue:#3a5a8c; --blue-soft:#e3e9f2;
+  --serif:Newsreader,Georgia,serif; --sans:Archivo,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#191714; --raise:#211e1a; --ink:#ece7df; --mut:#9d9488; --faint:#7d7568;
+  --line:#332e27; --hair:#282420; --ochre:#d9924f; --ochre-soft:#3a2b1d;
+  --good:#76b891; --good-soft:#1e2e26; --bad:#d98770; --bad-soft:#33221e;
+  --blue:#8aa9d8; --blue-soft:#1f2733;
+}}
+:root[data-theme="dark"]{
+  --paper:#191714; --raise:#211e1a; --ink:#ece7df; --mut:#9d9488; --faint:#7d7568;
+  --line:#332e27; --hair:#282420; --ochre:#d9924f; --ochre-soft:#3a2b1d;
+  --good:#76b891; --good-soft:#1e2e26; --bad:#d98770; --bad-soft:#33221e;
+  --blue:#8aa9d8; --blue-soft:#1f2733;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:400 17px/1.6 var(--serif);-webkit-font-smoothing:antialiased}
+.page{max-width:860px;margin:0 auto;padding:0 20px 90px}
+h1{font:600 clamp(34px,6vw,54px)/1.04 var(--serif);letter-spacing:-.02em;margin:0}
+h2{font:600 clamp(24px,3.2vw,31px)/1.18 var(--serif);margin:0 0 6px;letter-spacing:-.012em}
+h3{font:600 19px/1.3 var(--serif);margin:28px 0 8px}
+h4{font:600 12px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--mut);margin:0 0 8px}
+p{margin:0 0 1em}
+header{padding:62px 0 30px}
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ochre);margin-bottom:18px}
+.stamp{font:400 12px/1.7 var(--mono);color:var(--faint);margin-top:20px}
+section{padding:36px 0;border-top:1px solid var(--hair)}
+.secno{font:500 12px/1 var(--mono);color:var(--ochre);letter-spacing:.1em;margin-bottom:10px}
+.lede{font-size:1.12em;line-height:1.5}
+.box{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+  padding:16px 18px;margin:0 0 1em}
+.box.bad{background:var(--bad-soft);border-color:var(--bad)}
+.box.good{background:var(--good-soft);border-color:var(--good)}
+.box.key{background:var(--ochre-soft);border-color:var(--ochre)}
+.box p:last-child{margin:0}
+pre{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+  padding:14px 16px;overflow-x:auto;font:400 13px/1.55 var(--mono);
+  color:var(--ink);margin:0 0 1em}
+pre .c{color:var(--faint)}
+pre .k{color:var(--ochre)}
+.tw{overflow-x:auto;margin:0 0 1em}
+table{border-collapse:collapse;width:100%;min-width:430px;font:400 14.5px/1.45 var(--sans)}
+th{text-align:left;font:600 11px/1.3 var(--sans);letter-spacing:.07em;
+  text-transform:uppercase;color:var(--mut);padding:0 12px 8px 0;
+  border-bottom:1px solid var(--line);vertical-align:bottom}
+td{padding:8px 12px 8px 0;border-bottom:1px solid var(--hair);vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+tr:last-child td{border-bottom:none}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.g{color:var(--good);font-weight:600}
+.b{color:var(--bad);font-weight:600}
+.m{color:var(--mut)}
+ul,ol{margin:0 0 1em;padding-left:1.2em}
+li{margin-bottom:.45em}
+li::marker{color:var(--faint)}
+code{font:500 .86em var(--mono);color:var(--mut)}
+figure{margin:0 0 1em}
+.fig{background:var(--raise);border:1px solid var(--line);border-radius:3px;
+  padding:18px 14px 10px;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:560px}
+figcaption{font:400 13px/1.5 var(--sans);color:var(--mut);padding-top:8px}
+svg text{font-family:Archivo,sans-serif}
+.nb{fill:var(--raise);stroke:var(--line);stroke-width:1}
+.nb-a{fill:var(--ochre-soft);stroke:var(--ochre);stroke-width:1.2}
+.nb-b{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.nb-g{fill:var(--good-soft);stroke:var(--good);stroke-width:1.2}
+.nb-u{fill:var(--blue-soft);stroke:var(--blue);stroke-width:1.2}
+.nt{fill:var(--ink);font-size:12.5px;font-weight:500}
+.ns{fill:var(--mut);font-size:11px}
+.nk{fill:var(--faint);font-size:10px;font-family:var(--mono);letter-spacing:.05em}
+.ed{stroke:var(--faint);stroke-width:1.3;fill:none}
+.ed-a{stroke:var(--ochre);stroke-width:1.6;fill:none}
+.axl{stroke:var(--line);stroke-width:1}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">how it is built</div>
+  <h1>The harness</h1>
+  <p class="lede m" style="margin-top:16px;max-width:62ch">What was built for the content stage, how each piece works, what the model actually did with it, and which parts earn their place.</p>
+  <div class="stamp">16 September 2026 &middot; proto/tools.py, content_agent.py, content_agent_tools.py, llm.py</div>
+</header>
+
+<!-- ============================================ 1 -->
+<section>
+  <div class="secno">01</div>
+  <h2>The shape</h2>
+  <p>Three parts: a set of tools, one piece of shared state, and a model that calls them in whatever order it likes until it decides to answer.</p>
+
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 880 300" role="img" aria-label="The model calls six tools against one shared pool of numbered passages, looping until it calls answer.">
+        <defs><marker id="h1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,1 L7,4 L0,7 z" fill="var(--ochre)"/></marker>
+          <marker id="h2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,1 L7,4 L0,7 z" fill="var(--faint)"/></marker></defs>
+
+        <rect class="nb" x="16" y="20" width="98" height="38" rx="2"/>
+        <text class="nt" x="28" y="44">question</text>
+        <path class="ed-a" d="M114,39 H158" marker-end="url(#h1)"/>
+
+        <rect class="nb nb-a" x="164" y="14" width="212" height="50" rx="2"/>
+        <text class="nt" x="176" y="34">the model</text>
+        <text class="ns" x="176" y="52">calls a tool, gets the result, repeats</text>
+
+        <path class="ed-a" d="M270,64 V100" marker-end="url(#h1)"/>
+        <path class="ed" d="M376,39 H432 V100" marker-end="url(#h2)" stroke-dasharray="4 4"/>
+        <text class="nk" x="386" y="33">result</text>
+
+        <text class="nk" x="16" y="88">six tools</text>
+        <line class="axl" x1="16" y1="94" x2="864" y2="94"/>
+
+        <rect class="nb nb-g" x="16" y="106" width="132" height="42" rx="2"/>
+        <text class="nt" x="28" y="124">search</text>
+        <text class="ns" x="28" y="140">free, no model</text>
+        <rect class="nb nb-g" x="158" y="106" width="110" height="42" rx="2"/>
+        <text class="nt" x="170" y="124">read</text>
+        <text class="ns" x="170" y="140">free</text>
+        <rect class="nb nb-u" x="278" y="106" width="132" height="42" rx="2"/>
+        <text class="nt" x="290" y="124">relevance</text>
+        <text class="ns" x="290" y="140">1 call per 12</text>
+        <rect class="nb nb-u" x="420" y="106" width="106" height="42" rx="2"/>
+        <text class="nt" x="432" y="124">gap</text>
+        <text class="ns" x="432" y="140">1 call</text>
+        <rect class="nb nb-u" x="536" y="106" width="132" height="42" rx="2"/>
+        <text class="nt" x="548" y="124">check</text>
+        <text class="ns" x="548" y="140">1 call</text>
+        <rect class="nb nb-a" x="678" y="106" width="186" height="42" rx="2"/>
+        <text class="nt" x="690" y="124">answer</text>
+        <text class="ns" x="690" y="140">ends the loop</text>
+
+        <line class="axl" x1="16" y1="168" x2="864" y2="168"/>
+        <text class="nk" x="16" y="186">one shared state</text>
+        <rect class="nb" x="16" y="196" width="560" height="56" rx="2"/>
+        <text class="nt" x="28" y="216">a numbered pool of passages, verdicts attached once judged</text>
+        <text class="ns" x="28" y="234">[1] video, timestamp, score, first line          [2] ...</text>
+        <text class="ns" x="28" y="248">numbers never change, so it can read 4, then ask whether 4 is relevant</text>
+
+        <rect class="nb nb-a" x="600" y="196" width="264" height="56" rx="2"/>
+        <text class="nt" x="612" y="216">budget: 12 turns</text>
+        <text class="ns" x="612" y="234">nothing forces it to use them,</text>
+        <text class="ns" x="612" y="248">nothing forces it to stop early</text>
+
+        <rect class="nb nb-g" x="16" y="266" width="848" height="28" rx="2"/>
+        <text class="nt" x="28" y="285" fill="var(--good)">no fixed order. the model decides what to call and when it is done.</text>
+      </svg>
+    </div>
+    <figcaption>The only structure is the budget and the shared numbering.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================ 2 -->
+<section>
+  <div class="secno">02</div>
+  <h2>The one decision that shapes everything else</h2>
+  <p class="lede"><strong>Search returns an index, not the text.</strong></p>
+  <p>The deployed system dumps all 43 passages in full, about 13,000 words, and every later call carries all of it. That is why it can only afford two calls.</p>
+
+  <pre><span class="c"># what search returns</span>
+[1] you_don_t_know_what_discipline_mea 00:00:00-00:01:18 score 5.0
+     Oh my god, I hate brushing my teeth at night. Until you do it...
+[2] we_give_discipline_too_much_credit 00:05:25-00:06:44 score 4.1
+     never use willpower. Willpower is great, right? So, there are...
+[3] is_it_too_late_to_start_your_life_ 00:05:47-00:07:36 score 4.1
+     Super logical. But that's not the way that their mind. That's...</pre>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>15 passages, as</th><th>words</th><th>seconds a call costs</th><th>calls in 60s</th></tr></thead>
+      <tbody>
+        <tr><td>full text, all of it</td><td class="num b">4,509</td><td class="num">~20</td><td class="num b">2</td></tr>
+        <tr><td>an index</td><td class="num g">285</td><td class="num">~5</td><td class="num g">8</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Sixteen times cheaper to survey. Full text costs a separate <code>read</code>, so the model pays only for what it wants to see properly. <strong>That trade is what turns two calls into eight.</strong></p>
+</section>
+
+<!-- ============================================ 3 -->
+<section>
+  <div class="secno">03</div>
+  <h2>The six tools</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:15%">tool</th><th style="width:34%">what it does</th><th>what it returns</th><th style="width:13%">cost</th></tr></thead>
+      <tbody>
+        <tr><td><code>search</code></td><td>word matching over the archive, top 6 plus neighbours</td><td>an index of what was found, appended to the pool</td><td class="g">free</td></tr>
+        <tr><td><code>read</code></td><td>full text of the numbers you name</td><td>the passages themselves</td><td class="g">free</td></tr>
+        <tr><td><code>relevance</code></td><td>judges every pooled passage against the question</td><td>per passage: supports an answer, part of one, or no help</td><td>1 call per 12</td></tr>
+        <tr><td><code>gap</code></td><td>reads the index and asks what is still missing</td><td>a query it could run next, or NONE</td><td>1 call</td></tr>
+        <tr><td><code>check</code></td><td>takes a draft, traces each claim</td><td>claims resting on nothing, and claims resting on passages it judged irrelevant</td><td>1 call</td></tr>
+        <tr><td><code>answer</code></td><td>ends the loop</td><td>the final text</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Why these six and not others</h3>
+  <ul>
+    <li><code>relevance</code> is the only signal we have ever shown to work &mdash; showing its verdicts cut contradictions from 11 to 7.</li>
+    <li><code>gap</code> exists because the deployed system has <em>never</em> searched twice, on any question in any run. This makes "what am I missing" a thing it can ask rather than a thing it must notice.</li>
+    <li><code>check</code> is the only test that works without a reference answer, so it is the only one usable at serve time.</li>
+  </ul>
+
+  <div class="box bad">
+    <h4>each tool raises rather than returning something plausible</h4>
+    <p>Six measurement bugs in one day were tools failing quietly. So <code>read</code> raises on a number that does not exist, <code>relevance</code> raises if the judge returns verdicts for fewer than half the passages, and <code>check</code> raises if it parses no claims. A tool that half-worked and scored anyway is what cost us most of a day.</p>
+  </div>
+</section>
+
+<!-- ============================================ 4 -->
+<section>
+  <div class="secno">04</div>
+  <h2>Two ways of wiring it, and the difference mattered</h2>
+
+  <h3>First attempt: a text protocol</h3>
+  <p>Our model wrapper sent one text prompt and returned text, with nowhere to put a tool schema. So the model was told to emit one action per line and a regular expression scraped it back out.</p>
+  <pre><span class="c"># what the model was asked to emit</span>
+SEARCH: procrastination why we procrastinate
+READ: 3,7,11
+RELEVANCE:
+CHECK: &lt;draft&gt;
+ANSWER: &lt;text&gt;</pre>
+  <p>It worked. On one question: 6 actions, 25 seconds, two searches. <strong>And it never called <code>relevance</code> or <code>check</code></strong> &mdash; it searched, read, and answered. The same behaviour as the deployed system, which has one tool.</p>
+
+  <h3>Second attempt: native tool calling</h3>
+  <p>Added a second path to the wrapper that passes real tool definitions and handles the model's tool-use blocks. Each tool gets a schema and a description.</p>
+  <pre><span class="c"># one of the six definitions</span>
+{<span class="k">"name"</span>: <span class="k">"relevance"</span>,
+ <span class="k">"description"</span>: <span class="k">"Judge every passage found so far against the
+   question: does it support an answer, carry part of one, or not
+   help at all. Most of what a search returns does not bear on the
+   question even when it shares the topic, and this is how you find
+   out which is which."</span>,
+ <span class="k">"input_schema"</span>: {<span class="k">"type"</span>: <span class="k">"object"</span>, <span class="k">"properties"</span>: {}}}</pre>
+
+  <div class="box good">
+    <h4>what changed, same question</h4>
+    <div class="tw" style="margin:.6em 0 0">
+      <table>
+        <thead><tr><th></th><th>text protocol</th><th>native tools</th></tr></thead>
+        <tbody>
+          <tr><td>turns</td><td class="num">6</td><td class="num">11</td></tr>
+          <tr><td>searches</td><td class="num">2</td><td class="num g">7</td></tr>
+          <tr><td>reads</td><td class="num">2</td><td class="num">6</td></tr>
+          <tr><td>checked its own draft</td><td class="b">never</td><td class="g">twice</td></tr>
+          <tr><td>passages pooled</td><td class="num">33</td><td class="num">78</td></tr>
+          <tr><td>seconds</td><td class="num g">25</td><td class="num b">79</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:.8em">Real schemas made it start checking its own work, which it had never done, and issue several searches in one turn, which the text protocol could not express. <strong>The protocol was part of the problem.</strong></p>
+  </div>
+</section>
+
+<!-- ============================================ 5 -->
+<section>
+  <div class="secno">05</div>
+  <h2>What a turn actually looks like</h2>
+  <p>One question, the native version, traced.</p>
+  <pre><span class="c">  turn  what it called</span>
+   1    search("procrastination why you put things off")
+   1    search("analysis paralysis stuck can't start")     <span class="c">← two at once</span>
+   2    read([19, 20, 24, 26, 28, 22, 23, 31])
+   2    search("uncertainty reduce prediction error avoid starting")
+   3    read([37, 38, 46, 45, 41])
+   3    search("why you don't feel like doing it emotional avoidance")
+   4    read([53, 55, 58, 4])
+   4    search("provisional life waiting for the right moment")
+   5    read([63, 64, 35])
+   5    search("what to do instead cultivate what you want")
+   6    read([69, 68, 70, 11, 73, 72])
+   7    search("exhausted tired can't get anything done after work")
+   8    read([74, 75, 76, 77])
+   9    check(draft)          <span class="c">← drafts, then checks it</span>
+  10    check(draft)          <span class="c">← revises, checks again</span>
+  11    answer(text)
+
+  11 turns, 79s, 78 passages pooled, relevance never called</pre>
+  <p>Note the pattern: it alternates searching and reading, drafts late, checks twice, and never once asks which passages are relevant. It triages by reading them instead.</p>
+</section>
+
+<!-- ============================================ 6 -->
+<section>
+  <div class="secno">06</div>
+  <h2>The budget, and how it broke</h2>
+  <p>Run on the 100 questions, <strong>23 of them never produced an answer.</strong> All 23 hit the 12-turn ceiling.</p>
+
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 860 200" role="img" aria-label="Failed runs spent all twelve turns searching and reading, leaving none for answering.">
+        <text class="nk" x="16" y="22">the 77 that answered &mdash; 12 turns</text>
+        <rect x="16" y="32" width="380" height="24" rx="2" class="nb nb-g"/>
+        <text class="nt" x="26" y="49">7 searches</text>
+        <rect x="400" y="32" width="200" height="24" rx="2" class="nb"/>
+        <text class="nt" x="410" y="49">4 reads</text>
+        <rect x="604" y="32" width="90" height="24" rx="2" class="nb nb-u"/>
+        <text class="ns" x="612" y="49">check</text>
+        <rect x="698" y="32" width="92" height="24" rx="2" class="nb nb-a"/>
+        <text class="ns" x="706" y="49">answer</text>
+
+        <text class="nk" x="16" y="96">the 23 that did not &mdash; 12 turns</text>
+        <rect x="16" y="106" width="560" height="24" rx="2" class="nb nb-b"/>
+        <text class="nt" x="26" y="123">11.65 searches</text>
+        <rect x="580" y="106" width="250" height="24" rx="2" class="nb nb-b"/>
+        <text class="nt" x="590" y="123">5.13 reads</text>
+        <text class="nt" x="16" y="160" fill="var(--bad)">no turns left. more than half never even drafted an answer.</text>
+        <text class="ns" x="16" y="180">they pooled 107 passages against 68 &mdash; so it fails on the questions it searches hardest</text>
+      </svg>
+    </div>
+    <figcaption>Not confusion. The budget counts turns, and gathering crowds out finishing.</figcaption>
+  </figure>
+
+  <div class="box key">
+    <p><strong>It is the mirror image of the deployed system.</strong> That one commits after a single search, on every question ever logged. This one never commits. Same underlying fault: <strong>nothing in either version tells the model when it has enough.</strong> One guesses too early, the other never guesses.</p>
+  </div>
+
+  <h3>Fixes, none tested</h3>
+  <ul>
+    <li>warn it: <em>three turns left, you must answer</em></li>
+    <li>split the budget &mdash; say eight turns to gather, four reserved for drafting and checking</li>
+    <li>push parallel searching. It averaged 11.65 searches over 12 turns, so it is mostly issuing them one at a time when a single turn can hold several</li>
+  </ul>
+</section>
+
+<!-- ============================================ 7 -->
+<section>
+  <div class="secno">07</div>
+  <h2>Results, on the same 100 questions</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th></th><th>the harness</th><th>baseline</th></tr></thead>
+      <tbody>
+        <tr><td>answered</td><td class="num b">77 / 100</td><td class="num">100 / 100</td></tr>
+        <tr><td>missing content</td><td class="num">18.2%</td><td class="num">18.0%</td></tr>
+        <tr><td>contradicts him</td><td class="num">6.5%</td><td class="num">11.0%, best 7.0%</td></tr>
+        <tr><td>grounded</td><td class="num b">0.806</td><td class="num">0.891</td></tr>
+        <tr><td>seconds</td><td class="num b">68</td><td class="num">39</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box bad">
+    <h4>read honestly, this is not a win</h4>
+    <ul style="margin:.4em 0 0">
+      <li><strong>Missing content did not move.</strong> 18.2 against 18.0.</li>
+      <li><strong>Contradictions at 6.5% against a best of 7.0%</strong> is half a point, with no noise floor, on a smaller and easier sample.</li>
+      <li><strong>The 77 are the easy questions.</strong> The 23 failures pooled 107 passages against 68, so it failed on the hardest ones. Recovering them would most likely push both numbers up.</li>
+      <li><strong>Grounding got worse</strong> and it takes nearly twice as long.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================ 8 -->
+<section>
+  <div class="secno">08</div>
+  <h2>Which pieces earn their place</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:22%">piece</th><th style="width:16%">calls per question</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>search</code></td><td class="num">7.04</td><td class="g">yes. The deployed system searches once; this asks repeatedly and pools twice as much</td></tr>
+        <tr><td><code>read</code></td><td class="num">3.92</td><td class="g">yes. Selective reading is what makes the index decision pay</td></tr>
+        <tr><td><code>check</code></td><td class="num">0.92</td><td class="g">yes. Every answered question was checked, which never happened before</td></tr>
+        <tr><td><code>gap</code></td><td class="num">0.62</td><td class="m">unclear. Used often enough to matter, never measured alone</td></tr>
+        <tr><td><code>relevance</code></td><td class="num b">0.09</td><td class="b">no. Seven calls across 77 questions. The model triages by reading instead, and the one control we know works is the one it ignores</td></tr>
+        <tr><td>the index-not-text decision</td><td>&mdash;</td><td class="g">yes. Sixteen times cheaper to survey; it is what makes eight calls affordable</td></tr>
+        <tr><td>native tool calling</td><td>&mdash;</td><td class="g">yes. Self-checking went from never to always</td></tr>
+        <tr><td>the 12-turn budget</td><td>&mdash;</td><td class="b">no. It is the direct cause of the 23 failures</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box">
+    <h4>the awkward finding</h4>
+    <p><strong>The one tool we have evidence for is the one the model will not use.</strong> Showing relevance verdicts cut contradictions from 11 to 7 when the harness forced them into the prompt. Given the same verdicts as a tool it could call, it calls it nine times in a hundred.</p>
+    <p style="margin-top:.7em">Which suggests the answer is not to offer it. It is to run it always and put the verdicts in front of the model whether it asked or not &mdash; the configuration that already produced the best contradiction number we have.</p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
