@@ -93,7 +93,9 @@ The code assumes a MetaHuman face rig of DNA version 2.5: 263 raw controls and 5
 corrective shapes. Older rigs (Ada, 476 correctives) do not fit. The one Dr K's and
 Huberman's rigs were built from is a MetaHuman of the author's own face and is not
 released, so make one in MetaHuman Creator and export its DNA. Building these needs
-OpenRigLogic (`bash env/setup_externals.sh --with-riglogic`):
+OpenRigLogic (`bash env/setup_externals.sh --with-riglogic`). Build them in the table's order;
+each was rebuilt from scratch on 2026-10-04 and matches the files Dr K's and Huberman's models
+were trained with:
 
 | file, in `data/face/` | what it is | built by |
 |---|---|---|
@@ -101,7 +103,8 @@ OpenRigLogic (`bash env/setup_externals.sh --with-riglogic`):
 | `offset/cache/rig_names.npz` | control names and the GUI-to-raw map | `engines/audio2face/offset/data/extract_rig_names.py`; also reads one header from an Unreal Engine 5.8 install with the MetaHuman plugin (`UE_ROOT`) |
 | `head/head_assets.npz` | the DNA's head mesh: triangles, UVs, vertex map, neutral shape | `engines/audio2face/extend_head_assets.py --meshes 0` (`--dump` with OpenRigLogic, then `--build`; needs `rig_tables.npz` first) |
 | `head/head_assets_0134.npz` | the head plus teeth and both eyeballs, appended | the same script, `--meshes 0,1,3,4` |
-| `head/uv_region_masks_256.pkl` | eye, nose, lips and forehead regions on the UV map | `engines/audio2face/make_region_masks.py` (writes the 512 version; the renderer reads it at 256) |
+| `head/eye_mask.npz` | how far each vertex moves under the eyelid controls, and its distance to Epic's eyelid landmarks | made once from `face_landmarks.json` in an Unreal Engine install with the MetaHuman plugin; the builder is not in this repo |
+| `head/uv_region_masks.pkl`, `uv_region_masks_256.pkl` | eye, nose, lips and forehead regions on the UV map | `engines/audio2face/make_region_masks.py`, one run writes both; the eye region uses `eye_mask.npz` |
 
 ## Setting up a machine
 

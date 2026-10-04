@@ -6,7 +6,7 @@ appended so no existing index moves.
 Two steps each, because the DNA bindings link libpython3.13 and numpy lives elsewhere:
 
     cd externals/OpenRigLogic/build/python && LD_LIBRARY_PATH=. PYTHONPATH=./dna:./riglogic \
-        python3.13 <alive>/engines/audio2face/extend_head_assets.py --meshes 0 --dump
+        ~/.venvs/mh-offset/bin/python <alive>/engines/audio2face/extend_head_assets.py --meshes 0 --dump
     ~/miniconda3/envs/stavatar/bin/python engines/audio2face/extend_head_assets.py --meshes 0 --build
 
 then the same pair with --meshes 0,1,3,4 (what the renderer uses). --meshes 0 writes

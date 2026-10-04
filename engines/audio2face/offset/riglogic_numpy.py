@@ -264,7 +264,7 @@ def geometry(delta, bsw, rig, meshes):
 
 # ------------------------------------------------------------------ verify ---
 def verify(dna_path=None, n_trials=25, seed=3):
-    dna_path = dna_path or str(PIPE / "assets" / "face.dna")
+    dna_path = dna_path or str(PIPE / "assets" / "face_identity.dna")
     rig = MetaHumanRig(dna_path)
     inst, rl, r = rig.inst, rig.rl, rig.r
     t = RigTables.from_dna(r)
@@ -343,4 +343,6 @@ def verify(dna_path=None, n_trials=25, seed=3):
 
 
 if __name__ == "__main__":
-    sys.exit(0 if verify() else 1)
+    # The shipped tables come from face_identity.dna (joints only, no blend shapes);
+    # pass another DNA path to build from that instead.
+    sys.exit(0 if verify(sys.argv[1] if len(sys.argv) > 1 else None) else 1)

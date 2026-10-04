@@ -21,6 +21,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 X="$ROOT/externals"; P="$ROOT/env/patches"
 mkdir -p "$X"
+# Where the licensed files and the shared face assets go (README.md); the code reaches
+# them through links committed in engines/, which dangle until these exist.
+mkdir -p "$ROOT"/data/{takes,voice,answers} "$ROOT"/data/face/{assets,onnx,head,offset/cache}
 
 fetch() {  # name url commit [patch]
   local d="$X/$1"
@@ -41,6 +44,9 @@ fetch vhap     https://github.com/ShenhanQian/VHAP.git     4b64ab7dc62232110fcdb
 fetch stavatar https://github.com/JiankuoZhao/STAvatar.git 9f9ba1b24981f9a97abc62e77b43c28c57278a52 "$P/stavatar.patch"
 git -C "$X/stavatar" submodule update --init --recursive -q
 fetch F5-TTS   https://github.com/SWivid/F5-TTS.git        283252563dbf91be625e0c27926acfaac449186c
+# The renderer's FLAME loader also wants the tracker's template mesh, which its own repo
+# does not ship. Same file; linked so there is one copy.
+ln -sf ../../../../vhap/asset/flame/head_template_mesh.obj "$X/stavatar/flame_model/assets/flame/head_template_mesh.obj"
 
 # Only to REBUILD the shared face assets from a MetaHuman rig (README.md, "Shared face
 # assets"); serving and every recipe run without it.   bash env/setup_externals.sh --with-riglogic

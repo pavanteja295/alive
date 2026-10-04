@@ -29,6 +29,7 @@ import argparse
 import json
 import shutil
 import subprocess
+import time
 import sys
 from pathlib import Path
 
@@ -112,16 +113,29 @@ def subtitles(url, out, langs, force):
     auto-captions and none of them are useful here.
     """
     sub = out / 'Subtitles'
-    if sub.is_dir() and any(sub.iterdir()) and not force:
-        print('  subtitles exist, skip')
-        return
     sub.mkdir(parents=True, exist_ok=True)
+    done = sub / '.fetched'            # one line per finished track; a rerun resumes
+    have = set(done.read_text().split()) if done.exists() and not force else set()
     for flag, tag in (('--write-auto-subs', 'auto'), ('--write-subs', 'manual')):
         for fmt in ('json3', 'vtt'):
-            run(['yt-dlp', *js_runtime(), '--skip-download', flag,
-                 '--sub-langs', langs, '--sub-format', fmt,
-                 '-o', f'%(id)s.{tag}.%(ext)s', url], cwd=str(sub))
-    got = sorted(f.name for f in sub.iterdir())
+            if f'{tag}.{fmt}' in have or (not force and any(sub.glob(f'*.{tag}.*.{fmt}'))):
+                continue
+            # YouTube answers a burst of caption requests with HTTP 429. Downloading five
+            # videos in a row hits it; waiting a minute or two clears it.
+            for wait in (60, 120, 240, 0):
+                try:
+                    run(['yt-dlp', *js_runtime(), '--skip-download', flag,
+                         '--sub-langs', langs, '--sub-format', fmt,
+                         '-o', f'%(id)s.{tag}.%(ext)s', url], cwd=str(sub))
+                    break
+                except subprocess.CalledProcessError:
+                    if not wait:
+                        raise
+                    print(f'  captions refused (YouTube rate limit?); retrying in {wait} s', flush=True)
+                    time.sleep(wait)
+            with open(done, 'a') as f:
+                f.write(f'{tag}.{fmt}\n')
+    got = sorted(f.name for f in sub.iterdir() if not f.name.startswith('.'))
     print('  ' + (', '.join(got) if got else 'none available'))
 
 

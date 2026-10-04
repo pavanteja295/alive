@@ -1,3 +1,11 @@
+"""Eye, nose, lip and forehead regions on the head's UV map, for the renderer.
+
+    ~/miniconda3/envs/stavatar/bin/python engines/audio2face/make_region_masks.py
+
+A region is every vertex its controls move by more than 0.5 mm, baked to a 512 UV map,
+then averaged down to 256 (the size the renderer reads). Writes uv_region_masks.pkl and
+uv_region_masks_256.pkl; both reproduce the shipped files exactly.
+"""
 import sys, re, pickle, pathlib, numpy as np, torch
 ENGINE = pathlib.Path(__file__).resolve().parent          # the face engine
 sys.path.insert(0, str(ENGINE / "stavatar"))
@@ -41,6 +49,33 @@ for name,pat in PAT.items():
     masks[name]=uv[None]
     print("%-11s %3d controls  verts>%.1fmm %5d  UV coverage %5.2f%%" %
           (name,len(idx),thr,int(m.sum().item()),100*uv.mean()))
-pickle.dump({k:v.astype(np.float32) for k,v in masks.items()},
-            open(P+"head/uv_region_masks.pkl","wb"))
-print("wrote head/uv_region_masks.pkl")
+def renderer(size):
+    return SRenderY(image_size=size,uv_size=size,faces=PI[FL].unsqueeze(0).cuda(),
+                    uvfaces=FL.unsqueeze(0).cuda(),uvcoords=UVS.unsqueeze(0).cuda()).cuda()
+
+# The eye region, narrowed to the eyelid: vertices that move over 1 mm under the lid
+# controls AND sit within 25 mm of Epic's eyelid landmark curves, dilated 2 px so the
+# thin band survives the bake. head/eye_mask.npz holds both measurements; it was made
+# once from the landmark file in an Unreal Engine install (README.md, Shared face assets).
+EM=pathlib.Path(P+"head/eye_mask.npz")
+if EM.exists():
+    from scipy.ndimage import binary_dilation
+    e=np.load(EM)
+    keep=((e["motion_mm"]>1.0)&(e["dist_mm"]<25.0)).astype(np.float32)
+def eyelid(size):
+    v=torch.tensor(keep,device="cuda")[None,:,None].repeat(1,1,3)
+    uv=(renderer(size).world2uv(v)[0,0]>0.5).cpu().numpy()
+    return binary_dilation(uv,iterations=2).astype(np.float32)[None]
+
+import torch.nn.functional as Fn
+for size in (512,256):
+    out={k:(v if size==512 else
+            (Fn.avg_pool2d(torch.tensor(v)[None],512//size)>0.5).float()[0].numpy())
+         for k,v in masks.items()}
+    if EM.exists():
+        out["eye_region"]=eyelid(size)
+    else:
+        print("no head/eye_mask.npz: eye_region is the coarse version")
+    name="uv_region_masks.pkl" if size==512 else "uv_region_masks_%d.pkl" % size
+    pickle.dump({k:v.astype(np.float32) for k,v in out.items()}, open(P+"head/"+name,"wb"))
+    print("wrote head/%s (eye region %.2f%% of UV)" % (name,100*out["eye_region"].mean()))
