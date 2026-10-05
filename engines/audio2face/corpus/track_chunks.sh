@@ -22,7 +22,7 @@ VHAP="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)/vhap"   # the tracker, 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 LEDGER="$ROOT/chunks/$SEQ/track_ledger.tsv"
 
-export CUDA_HOME=$E PATH=$E/bin:$PATH TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-12.0}   # 12.0 = RTX 50xx; set yours
+export CONDA_PREFIX=$E CUDA_HOME=$E PATH=$E/bin:$PATH TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-12.0}   # 12.0 = RTX 50xx; set yours
 export CC=$E/bin/x86_64-conda-linux-gnu-gcc
 export CXX=$E/bin/x86_64-conda-linux-gnu-g++
 export NVCC_PREPEND_FLAGS="-ccbin $E/bin/x86_64-conda-linux-gnu-g++"

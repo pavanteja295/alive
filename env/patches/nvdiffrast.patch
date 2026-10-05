@@ -1,0 +1,24 @@
+--- a/nvdiffrast/torch/ops.py	2026-10-05 08:57:22.558597187 +0530
++++ b/nvdiffrast/torch/ops.py	2026-10-05 08:57:22.559410425 +0530
+@@ -122,9 +122,19 @@
+ 
+     # Compile and load.
+     source_paths = [os.path.join(os.path.dirname(__file__), fn) for fn in source_files]
+-    torch.utils.cpp_extension.load(name=plugin_name, sources=source_paths, extra_cflags=common_opts+cc_opts, extra_cuda_cflags=common_opts+['-lineinfo'], extra_ldflags=ldflags, with_cuda=True, verbose=False)
++    _built = torch.utils.cpp_extension.load(name=plugin_name, sources=source_paths, extra_cflags=common_opts+cc_opts, extra_cuda_cflags=common_opts+['-lineinfo'], extra_ldflags=ldflags, with_cuda=True, verbose=False)
+ 
+-    # Import, cache, and return the compiled module.
++    # Import, cache, and return the compiled module. Newer torch no longer puts
++    # the build directory on sys.path, so import_module() alone fails even after
++    # a successful build. Prefer the module object load() hands back.
++    if _built is not None:
++        _cached_plugin[gl] = _built
++        return _cached_plugin[gl]
++
++    import sys
++    build_dir = torch.utils.cpp_extension._get_build_directory(plugin_name, False)
++    if build_dir not in sys.path:
++        sys.path.insert(0, build_dir)
+     _cached_plugin[gl] = importlib.import_module(plugin_name)
+     return _cached_plugin[gl]
+ 

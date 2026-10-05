@@ -52,11 +52,13 @@ ln -sf ../../../../vhap/asset/flame/head_template_mesh.obj "$X/stavatar/flame_mo
 # assets"); serving and every recipe run without it.   bash env/setup_externals.sh --with-riglogic
 if [[ " $* " == *" --with-riglogic "* ]]; then
   fetch OpenRigLogic https://github.com/EpicGames/OpenRigLogic.git 7b9e7a88898f51f29aa308acb4877276f27e1507 "$P/openriglogic.patch"
+  if ls "$X/OpenRigLogic/build/python/dna/"_py3dna*.so >/dev/null 2>&1; then echo "  OpenRigLogic: already built"; else
   PYV=${RIGLOGIC_PYTHON:-3.13}      # the Python its bindings are built for
   cmake -S "$X/OpenRigLogic" -B "$X/OpenRigLogic/build" -DCMAKE_BUILD_TYPE=Release \
         -DDNA_BUILD_PYTHON_WRAPPER=$PYV -DRL_BUILD_PYTHON_WRAPPER=$PYV >/dev/null
   cmake --build "$X/OpenRigLogic/build" -j >/dev/null && echo "  OpenRigLogic: built, bindings in build/python"
+  fi
 fi
 
 echo
-echo "next: the environments (env/README.md), then FLAME into the two folders above."
+echo "next: bash env/install.sh (the environments), or ./alive install for everything."

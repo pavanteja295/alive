@@ -29,11 +29,13 @@ each creator's profile.
 | `ffmpeg`, `ffprobe` | every recipe, the live app | any recent build |
 | `yt-dlp` and a JavaScript runtime (`deno` or `node`) | downloading videos | YouTube extraction needs the JS runtime now |
 | CUDA toolkit 12.8 (`nvcc`) and conda's `gxx_linux-64` in the tracker env | face tracking builds VHAP's CUDA ops on first run | `conda install -n vhap -c conda-forge gxx_linux-64 cuda-nvcc=12.8`; set `TORCH_CUDA_ARCH_LIST` for your card (default 12.0, the RTX 50 series) |
-| a gcc that CUDA 11.7 accepts | the face export (`gauss/export_all.sh`) | point `CC`/`CXX` at it; the default is a `gaussian-avatars` conda env's |
 | `cmake` | only `--with-riglogic` | to rebuild the shared face assets |
 | the `claude` CLI | optional | the answer engine falls back to it when no API key is set |
 
 ## Order
+
+`bash env/install.sh` does all of this, and `./alive install` runs it after `setup_externals.sh`.
+The commands below are what it runs, for doing one by hand.
 
 ```bash
 bash env/setup_externals.sh            # tracker, renderer and voice code, at our commits

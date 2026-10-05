@@ -95,6 +95,11 @@ You can make those calls by hand instead.</p>
 <h3>2. Clone</h3>
 <pre><code>git clone https://github.com/pavanteja295/alive && cd alive</code></pre>
 
+<div class="box"><b class="t">Steps 3 to 5 in one command</b><code>./alive install</code> fetches the outside code, creates
+all six environments, builds the shared face assets once your MetaHuman rig is in place, and finishes with a list of
+the files only you can supply. Rerun it after adding them; it skips whatever is done. The sections below say what
+it does, for when one step needs a hand.</div>
+
 <h3>3. Outside code</h3>
 <p>Three projects this builds on, each at the exact commit used, with our changes applied as patches:
 the face tracker (VHAP), the face renderer (STAvatar) and the voice model (F5-TTS).</p>
@@ -102,7 +107,8 @@ the face tracker (VHAP), the face renderer (STAvatar) and the voice model (F5-TT
 
 <h3>4. Environments</h3>
 <p>Six separate Python environments, because their libraries conflict. Each file in <code>env/</code> is the exact
-package list. <code>env/README.md</code> has the full commands; in short:</p>
+package list. <code>bash env/install.sh</code> builds all six (or name some: <code>bash env/install.sh face tracker</code>),
+installing each list exactly and compiling the renderer's and tracker's GPU code for your card:</p>
 <div class="tbl"><table>
 <tr><th>environment</th><th>for</th><th>build it with</th></tr>
 <tr><td><code>~/.venvs/vc-f5</code></td><td>voice training and serving</td><td><code>uv venv --python 3.11</code>, <code>-r env/voice-f5.txt</code>, then <code>-e externals/F5-TTS</code></td></tr>

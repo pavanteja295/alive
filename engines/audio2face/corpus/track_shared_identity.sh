@@ -53,7 +53,7 @@ echo "  $CKPT"
 # so recipes/audio-to-mesh builds the person's rig from this chunk's export.
 mkdir -p "$ROOT/chunks/$SEQ" && echo "$DONOR" > "$ROOT/chunks/$SEQ/donor.txt"
 
-export CUDA_HOME=$E PATH=$E/bin:$PATH TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-12.0}   # 12.0 = RTX 50xx; set yours
+export CONDA_PREFIX=$E CUDA_HOME=$E PATH=$E/bin:$PATH TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-12.0}   # 12.0 = RTX 50xx; set yours
 export CC=$E/bin/x86_64-conda-linux-gnu-gcc
 export CXX=$E/bin/x86_64-conda-linux-gnu-g++
 export NVCC_PREPEND_FLAGS="-ccbin $E/bin/x86_64-conda-linux-gnu-g++"

@@ -10,10 +10,11 @@
 set -u
 VHAP="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)/vhap"   # the tracker, linked from alive/externals
 V="$VHAP"
-export CUDA_HOME=$HOME/miniconda3/envs/vhap
-export PATH=$CUDA_HOME/bin:$PATH
-export CC=${CC:-$HOME/miniconda3/envs/gaussian-avatars/bin/gcc}     # any gcc VHAP's CUDA ops build with
-export CXX=${CXX:-$HOME/miniconda3/envs/gaussian-avatars/bin/g++}
+E=${ENV_VHAP:-$HOME/miniconda3/envs/vhap}      # the tracker's env, with its own nvcc 12.8 and gcc
+export CONDA_PREFIX=$E CUDA_HOME=$E PATH=$E/bin:$PATH TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-12.0}
+export CC=${CC:-$E/bin/x86_64-conda-linux-gnu-gcc}       # same toolchain the tracking scripts use
+export CXX=${CXX:-$E/bin/x86_64-conda-linux-gnu-g++}
+export NVCC_PREPEND_FLAGS="-ccbin $CXX"
 cd "$V" || exit 1
 n=0; skipped=0; failed=0
 for d in output/shared/*/; do
@@ -27,7 +28,7 @@ for d in output/shared/*/; do
   # Atomic claim, so several copies of this script can share the queue. mkdir either
   # creates the directory or fails; nothing in between, unlike a test-then-touch.
   mkdir "$tgt.lock" 2>/dev/null || { skipped=$((skipped+1)); continue; }
-  if ~/miniconda3/envs/vhap/bin/python vhap/export_as_nerf_dataset.py \
+  if "$E/bin/python" vhap/export_as_nerf_dataset.py \
         --src_folder "$src" --tgt_folder "$tgt" --background-color white \
         > /tmp/export_$chunk.log 2>&1; then
     n=$((n+1)); echo "OK   $chunk  ($(ls "$tgt/images" | wc -l) frames)"

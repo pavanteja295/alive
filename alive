@@ -8,6 +8,7 @@
 #   ./alive restart [service] one service, or all of them
 #   ./alive logs <service> [-f]
 #   ./alive check [creator]   is everything the app needs on disk?
+#   ./alive install           once: outside code, environments, shared face assets
 #   ./alive build <creator>   download their videos and rebuild every model (recipes/)
 #
 # Then open http://127.0.0.1:8800.
@@ -206,7 +207,46 @@ cmd_logs() {
   if [[ "${1:-}" == "-f" ]]; then tail -f "$RUN/$n.log"; else tail -40 "$RUN/$n.log"; fi
 }
 
+# Everything a fresh clone needs before it can build or run, in order, skipping what is
+# done: outside code, the six environments, the shared face assets (once a MetaHuman rig
+# is in data/face/assets/), then a checklist of the files only you can supply.
+cmd_install() {
+  say "== outside code";  bash "$ROOT/env/setup_externals.sh" --with-riglogic || return 1
+  say "== environments";  bash "$ROOT/env/install.sh" || return 1
+  "$PYTHON" -c "import anthropic" 2>/dev/null ||
+    "$PYTHON" -m pip install --user -q anthropic || say "  pip install anthropic (answer engine)"
+  local D="$ROOT/data/face" A="$ROOT/engines/audio2face" ORL="$ROOT/externals/OpenRigLogic/build/python"
+  local MH=${ENV_MH:-$HOME/.venvs/mh-offset}/bin/python ST=${ENV_STAVATAR:-$HOME/miniconda3/envs/stavatar}/bin/python
+  dna() { (cd "$ORL" && LD_LIBRARY_PATH=.:./dna:./riglogic PYTHONPATH=./dna:./riglogic "$MH" "$@"); }
+  say "== shared face assets"
+  if [[ ! -f "$D/assets/face_identity.dna" || ! -f "$D/assets/face.dna" ]]; then
+    say "  waiting for your MetaHuman rig in data/face/assets/ (face.dna, face_identity.dna); rerun after"
+  else
+    [[ -f "$D/offset/rig_tables.npz" ]] || dna "$A/offset/riglogic_numpy.py" || return 1
+    [[ -f "$D/head/head_assets.npz" ]] || { dna "$A/extend_head_assets.py" --meshes 0 --dump &&
+        "$ST" "$A/extend_head_assets.py" --meshes 0 --build; } || return 1
+    [[ -f "$D/head/head_assets_0134.npz" ]] || { dna "$A/extend_head_assets.py" --meshes 0,1,3,4 --dump &&
+        "$ST" "$A/extend_head_assets.py" --meshes 0,1,3,4 --build; } || return 1
+    if [[ -f "$D/head/eye_mask.npz" && ! -f "$D/head/uv_region_masks_256.pkl" ]]; then
+      (cd "$ROOT" && "$ST" "$A/make_region_masks.py") || return 1; fi
+    say "  built what the rig allows"
+  fi
+  say ""; say "== still needed from you (docs/guide/setup.html#licensed)"
+  local f miss=0
+  for f in "externals/vhap/asset/flame/flame2023.pkl|FLAME head model: flame.is.tue.mpg.de" \
+           "externals/stavatar/flame_model/assets/flame/flame2023.pkl|FLAME, the renderer's copy" \
+           "data/face/onnx/audio_encoder.onnx|NVIDIA Audio2Face-3D models" \
+           "data/face/assets/face_identity.dna|a MetaHuman face rig (face.dna, face_identity.dna)" \
+           "data/face/offset/cache/rig_names.npz|rig control names: needs Unreal Engine (setup page)" \
+           "data/face/head/eye_mask.npz|eyelid mask: needs Unreal Engine (setup page)" \
+           "data/answers/.protokey|an Anthropic API key: console.anthropic.com"; do
+    [[ -e "$ROOT/${f%%|*}" ]] || { say "  ${c_no}MISSING${c_z} ${f%%|*}  (${f#*|})"; miss=1; }
+  done
+  [[ $miss == 0 ]] && say "  nothing: ./alive build <creator>" || say "  add them, then rerun ./alive install"
+}
+
 case "${1:-}" in
+  install) cmd_install ;;
   up)      pick_creator "${2:-}"; cmd_up ;;
   down)    cmd_down ;;
   status)  cmd_status ;;
@@ -217,7 +257,8 @@ case "${1:-}" in
            else cmd_down; say ""; cmd_up; fi ;;
   logs)    shift; cmd_logs "$@" ;;
   build)   shift; exec "$PYTHON" "$ROOT/recipes/rebuild.py" "$@" ;;
-  *)  say "usage: ./alive up <creator> | down | status | check [creator] | restart [service] | logs <service> [-f]"
+  *)  say "usage: ./alive install                (once: outside code, environments, face assets)"
+      say "       ./alive up <creator> | down | status | check [creator] | restart [service] | logs <service> [-f]"
       say "       ./alive build <creator> [--stage S] [--dry-run] [--trust-gates]"
       say ""; say "  creators: $(ls "$ROOT/creators" | grep -v '^_' | grep -v README | tr '\n' ' ')" ;;
 esac
