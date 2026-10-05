@@ -7,8 +7,16 @@ builds a live version of them you can question.
 
 ```mermaid
 flowchart LR
-    Q([Your question]) --> A[Their words] --> V[Their voice] --> F[Their face] --> W([They answer])
+    Q([Your question]) --> A["<b>Their words</b><br/>found in what<br/>they actually said"]
+    A --> V["<b>Their voice</b><br/>learned from hours<br/>of their speech"]
+    V --> F["<b>Their face</b><br/>moving the way<br/>theirs moves"]
+    F --> W([They answer])
 ```
+
+- **From their own words.** Answers come from their videos, and every claim points back to the moment they said it.
+- **Sounds like them.** Their voice, their pace, their pitch.
+- **Looks like them.** Their face, drawn fresh onto real footage of their body.
+- **Any creator.** Same recipe for everyone: give it videos, get a creator.
 
 > Everything it shows is AI-generated and labelled so. Ask a creator before you build one of them.
 
