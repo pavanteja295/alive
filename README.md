@@ -31,6 +31,10 @@ flowchart LR
 
 **Software:** Linux, an NVIDIA driver for CUDA 12.8, Miniconda, uv, ffmpeg, yt-dlp.
 
+**[Claude Code](https://claude.com/claude-code):** the recipes are written for it to run. It drives the build and makes
+the look-and-decide calls along the way (which shots show the creator, where they look at rest).
+You can make those calls yourself, but it is the intended way to build a clone.
+
 **Bring your own** (these can't be shared):
 - an [Anthropic API key](https://console.anthropic.com), for writing the answers
 - the [FLAME](https://flame.is.tue.mpg.de) head model, free for research
