@@ -1,9 +1,9 @@
 # alive
 
-### Ask a creator anything. Watch them answer, in their own words, voice and face.
+### Turn any creator into an AI clone you can talk to.
 
-Point it at a creator's YouTube videos. It learns how they talk, sound and move, and
-builds a live version of them you can question.
+Feed it their YouTube videos. Ask it anything. Watch them answer, in their own words,
+voice and face.
 
 ```mermaid
 flowchart LR
@@ -16,9 +16,9 @@ flowchart LR
 - **From their own words.** Answers come from their videos, and every claim points back to the moment they said it.
 - **Sounds like them.** Their voice, their pace, their pitch.
 - **Looks like them.** Their face, drawn fresh onto real footage of their body.
-- **Any creator.** Same recipe for everyone: give it videos, get a creator.
+- **Any creator.** Give it their videos, get their clone.
 
-> Everything it shows is AI-generated and labelled so. Ask a creator before you build one of them.
+> Every clone is AI-generated and labelled so. Ask a creator before you clone them.
 
 ## Try it
 
