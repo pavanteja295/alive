@@ -1,175 +1,138 @@
 # alive
 
-Ask a creator a question and watch them answer it: an answer in their words, from
-their own videos, in their cloned voice, on their face and body. Built from public
-YouTube videos of the creator. Working today for Dr K and Huberman.
+### Ask a creator anything. Watch them answer, in their own words, voice and face.
 
-Every frame is labelled AI-generated. The face, voice and words are generated; the
-creator did not say them.
+Give alive a creator's YouTube videos. It learns how they talk, how they sound and how
+their face moves, and builds a live version of them you can question. Every answer is
+drawn from things they actually said, with each claim tied back to the video it came from.
 
-**New here? Read the guide: https://pavanteja295.github.io/alive/** (also in `docs/guide/`).
-It explains every stage with diagrams, from setting up a machine to building a new creator.
+[**Read the guide →**](https://pavanteja295.github.io/alive/) &nbsp;·&nbsp;
+[How it works](#how-it-works) &nbsp;·&nbsp; [Try it](#try-it) &nbsp;·&nbsp;
+[Build your own](#build-your-own-creator) &nbsp;·&nbsp; [Built on](#built-on)
+
+> **Everything it shows is AI-generated, and labelled that way on every frame.** The face,
+> voice and words are made by models; the creator never said any of it. Ask a creator's
+> permission before you build or share a model of them.
+
+Working today for two creators: **Dr K** (HealthyGamerGG) and **Andrew Huberman**.
+
+---
+
+## How it works
+
+```mermaid
+flowchart LR
+    Q([Your question]) --> A["<b>Their words</b><br/>an LLM searches everything<br/>they've said on video"]
+    A --> V["<b>Their voice</b><br/>a voice model trained<br/>on hours of their speech"]
+    V --> M["<b>Their face, moving</b><br/>a 3D face that moves<br/>the way theirs does"]
+    M --> R["<b>Their picture</b><br/>painted from their own<br/>video, on their real body"]
+    R --> W([You watch them answer])
+```
+
+Five models, one per box, all learned from the same public videos. The picture is a newly
+drawn head placed onto real footage of the creator, so the body, hands and room are
+genuine and only the face is new.
+
+**How fast:** the answer takes 20-80 seconds to write (the LLM is most of the wait). After
+that you hear them within a second, and see them speak about ten seconds later, faster
+than real time. While it thinks, the creator sits there blinking and breathing, so the page
+never looks frozen.
+
+## Try it
+
+You need a creator's trained models in `checkpoints/<creator>/` (not published yet; you
+build them, below). Then:
 
 ```bash
-./alive up huberman        # or drk
-# open http://127.0.0.1:8800
-./alive down
+./alive up huberman        # or drk; ready in about 20 seconds
+# open http://127.0.0.1:8800 and ask a question
+./alive down               # stop
 ```
 
-## What happens when you ask
+`./alive check huberman` tells you what's missing, if anything.
 
-```
-question -> answer text -> voice -> face motion -> pictures on the creator's real body
-            (LLM, their    (cloned  (from the     (renderer trained on their face,
-            transcripts)   voice)   audio)        pasted onto real footage)
-```
+## Build your own creator
 
-| stage | where | serves on |
-|---|---|---|
-| answer | `engines/knowledge_style` | :8788, calls the Anthropic API |
-| voice | `engines/text2audio/blocks/voice` | :8791 |
-| face | `engines/audio2face` (motion, rig, renderer, live server) | :8730 |
-| viewer | `app/` | :8800 |
-
-`./alive up <creator>` reads `creators/<creator>/live.env` and starts the four in order.
-`./alive check <creator>` says what is missing first.
-
-Measured on the Huberman app: 20-80 s writing the answer (most of the wait), first sound
-about 1 s later, first frame about 10 s after that (the face waits for the whole voice, then starts in
-about 3 s), then 80 frames a
-second (2.7x real time).
-
-## Hardware
-
-| | serving | building a creator |
-|---|---|---|
-| GPU | NVIDIA, 12 GB (peak use 7 GB on a 90 s answer) | 16 GB (built on an RTX 5080) |
-| RAM | 16 GB | 32 GB (face tracking runs 8 workers at ~1.2 GB each) |
-| disk | ~3 GB of models per creator | ~150 GB working space per creator |
-| other | an Anthropic API key | ffmpeg, yt-dlp, a network connection |
-
-Building and serving do not share the card: `./alive down` before `./alive build`.
-Everything was built and run on CUDA 12.8 (torch `+cu128`); other cards are untested.
-
-## Where everything goes
-
-```
-alive/
-  checkpoints/<creator>/      THE MODELS. Not in git, not released yet.
-    voice/                    model.pt, reference.wav, vocab.txt, voice.json
-    face/motion/<release>/    voice-to-motion model, with its corrective layer
-    face/rig/                 the creator's face rig
-    face/render/<run>/        the renderer, final iteration
-  data/                       everything else that is not code. Not in git.
-    takes/<folder>/<take>/    downloaded videos, audio, subtitles (./alive build fills it)
-    answers/<creator>/        indexed transcripts; answers/.protokey holds the API key
-    voice/                    the voice recipe's working state
-    face/                     the face recipes' working state, plus shared face assets
-  externals/                  outside code at our commits: bash env/setup_externals.sh
-    vhap/                     face tracker (its data/, output/, export/ hold tracking)
-    stavatar/                 face renderer, with our changes applied
-    F5-TTS/                   voice model code
-```
-
-`data/` and `externals/` can be links to wherever the bytes live. The face engine reaches
-them through relative links committed in `engines/audio2face`, so no code names a
-machine path.
-
-**Licensed files you supply yourself** (not redistributable, not in git):
-
-| file | goes in | from |
-|---|---|---|
-| `flame2023.pkl`, `FLAME_masks.pkl` | `externals/vhap/asset/flame/` and `externals/stavatar/flame_model/assets/flame/` | the FLAME head model: register at https://flame.is.tue.mpg.de |
-| `audio_encoder.onnx`, `animation_decoder.onnx` | `data/face/onnx/` | NVIDIA Audio2Face-3D (the speech encoder and its decoder) |
-| a MetaHuman face rig, `face.dna` and `face_identity.dna` | `data/face/assets/` | Epic's MetaHuman Creator, under Epic's licence. *Shared face assets* below |
-| an Anthropic API key | `data/answers/.protokey` | https://console.anthropic.com |
-
-### Shared face assets
-
-Every creator's face rig is the same MetaHuman rig, reshaped to their face. The files
-below are built once from that MetaHuman rig and shared by all creators.
-
-The code assumes a MetaHuman face rig of DNA version 2.5: 263 raw controls and 545
-corrective shapes. Older rigs (Ada, 476 correctives) do not fit. The one Dr K's and
-Huberman's rigs were built from is a MetaHuman of the author's own face and is not
-released, so make one in MetaHuman Creator and export its DNA. Building these needs
-OpenRigLogic (`bash env/setup_externals.sh --with-riglogic`). Build them in the table's order;
-each was rebuilt from scratch on 2026-10-04 and matches the files Dr K's and Huberman's models
-were trained with:
-
-| file, in `data/face/` | what it is | built by |
-|---|---|---|
-| `offset/rig_tables.npz` | the rig's arithmetic, so it runs without the DNA library | `engines/audio2face/offset/riglogic_numpy.py`, from `face_identity.dna` |
-| `offset/cache/rig_names.npz` | control names and the GUI-to-raw map | `engines/audio2face/offset/data/extract_rig_names.py`; also reads one header from an Unreal Engine 5.8 install with the MetaHuman plugin (`UE_ROOT`) |
-| `head/head_assets.npz` | the DNA's head mesh: triangles, UVs, vertex map, neutral shape | `engines/audio2face/extend_head_assets.py --meshes 0` (`--dump` with OpenRigLogic, then `--build`; needs `rig_tables.npz` first) |
-| `head/head_assets_0134.npz` | the head plus teeth and both eyeballs, appended | the same script, `--meshes 0,1,3,4` |
-| `head/eye_mask.npz` | how far each vertex moves under the eyelid controls, and its distance to Epic's eyelid landmarks | made once from `face_landmarks.json` in an Unreal Engine install with the MetaHuman plugin; the builder is not in this repo |
-| `head/uv_region_masks.pkl`, `uv_region_masks_256.pkl` | eye, nose, lips and forehead regions on the UV map | `engines/audio2face/make_region_masks.py`, one run writes both; the eye region uses `eye_mask.npz` |
-
-## Setting up a machine
+One command turns a list of YouTube videos into every model:
 
 ```bash
-bash env/setup_externals.sh      # tracker, renderer, voice code at our commits
-# then the six Python environments: env/README.md
-./alive check drk                # what is still missing
+./alive build <creator>
 ```
 
-## Building a creator
+It downloads the videos, trains each model in order, and **stops whenever a person needs
+to look at something**: which shots really show the creator, whether a voice clip sounds
+right, whether lips and sound line up. You decide, write it down, and run the same command
+again. It picks up where it left off.
 
-```bash
-./alive build huberman           # download their videos and rebuild every model
-```
+About a day of computer time per creator on one GPU, most of it tracking their face. The
+[guide](https://pavanteja295.github.io/alive/new-creator.html) walks through it from
+nothing, with a diagram for every step.
 
-One command, from YouTube ids to `checkpoints/`. It asks each recipe what is next, runs
-it, and replays the decisions recorded for that creator in `creators/<creator>/`. It
-resumes where it stopped. About a day for Huberman and two for Dr K, mostly face
-tracking. For a new creator, and for every step that needs a person: `recipes/README.md`.
+**Rebuilding Dr K or Huberman:** every decision made while building them is recorded in
+this repo, so `./alive build drk` or `./alive build huberman` replays the whole thing from
+YouTube. A from-scratch rebuild of Huberman reproduced his voice to the same scores.
 
-### Reproducing Dr K and Huberman from scratch
+## What you need
 
-Their videos, every decision a person made while building them, and the settings of
-every model are in this repo (`creators/drk/`, `creators/huberman/`, the recipes'
-profiles). What it cannot hold is the licensed and private input: FLAME, the speech
-encoder, the MetaHuman rig and the assets built from it, and each creator's persona
-note. With those in place (the tables above), `./alive build drk` and
-`./alive build huberman` rebuild both from YouTube. The authors keep those inputs in a
-private kit; anyone else supplies their own licensed copies and makes a MetaHuman rig.
+| | to run it | to build a creator |
+|---|---|---|
+| GPU | NVIDIA, 12 GB | NVIDIA, 16 GB |
+| disk | ~3 GB per creator | ~150 GB while building |
+| also | Linux, an Anthropic API key | ffmpeg, yt-dlp |
 
-## The map
+Some inputs can't be shared, so you bring your own: the FLAME head model (free for
+research), NVIDIA's Audio2Face-3D models, a MetaHuman face from Epic's MetaHuman Creator,
+and an Anthropic API key. [Setup](https://pavanteja295.github.io/alive/setup.html) says
+where to get each and where it goes.
 
-```
-engines/      the pipeline. each engine has swappable blocks inside it.
-  knowledge_style/   question -> styled text
-  text2audio/        styled text -> audio
-  audio2face/        audio -> video
-recipes/      how every model is built, in order, for any creator
-creators/     per creator: live settings, the build record
-app/          the viewer
-env/          environments, patches to outside code, setup
-alive         start, stop, check, build
-docs/         write-ups of the answer engine's design (HTML; derived, owns nothing)
-corpus/ runs/ agent/ pipelines/ eval/ ingest/ ops/ configs/
-              the target layout (MANIFESTO.md); README-only so far
-```
+**Not in this repo:** the trained models, and the creators' videos and words. The recipes
+rebuild them from public uploads.
 
-Read `MANIFESTO.md` for direction and standing decisions, `CLAUDE.md` for how we work,
-`problems.md` for what is unresolved.
+## Built on
 
-## Four rules that carry most of the weight
+The hard parts stand on published work:
 
-- **Nothing names a subject internally.** Subject is always an argument; per-creator
-  values live in profiles and in `creators/<creator>/`.
-- **Engines are pure wiring.** Every block trains and infers alone, on explicit inputs,
-  with output you can read.
-- **What we observed, worked on and kept are separate.** `data/` is the first two,
-  `checkpoints/` is the third.
-- **Status is computed from disk, never written.** `./alive check`, and each recipe's
-  status command.
+- **[STAvatar](https://github.com/JiankuoZhao/STAvatar)** ([paper](https://arxiv.org/abs/2511.19854)) draws the photoreal face
+- **[F5-TTS](https://github.com/SWivid/F5-TTS)** ([paper](https://arxiv.org/abs/2410.06885)) is the voice
+- **[VHAP](https://github.com/ShenhanQian/VHAP)** with the [FLAME](https://flame.is.tue.mpg.de) head model tracks the face in video
+- **NVIDIA Audio2Face-3D** turns speech into face movement, corrected per creator
+- **Epic Games MetaHuman** and **[OpenRigLogic](https://github.com/EpicGames/OpenRigLogic)** give the 3D face its controls
+- **Anthropic Claude** writes the answers
+
+We also tried [inmystyle](https://github.com/achak1987/inmystyle) for speaking style and
+dropped it; [credits](https://pavanteja295.github.io/alive/credits.html) has why, and
+what was changed in each project.
 
 ## Known limits
 
-- Huberman's mouth runs about 0.2 s ahead of his voice: his source video's sound is late,
-  and the motion model learned that offset.
-- A hand or the microphone in front of the face is drawn over by the generated head.
-- The answer engine's onboarding is only partly scripted (`recipes/README.md`, *Not in
-  a recipe yet*).
+- A hand or microphone in front of the face gets painted over by the new face.
+- Huberman's lips run about 0.2 s ahead of his voice (his source video's sound is late).
+- Lips don't always fully close.
+- The creator's body replays real footage, so it doesn't react to what they're saying.
+
+<details>
+<summary><b>For developers: what's where</b></summary>
+
+```
+alive          start, stop, check, build
+engines/
+  knowledge_style/   question -> answer text        (serves on :8788)
+  text2audio/        answer text -> voice           (:8791)
+  audio2face/        voice -> face -> pictures      (:8730)
+app/           the viewer page                      (:8800)
+recipes/       how every model is built, in order, for any creator
+creators/      per creator: live settings, and every recorded build decision
+env/           Python environments, our patches to outside code, setup
+docs/guide/    the guide (served at pavanteja295.github.io/alive)
+checkpoints/   trained models       (not in git)
+data/          videos and working files (not in git)
+externals/     outside code at fixed commits (bash env/setup_externals.sh)
+```
+
+How the project is run: nothing in the code names a person (each creator is a settings
+file), every model is built by a recipe that anyone can rerun, and progress is always read
+from what's on disk, never written down by hand. `MANIFESTO.md` has the direction,
+`problems.md` what's unresolved. The full folder layout and the shared face assets are in
+[setup](https://pavanteja295.github.io/alive/setup.html).
+
+</details>

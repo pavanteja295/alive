@@ -115,6 +115,13 @@ package list. <code>env/README.md</code> has the full commands; in short:</p>
 answer engine run on the system <code>python3</code>, and every step calls its own environment's Python by path. The paths
 default to the ones in the table; if yours differ, set <code>ENV_F5</code>, <code>ENV_PREP</code>, <code>ENV_STAVATAR</code> or
 <code>ENV_VHAP</code> to the environment's folder. The stage pages show the Python to use when you run a step by hand.</div>
+<div class="box warn"><b class="t">Reusing environments from another project</b>The tracker and voice environments install
+<code>externals/vhap</code> and <code>externals/F5-TTS</code> in editable mode, and F5 keeps its training data and saved
+models beside its own code. An environment installed from another checkout will train from that checkout's files,
+and can resume someone else's training run. Check with
+<code>~/.venvs/vc-f5/bin/python -c "import f5_tts; print(f5_tts.__path__)"</code>; it must print a path inside this
+repository's <code>externals/</code>. If not: <code>uv pip install --python &lt;env&gt;/bin/python --no-deps -e externals/F5-TTS</code>
+(and the same for <code>externals/vhap</code> in the tracker's environment). Voice training refuses to start on a mismatch.</div>
 <div class="box warn"><b class="t">On a card other than the RTX 50 series</b>set <code>TORCH_CUDA_ARCH_LIST</code> (for example
 <code>8.9</code> for an RTX 40) before the tracker and renderer first build their CUDA code.</div>
 
